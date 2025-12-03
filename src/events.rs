@@ -98,21 +98,27 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
                 if panel == Panel::Canvas {
                     if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
                         if app.is_select_tool() {
-                            // Selection mode: check if clicking inside selection bounds
+                            // Selection mode
                             if app.is_in_selection_mode() {
-                                let clicked_inside = if let Some((x1, y1, x2, y2)) = app.selection_state.selection_bounds {
-                                    let cx = canvas_x as i32;
-                                    let cy = canvas_y as i32;
-                                    cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2
-                                } else {
-                                    false
-                                };
+                                // Check if clicking inside any selected element's bounds
+                                let px = canvas_x as i32;
+                                let py = canvas_y as i32;
+                                let mut clicked_selected = false;
 
-                                if clicked_inside {
+                                for element_id in app.get_selected_element_ids() {
+                                    if let Some(element) = app.canvas.get_element(*element_id) {
+                                        if element.point_in_bounds(px, py) {
+                                            clicked_selected = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if clicked_selected {
                                     // Start moving selection
                                     app.start_move_selection(canvas_x, canvas_y);
                                 } else {
-                                    // Click outside - deselect and start new selection
+                                    // Clicked outside selected elements - deselect and start new selection
                                     app.deselect();
                                     app.start_selection(canvas_x, canvas_y);
                                 }

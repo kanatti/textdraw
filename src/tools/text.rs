@@ -1,5 +1,7 @@
 use crate::canvas::Canvas;
+use crate::element::{Element, TextElement};
 use crate::tools::DrawingTool;
+use std::collections::HashMap;
 
 pub struct TextTool {
     position: Option<(u16, u16)>,
@@ -39,10 +41,16 @@ impl DrawingTool for TextTool {
     }
 
     fn on_mouse_up(&mut self, _x: u16, _y: u16, canvas: &mut Canvas) {
-        // Commit text to canvas
+        // Commit text to canvas as a TextElement
         if let Some((px, py)) = self.position {
-            for (i, ch) in self.text.chars().enumerate() {
-                canvas.set(px as i32 + i as i32, py as i32, ch);
+            if !self.text.is_empty() {
+                let mut points = HashMap::new();
+                for (i, ch) in self.text.chars().enumerate() {
+                    points.insert((px as i32 + i as i32, py as i32), ch);
+                }
+                let id = canvas.get_next_id();
+                let text_elem = TextElement::new(id, (px as i32, py as i32), self.text.clone(), points);
+                canvas.add_element(Element::Text(text_elem));
             }
         }
         self.position = None;

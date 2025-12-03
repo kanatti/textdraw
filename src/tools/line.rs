@@ -1,5 +1,6 @@
 use crate::canvas::Canvas;
 use crate::drawing::algorithms;
+use crate::element::{Element, LineElement};
 use crate::tools::DrawingTool;
 
 pub struct LineTool {
@@ -28,7 +29,10 @@ impl DrawingTool for LineTool {
 
     fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut Canvas) {
         if let Some((sx, sy)) = self.start {
-            algorithms::draw_line(canvas, sx as i32, sy as i32, x as i32, y as i32);
+            let points = algorithms::generate_line_points(sx as i32, sy as i32, x as i32, y as i32);
+            let id = canvas.get_next_id();
+            let line = LineElement::new(id, (sx as i32, sy as i32), (x as i32, y as i32), points);
+            canvas.add_element(Element::Line(line));
         }
         self.start = None;
         self.current = None;

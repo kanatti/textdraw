@@ -1,7 +1,6 @@
 pub mod arrow;
 pub mod line;
 pub mod rectangle;
-pub mod select;
 pub mod text;
 
 use crate::canvas::Canvas;

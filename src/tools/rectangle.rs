@@ -1,5 +1,6 @@
 use crate::canvas::Canvas;
 use crate::drawing::algorithms;
+use crate::element::{Element, RectangleElement};
 use crate::tools::DrawingTool;
 
 pub struct RectangleTool {
@@ -28,7 +29,12 @@ impl DrawingTool for RectangleTool {
 
     fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut Canvas) {
         if let Some((sx, sy)) = self.start {
-            algorithms::draw_box(canvas, sx as i32, sy as i32, x as i32, y as i32);
+            let points = algorithms::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
+            let id = canvas.get_next_id();
+            let (left, right) = if sx <= x { (sx, x) } else { (x, sx) };
+            let (top, bottom) = if sy <= y { (sy, y) } else { (y, sy) };
+            let rect = RectangleElement::new(id, (left as i32, top as i32), (right as i32, bottom as i32), points);
+            canvas.add_element(Element::Rectangle(rect));
         }
         self.start = None;
         self.current = None;
