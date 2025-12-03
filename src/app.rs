@@ -1,4 +1,5 @@
 use crate::canvas::Canvas;
+use crate::tools::{line::LineTool, DrawingTool};
 use ratatui::layout::Rect;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -57,14 +58,8 @@ pub struct App {
     pub properties_area: Option<Rect>,
     // Drawing canvas
     pub canvas: Canvas,
-    // Drawing state
-    pub drawing: Option<DrawingState>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct DrawingState {
-    pub start_x: u16,
-    pub start_y: u16,
+    // Active tool instance
+    active_tool: Box<dyn DrawingTool>,
 }
 
 impl App {
@@ -80,59 +75,32 @@ impl App {
             elements_area: None,
             properties_area: None,
             canvas: Canvas::default(),
-            drawing: None,
+            active_tool: Box::new(LineTool::new()),
         }
     }
 
     pub fn start_drawing(&mut self, x: u16, y: u16) {
-        self.drawing = Some(DrawingState {
-            start_x: x,
-            start_y: y,
-        });
+        self.active_tool.on_mouse_down(x, y);
     }
 
-    pub fn finish_drawing(&mut self, end_x: u16, end_y: u16) {
-        if let Some(state) = self.drawing.take() {
-            match self.selected_tool {
-                Tool::Line => {
-                    self.draw_line(state.start_x, state.start_y, end_x, end_y);
-                }
-                _ => {}
-            }
-        }
+    pub fn update_drawing(&mut self, x: u16, y: u16) {
+        self.active_tool.on_mouse_drag(x, y);
+    }
+
+    pub fn finish_drawing(&mut self, x: u16, y: u16) {
+        self.active_tool.on_mouse_up(x, y, &mut self.canvas);
     }
 
     pub fn cancel_drawing(&mut self) {
-        self.drawing = None;
+        self.active_tool.cancel();
     }
 
-    fn draw_line(&mut self, x1: u16, y1: u16, x2: u16, y2: u16) {
-        let dx = (x2 as i32 - x1 as i32).abs();
-        let dy = (y2 as i32 - y1 as i32).abs();
-
-        if dx > dy {
-            // More horizontal - draw horizontal line
-            self.draw_horizontal_line(x1 as i32, y1 as i32, x2 as i32);
-        } else {
-            // More vertical - draw vertical line
-            self.draw_vertical_line(x1 as i32, y1 as i32, y2 as i32);
-        }
+    pub fn is_drawing(&self) -> bool {
+        self.active_tool.is_drawing()
     }
 
-    fn draw_horizontal_line(&mut self, x1: i32, y: i32, x2: i32) {
-        let (start, end) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
-
-        for x in start..=end {
-            self.canvas.set(x, y, '─');
-        }
-    }
-
-    fn draw_vertical_line(&mut self, x: i32, y1: i32, y2: i32) {
-        let (start, end) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
-
-        for y in start..=end {
-            self.canvas.set(x, y, '│');
-        }
+    pub fn get_preview_points(&self) -> Vec<(i32, i32, char)> {
+        self.active_tool.preview_points()
     }
 
     pub fn switch_panel(&mut self, panel: Panel) {
@@ -198,6 +166,13 @@ impl App {
     pub fn select_tool(&mut self, tool: Tool) {
         self.selected_tool = tool;
         self.tool_index = Tool::all().iter().position(|&t| t == tool).unwrap_or(0);
+
+        // Create new tool instance based on selection
+        self.active_tool = match tool {
+            Tool::Line => Box::new(LineTool::new()),
+            // TODO: Implement other tools
+            _ => Box::new(LineTool::new()),
+        };
     }
 
     pub fn select_next_tool(&mut self) {

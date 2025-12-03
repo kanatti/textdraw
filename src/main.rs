@@ -1,6 +1,8 @@
 mod app;
 mod canvas;
+mod drawing;
 mod events;
+mod tools;
 mod ui;
 
 use anyhow::Result;

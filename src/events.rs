@@ -84,33 +84,19 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
             if let Some(panel) = app.detect_panel_click(column, row) {
                 app.switch_panel(panel);
 
-                // If clicking on canvas with Line tool, start drawing
-                if panel == Panel::Canvas && app.selected_tool == Tool::Line {
-                    if let Some(canvas_area) = app.canvas_area {
-                        let canvas_x = column.saturating_sub(canvas_area.x + 1);
-                        let canvas_y = row.saturating_sub(canvas_area.y + 1);
-
-                        if canvas_x < canvas_area.width.saturating_sub(2)
-                            && canvas_y < canvas_area.height.saturating_sub(2)
-                        {
-                            app.start_drawing(canvas_x, canvas_y);
-                        }
+                // If clicking on canvas, start drawing with current tool
+                if panel == Panel::Canvas {
+                    if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
+                        app.start_drawing(canvas_x, canvas_y);
                     }
                 }
             }
         }
         MouseEventKind::Up(_) => {
             // Finish drawing on mouse up
-            if app.drawing.is_some() && app.active_panel == Panel::Canvas {
-                if let Some(canvas_area) = app.canvas_area {
-                    let canvas_x = column.saturating_sub(canvas_area.x + 1);
-                    let canvas_y = row.saturating_sub(canvas_area.y + 1);
-
-                    if canvas_x < canvas_area.width.saturating_sub(2)
-                        && canvas_y < canvas_area.height.saturating_sub(2)
-                    {
-                        app.finish_drawing(canvas_x, canvas_y);
-                    }
+            if app.is_drawing() && app.active_panel == Panel::Canvas {
+                if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
+                    app.finish_drawing(canvas_x, canvas_y);
                 }
             }
         }
@@ -120,35 +106,36 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
                 return;
             }
 
-            // Convert screen coordinates to canvas coordinates
-            if let Some(canvas_area) = app.canvas_area {
-                let canvas_x = column.saturating_sub(canvas_area.x + 1);
-                let canvas_y = row.saturating_sub(canvas_area.y + 1);
-
-                // Check if mouse is within canvas bounds
-                if canvas_x < canvas_area.width.saturating_sub(2)
-                    && canvas_y < canvas_area.height.saturating_sub(2)
-                {
-                    app.update_cursor(canvas_x, canvas_y);
-                }
+            // Update cursor position
+            if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
+                app.update_cursor(canvas_x, canvas_y);
             }
         }
         MouseEventKind::Drag(_) => {
             // Handle dragging for drawing preview
-            if app.drawing.is_some() && app.active_panel == Panel::Canvas {
-                if let Some(canvas_area) = app.canvas_area {
-                    let canvas_x = column.saturating_sub(canvas_area.x + 1);
-                    let canvas_y = row.saturating_sub(canvas_area.y + 1);
-
-                    // Check if mouse is within canvas bounds
-                    if canvas_x < canvas_area.width.saturating_sub(2)
-                        && canvas_y < canvas_area.height.saturating_sub(2)
-                    {
-                        app.update_cursor(canvas_x, canvas_y);
-                    }
+            if app.is_drawing() && app.active_panel == Panel::Canvas {
+                if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
+                    app.update_cursor(canvas_x, canvas_y);
+                    app.update_drawing(canvas_x, canvas_y);
                 }
             }
         }
         _ => {}
     }
+}
+
+/// Convert screen coordinates to canvas coordinates
+fn to_canvas_coords(app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
+    if let Some(canvas_area) = app.canvas_area {
+        let canvas_x = column.saturating_sub(canvas_area.x + 1);
+        let canvas_y = row.saturating_sub(canvas_area.y + 1);
+
+        // Check if within canvas bounds
+        if canvas_x < canvas_area.width.saturating_sub(2)
+            && canvas_y < canvas_area.height.saturating_sub(2)
+        {
+            return Some((canvas_x, canvas_y));
+        }
+    }
+    None
 }
