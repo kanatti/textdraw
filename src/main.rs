@@ -31,11 +31,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
     loop {
         terminal.draw(|frame| {
-            let areas = ui::render(frame, &app);
-            app.canvas_area = Some(areas.canvas);
-            app.tools_area = Some(areas.tools);
-            app.elements_area = Some(areas.elements);
-            app.properties_area = Some(areas.properties);
+            ui::render(frame, &mut app);
         })?;
 
         let event = event::read()?;

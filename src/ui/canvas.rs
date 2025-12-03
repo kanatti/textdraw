@@ -30,7 +30,8 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
 
     // Build render cache: map (x, y) -> (char, element_id)
     // This is O(total_points) instead of O(pixels × elements)
-    let mut render_map: std::collections::HashMap<(i32, i32), (char, usize)> = std::collections::HashMap::new();
+    let mut render_map: std::collections::HashMap<(i32, i32), (char, usize)> =
+        std::collections::HashMap::new();
 
     for element in app.canvas.elements() {
         let element_id = element.id();
@@ -78,7 +79,12 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
                 }
             }
 
-            if x == app.cursor_x && y == app.cursor_y && !app.is_drawing() && !is_actively_selecting_or_moving && !hovering_selected {
+            if x == app.cursor_x
+                && y == app.cursor_y
+                && !app.is_drawing()
+                && !is_actively_selecting_or_moving
+                && !hovering_selected
+            {
                 // Show cursor block only when:
                 // - Not drawing
                 // - Not actively selecting/moving
@@ -101,14 +107,11 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
                 // Found element at this position - O(1) lookup!
                 let is_selected = selected_ids.contains(element_id);
                 let color = if is_selected {
-                    Color::Yellow  // Selected elements in yellow
+                    Color::Yellow // Selected elements in yellow
                 } else {
-                    Color::White   // Normal elements in white
+                    Color::White // Normal elements in white
                 };
-                line_chars.push(Span::styled(
-                    ch.to_string(),
-                    Style::default().fg(color),
-                ));
+                line_chars.push(Span::styled(ch.to_string(), Style::default().fg(color)));
             } else {
                 // Empty space
                 line_chars.push(Span::raw(" "));

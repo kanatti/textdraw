@@ -11,9 +11,9 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) -> (Rect, Rect, Rect) {
     let sections = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(9),  // Tools section
-            Constraint::Length(9),  // Elements section
-            Constraint::Min(0),     // Properties section
+            Constraint::Length(9), // Tools section
+            Constraint::Length(9), // Elements section
+            Constraint::Min(0),    // Properties section
         ])
         .split(area);
 
