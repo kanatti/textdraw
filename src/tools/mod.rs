@@ -1,4 +1,7 @@
+pub mod arrow;
 pub mod line;
+pub mod rectangle;
+pub mod text;
 
 use crate::canvas::Canvas;
 
@@ -23,4 +26,7 @@ pub trait DrawingTool {
 
     /// Check if tool is currently in a drawing state
     fn is_drawing(&self) -> bool;
+
+    /// Downcast helper for accessing specific tool implementations
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }

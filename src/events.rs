@@ -14,6 +14,11 @@ pub fn handle_event(app: &mut App, event: Event) -> Result<bool> {
 }
 
 fn handle_key_event(app: &mut App, key_code: KeyCode) -> Result<bool> {
+    // If text tool is active and in drawing mode, handle text input
+    if app.is_text_input_mode() {
+        return handle_text_input(app, key_code);
+    }
+
     match key_code {
         KeyCode::Char('q') => Ok(true), // Signal to quit
         KeyCode::Char('0') => {
@@ -41,8 +46,8 @@ fn handle_key_event(app: &mut App, key_code: KeyCode) -> Result<bool> {
             app.select_tool(Tool::Line);
             Ok(false)
         }
-        KeyCode::Char('b') => {
-            app.select_tool(Tool::Box);
+        KeyCode::Char('r') => {
+            app.select_tool(Tool::Rectangle);
             Ok(false)
         }
         KeyCode::Char('a') => {
@@ -73,6 +78,11 @@ fn handle_key_event(app: &mut App, key_code: KeyCode) -> Result<bool> {
 fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16) {
     match kind {
         MouseEventKind::Down(_) => {
+            // If text tool is active and we're in text input mode, finish the text
+            if app.is_text_input_mode() {
+                app.finish_text_input();
+            }
+
             // Check for tool click first
             if let Some(tool) = app.detect_tool_click(column, row) {
                 app.select_tool(tool);
@@ -93,8 +103,8 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
             }
         }
         MouseEventKind::Up(_) => {
-            // Finish drawing on mouse up
-            if app.is_drawing() && app.active_panel == Panel::Canvas {
+            // Finish drawing on mouse up (except for text tool which finishes on Enter)
+            if app.is_drawing() && app.active_panel == Panel::Canvas && !app.is_text_input_mode() {
                 if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
                     app.finish_drawing(canvas_x, canvas_y);
                 }
@@ -138,4 +148,28 @@ fn to_canvas_coords(app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
         }
     }
     None
+}
+
+/// Handle text input when text tool is active
+fn handle_text_input(app: &mut App, key_code: KeyCode) -> Result<bool> {
+    match key_code {
+        KeyCode::Char(c) => {
+            app.add_text_char(c);
+            Ok(false)
+        }
+        KeyCode::Backspace => {
+            app.text_backspace();
+            Ok(false)
+        }
+        KeyCode::Enter | KeyCode::Esc => {
+            // Commit or cancel text
+            if key_code == KeyCode::Enter {
+                app.finish_text_input();
+            } else {
+                app.cancel_drawing();
+            }
+            Ok(false)
+        }
+        _ => Ok(false),
+    }
 }

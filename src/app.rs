@@ -1,5 +1,7 @@
 use crate::canvas::Canvas;
-use crate::tools::{line::LineTool, DrawingTool};
+use crate::tools::{
+    arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
+};
 use ratatui::layout::Rect;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -14,21 +16,21 @@ pub enum Panel {
 pub enum Tool {
     Select,
     Line,
-    Box,
+    Rectangle,
     Arrow,
     Text,
 }
 
 impl Tool {
     pub fn all() -> Vec<Tool> {
-        vec![Tool::Select, Tool::Line, Tool::Box, Tool::Arrow, Tool::Text]
+        vec![Tool::Select, Tool::Line, Tool::Rectangle, Tool::Arrow, Tool::Text]
     }
 
     pub fn name(&self) -> &str {
         match self {
             Tool::Select => "Select",
             Tool::Line => "Line",
-            Tool::Box => "Box",
+            Tool::Rectangle => "Rectangle",
             Tool::Arrow => "Arrow",
             Tool::Text => "Text",
         }
@@ -38,7 +40,7 @@ impl Tool {
         match self {
             Tool::Select => 's',
             Tool::Line => 'l',
-            Tool::Box => 'b',
+            Tool::Rectangle => 'r',
             Tool::Arrow => 'a',
             Tool::Text => 't',
         }
@@ -101,6 +103,27 @@ impl App {
 
     pub fn get_preview_points(&self) -> Vec<(i32, i32, char)> {
         self.active_tool.preview_points()
+    }
+
+    pub fn is_text_input_mode(&self) -> bool {
+        self.selected_tool == Tool::Text && self.is_drawing()
+    }
+
+    pub fn add_text_char(&mut self, c: char) {
+        if let Some(text_tool) = self.active_tool.as_any_mut().downcast_mut::<TextTool>() {
+            text_tool.add_char(c);
+        }
+    }
+
+    pub fn text_backspace(&mut self) {
+        if let Some(text_tool) = self.active_tool.as_any_mut().downcast_mut::<TextTool>() {
+            text_tool.backspace();
+        }
+    }
+
+    pub fn finish_text_input(&mut self) {
+        // Trigger on_mouse_up to commit the text (we don't care about the position)
+        self.active_tool.on_mouse_up(0, 0, &mut self.canvas);
     }
 
     pub fn switch_panel(&mut self, panel: Panel) {
@@ -170,7 +193,10 @@ impl App {
         // Create new tool instance based on selection
         self.active_tool = match tool {
             Tool::Line => Box::new(LineTool::new()),
-            // TODO: Implement other tools
+            Tool::Rectangle => Box::new(RectangleTool::new()),
+            Tool::Arrow => Box::new(ArrowTool::new()),
+            Tool::Text => Box::new(TextTool::new()),
+            // TODO: Implement select tool
             _ => Box::new(LineTool::new()),
         };
     }
@@ -178,7 +204,8 @@ impl App {
     pub fn select_next_tool(&mut self) {
         let tools = Tool::all();
         self.tool_index = (self.tool_index + 1) % tools.len();
-        self.selected_tool = tools[self.tool_index];
+        let tool = tools[self.tool_index];
+        self.select_tool(tool);
     }
 
     pub fn select_prev_tool(&mut self) {
@@ -188,7 +215,8 @@ impl App {
         } else {
             self.tool_index - 1
         };
-        self.selected_tool = tools[self.tool_index];
+        let tool = tools[self.tool_index];
+        self.select_tool(tool);
     }
 }
 

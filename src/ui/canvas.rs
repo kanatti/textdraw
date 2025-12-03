@@ -26,8 +26,8 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
             // Check if this position is part of the preview
             let preview_char = preview_map.get(&(x as i32, y as i32));
 
-            if x == app.cursor_x && y == app.cursor_y {
-                // Show cursor
+            if x == app.cursor_x && y == app.cursor_y && !app.is_drawing() {
+                // Show cursor only when not drawing
                 line_chars.push(Span::styled("█", Style::default().fg(Color::Yellow)));
             } else if let Some(&ch) = preview_char {
                 // Show preview while drawing
