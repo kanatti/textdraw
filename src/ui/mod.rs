@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-// Render the UI based on current App state.
+/// Render the UI based on current App state.
 pub fn render(frame: &mut Frame, app: &mut App) {
     let outer_layout = Layout::vertical([
         Constraint::Min(0),    // Main area

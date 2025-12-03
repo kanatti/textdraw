@@ -8,7 +8,7 @@ mod ui;
 
 use anyhow::Result;
 use app::App;
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture};
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
 use ratatui::DefaultTerminal;
 
@@ -34,7 +34,8 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
             ui::render(frame, &mut app);
         })?;
 
-        let event = event::read()?;
+        // wait for next event
+        let event = crossterm::event::read()?;
         let should_quit = events::handle_event(&mut app, event)?;
 
         if should_quit {
@@ -44,4 +45,3 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
     Ok(())
 }
-

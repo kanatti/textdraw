@@ -49,7 +49,8 @@ impl DrawingTool for TextTool {
                     points.insert((px as i32 + i as i32, py as i32), ch);
                 }
                 let id = canvas.get_next_id();
-                let text_elem = TextElement::new(id, (px as i32, py as i32), self.text.clone(), points);
+                let text_elem =
+                    TextElement::new(id, (px as i32, py as i32), self.text.clone(), points);
                 canvas.add_element(Element::Text(text_elem));
             }
         }

@@ -107,7 +107,12 @@ pub struct LineElement {
 }
 
 impl LineElement {
-    pub fn new(id: usize, start: (i32, i32), end: (i32, i32), points: HashMap<(i32, i32), char>) -> Self {
+    pub fn new(
+        id: usize,
+        start: (i32, i32),
+        end: (i32, i32),
+        points: HashMap<(i32, i32), char>,
+    ) -> Self {
         let bounds = calculate_bounds(&points);
         let name = format!("Line {}", id + 1);
         Self {
@@ -140,7 +145,12 @@ pub struct RectangleElement {
 }
 
 impl RectangleElement {
-    pub fn new(id: usize, top_left: (i32, i32), bottom_right: (i32, i32), points: HashMap<(i32, i32), char>) -> Self {
+    pub fn new(
+        id: usize,
+        top_left: (i32, i32),
+        bottom_right: (i32, i32),
+        points: HashMap<(i32, i32), char>,
+    ) -> Self {
         let bounds = calculate_bounds(&points);
         let name = format!("Rectangle {}", id + 1);
         Self {
@@ -173,7 +183,12 @@ pub struct ArrowElement {
 }
 
 impl ArrowElement {
-    pub fn new(id: usize, start: (i32, i32), end: (i32, i32), points: HashMap<(i32, i32), char>) -> Self {
+    pub fn new(
+        id: usize,
+        start: (i32, i32),
+        end: (i32, i32),
+        points: HashMap<(i32, i32), char>,
+    ) -> Self {
         let bounds = calculate_bounds(&points);
         let name = format!("Arrow {}", id + 1);
         Self {
@@ -206,7 +221,12 @@ pub struct TextElement {
 }
 
 impl TextElement {
-    pub fn new(id: usize, position: (i32, i32), text: String, points: HashMap<(i32, i32), char>) -> Self {
+    pub fn new(
+        id: usize,
+        position: (i32, i32),
+        text: String,
+        points: HashMap<(i32, i32), char>,
+    ) -> Self {
         let bounds = calculate_bounds(&points);
         let name = format!("Text {}", id + 1);
         Self {

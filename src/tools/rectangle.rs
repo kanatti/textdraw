@@ -33,7 +33,12 @@ impl DrawingTool for RectangleTool {
             let id = canvas.get_next_id();
             let (left, right) = if sx <= x { (sx, x) } else { (x, sx) };
             let (top, bottom) = if sy <= y { (sy, y) } else { (y, sy) };
-            let rect = RectangleElement::new(id, (left as i32, top as i32), (right as i32, bottom as i32), points);
+            let rect = RectangleElement::new(
+                id,
+                (left as i32, top as i32),
+                (right as i32, bottom as i32),
+                points,
+            );
             canvas.add_element(Element::Rectangle(rect));
         }
         self.start = None;

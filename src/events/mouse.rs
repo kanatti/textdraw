@@ -1,81 +1,7 @@
-use crate::app::{App, Panel, Tool};
-use anyhow::Result;
-use crossterm::event::{Event, KeyCode, MouseEventKind};
+use crate::app::{App, Panel};
+use crossterm::event::MouseEventKind;
 
-pub fn handle_event(app: &mut App, event: Event) -> Result<bool> {
-    match event {
-        Event::Key(key) => handle_key_event(app, key.code),
-        Event::Mouse(mouse) => {
-            handle_mouse_event(app, mouse.kind, mouse.column, mouse.row);
-            Ok(false)
-        }
-        _ => Ok(false),
-    }
-}
-
-fn handle_key_event(app: &mut App, key_code: KeyCode) -> Result<bool> {
-    // If text tool is active and in drawing mode, handle text input
-    if app.is_text_input_mode() {
-        return handle_text_input(app, key_code);
-    }
-
-    match key_code {
-        KeyCode::Char('q') => Ok(true), // Signal to quit
-        KeyCode::Char('0') => {
-            app.switch_panel(Panel::Canvas);
-            Ok(false)
-        }
-        KeyCode::Char('1') => {
-            app.switch_panel(Panel::Tools);
-            Ok(false)
-        }
-        KeyCode::Char('2') => {
-            app.switch_panel(Panel::Elements);
-            Ok(false)
-        }
-        KeyCode::Char('3') => {
-            app.switch_panel(Panel::Properties);
-            Ok(false)
-        }
-        // Tool shortcuts
-        KeyCode::Char('s') | KeyCode::Esc => {
-            app.select_tool(Tool::Select);
-            Ok(false)
-        }
-        KeyCode::Char('l') => {
-            app.select_tool(Tool::Line);
-            Ok(false)
-        }
-        KeyCode::Char('r') => {
-            app.select_tool(Tool::Rectangle);
-            Ok(false)
-        }
-        KeyCode::Char('a') => {
-            app.select_tool(Tool::Arrow);
-            Ok(false)
-        }
-        KeyCode::Char('t') => {
-            app.select_tool(Tool::Text);
-            Ok(false)
-        }
-        // Arrow key navigation in Tools panel
-        KeyCode::Up | KeyCode::Char('k') => {
-            if app.active_panel == Panel::Tools {
-                app.select_prev_tool();
-            }
-            Ok(false)
-        }
-        KeyCode::Down | KeyCode::Char('j') => {
-            if app.active_panel == Panel::Tools {
-                app.select_next_tool();
-            }
-            Ok(false)
-        }
-        _ => Ok(false),
-    }
-}
-
-fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16) {
+pub fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16) {
     match kind {
         MouseEventKind::Down(_) => {
             // If text tool is active and we're in text input mode, finish the text
@@ -179,7 +105,8 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
                         if app.is_in_selection_mode() {
                             if app.selection_state.mode == crate::app::SelectionMode::Selecting {
                                 app.update_selection(canvas_x, canvas_y);
-                            } else if app.selection_state.mode == crate::app::SelectionMode::Moving {
+                            } else if app.selection_state.mode == crate::app::SelectionMode::Moving
+                            {
                                 app.update_move_selection(canvas_x, canvas_y);
                             }
                         }
@@ -210,28 +137,4 @@ fn to_canvas_coords(app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
         }
     }
     None
-}
-
-/// Handle text input when text tool is active
-fn handle_text_input(app: &mut App, key_code: KeyCode) -> Result<bool> {
-    match key_code {
-        KeyCode::Char(c) => {
-            app.add_text_char(c);
-            Ok(false)
-        }
-        KeyCode::Backspace => {
-            app.text_backspace();
-            Ok(false)
-        }
-        KeyCode::Enter | KeyCode::Esc => {
-            // Commit or cancel text
-            if key_code == KeyCode::Enter {
-                app.finish_text_input();
-            } else {
-                app.cancel_drawing();
-            }
-            Ok(false)
-        }
-        _ => Ok(false),
-    }
 }

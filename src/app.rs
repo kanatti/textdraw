@@ -24,7 +24,13 @@ pub enum Tool {
 
 impl Tool {
     pub fn all() -> Vec<Tool> {
-        vec![Tool::Select, Tool::Line, Tool::Rectangle, Tool::Arrow, Tool::Text]
+        vec![
+            Tool::Select,
+            Tool::Line,
+            Tool::Rectangle,
+            Tool::Arrow,
+            Tool::Text,
+        ]
     }
 
     pub fn name(&self) -> &str {
@@ -48,6 +54,7 @@ impl Tool {
     }
 }
 
+/// Main application state
 pub struct App {
     pub cursor_x: u16,
     pub cursor_y: u16,
@@ -77,8 +84,8 @@ pub enum SelectionMode {
 
 pub struct SelectionState {
     pub mode: SelectionMode,
-    pub selected_ids: Vec<usize>,  // IDs of selected elements
-    pub select_start: Option<(u16, u16)>,  // For drag-select box
+    pub selected_ids: Vec<usize>,         // IDs of selected elements
+    pub select_start: Option<(u16, u16)>, // For drag-select box
     pub select_current: Option<(u16, u16)>,
     pub has_dragged: bool,
     pub move_start: Option<(u16, u16)>,
@@ -181,7 +188,10 @@ impl App {
 
         // Only show selection box when actively selecting (dragging)
         if matches!(self.selection_state.mode, SelectionMode::Selecting) {
-            if let (Some((sx, sy)), Some((cx, cy))) = (self.selection_state.select_start, self.selection_state.select_current) {
+            if let (Some((sx, sy)), Some((cx, cy))) = (
+                self.selection_state.select_start,
+                self.selection_state.select_current,
+            ) {
                 let (left, right) = if sx <= cx { (sx, cx) } else { (cx, sx) };
                 let (top, bottom) = if sy <= cy { (sy, cy) } else { (cy, sy) };
 
@@ -299,7 +309,8 @@ impl App {
 
     pub fn update_move_selection(&mut self, x: u16, y: u16) {
         if let Some((start_x, start_y)) = self.selection_state.move_start {
-            self.selection_state.move_offset = (x as i32 - start_x as i32, y as i32 - start_y as i32);
+            self.selection_state.move_offset =
+                (x as i32 - start_x as i32, y as i32 - start_y as i32);
         }
     }
 

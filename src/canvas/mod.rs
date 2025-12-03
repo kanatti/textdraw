@@ -52,7 +52,13 @@ impl Canvas {
     }
 
     /// Find all elements that are fully contained within the given rectangle
-    pub fn find_elements_fully_inside_rect(&self, x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<usize> {
+    pub fn find_elements_fully_inside_rect(
+        &self,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+    ) -> Vec<usize> {
         self.elements
             .iter()
             .filter(|e| e.is_fully_inside_rect(x1, y1, x2, y2))

@@ -83,7 +83,11 @@ pub fn arrow_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32
         for x in start..=end {
             let ch = if x == x2 {
                 // Arrowhead at x2
-                if dx > 0 { '>' } else { '<' }
+                if dx > 0 {
+                    '>'
+                } else {
+                    '<'
+                }
             } else {
                 '─'
             };
@@ -95,7 +99,11 @@ pub fn arrow_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32
         for y in start..=end {
             let ch = if y == y2 {
                 // Arrowhead at y2
-                if dy > 0 { 'v' } else { '^' }
+                if dy > 0 {
+                    'v'
+                } else {
+                    '^'
+                }
             } else {
                 '│'
             };
