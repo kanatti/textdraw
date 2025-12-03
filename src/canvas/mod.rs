@@ -28,6 +28,10 @@ impl Canvas {
         }
     }
 
+    pub fn remove(&mut self, x: i32, y: i32) {
+        self.cells.remove(&(x, y));
+    }
+
     pub fn clear(&mut self) {
         self.cells.clear();
     }

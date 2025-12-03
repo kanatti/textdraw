@@ -94,19 +94,61 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
             if let Some(panel) = app.detect_panel_click(column, row) {
                 app.switch_panel(panel);
 
-                // If clicking on canvas, start drawing with current tool
+                // If clicking on canvas
                 if panel == Panel::Canvas {
                     if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
-                        app.start_drawing(canvas_x, canvas_y);
+                        if app.is_select_tool() {
+                            // Selection mode: check if clicking inside selection bounds
+                            if app.is_in_selection_mode() {
+                                let clicked_inside = if let Some((x1, y1, x2, y2)) = app.selection_state.selection_bounds {
+                                    let cx = canvas_x as i32;
+                                    let cy = canvas_y as i32;
+                                    cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2
+                                } else {
+                                    false
+                                };
+
+                                if clicked_inside {
+                                    // Start moving selection
+                                    app.start_move_selection(canvas_x, canvas_y);
+                                } else {
+                                    // Click outside - deselect and start new selection
+                                    app.deselect();
+                                    app.start_selection(canvas_x, canvas_y);
+                                }
+                            } else {
+                                // No selection - start new selection
+                                app.start_selection(canvas_x, canvas_y);
+                            }
+                        } else {
+                            // Drawing tools: start drawing
+                            app.start_drawing(canvas_x, canvas_y);
+                        }
                     }
                 }
             }
         }
         MouseEventKind::Up(_) => {
-            // Finish drawing on mouse up (except for text tool which finishes on Enter)
-            if app.is_drawing() && app.active_panel == Panel::Canvas && !app.is_text_input_mode() {
+            if app.active_panel == Panel::Canvas {
                 if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
-                    app.finish_drawing(canvas_x, canvas_y);
+                    if app.is_select_tool() {
+                        // Selection mode: finish selection or move
+                        use crate::app::SelectionMode;
+                        match app.selection_state.mode {
+                            SelectionMode::Selecting => {
+                                app.finish_selection(canvas_x, canvas_y);
+                            }
+                            SelectionMode::Moving => {
+                                app.finish_move_selection();
+                            }
+                            _ => {}
+                        }
+                    } else {
+                        // Finish drawing on mouse up (except for text tool which finishes on Enter)
+                        if app.is_drawing() && !app.is_text_input_mode() {
+                            app.finish_drawing(canvas_x, canvas_y);
+                        }
+                    }
                 }
             }
         }
@@ -122,11 +164,25 @@ fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16
             }
         }
         MouseEventKind::Drag(_) => {
-            // Handle dragging for drawing preview
-            if app.is_drawing() && app.active_panel == Panel::Canvas {
+            if app.active_panel == Panel::Canvas {
                 if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
                     app.update_cursor(canvas_x, canvas_y);
-                    app.update_drawing(canvas_x, canvas_y);
+
+                    if app.is_select_tool() {
+                        // Selection mode: update selection or move
+                        if app.is_in_selection_mode() {
+                            if app.selection_state.mode == crate::app::SelectionMode::Selecting {
+                                app.update_selection(canvas_x, canvas_y);
+                            } else if app.selection_state.mode == crate::app::SelectionMode::Moving {
+                                app.update_move_selection(canvas_x, canvas_y);
+                            }
+                        }
+                    } else {
+                        // Handle dragging for drawing preview
+                        if app.is_drawing() {
+                            app.update_drawing(canvas_x, canvas_y);
+                        }
+                    }
                 }
             }
         }

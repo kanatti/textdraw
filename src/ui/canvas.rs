@@ -17,6 +17,19 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
         .map(|(x, y, ch)| ((x, y), ch))
         .collect();
 
+    // Get selection box (grey) and content (yellow)
+    let selection_box = app.get_selection_box_points();
+    let selection_box_map: std::collections::HashMap<(i32, i32), char> = selection_box
+        .into_iter()
+        .map(|(x, y, ch)| ((x, y), ch))
+        .collect();
+
+    let selection_content = app.get_selection_content_points();
+    let selection_content_map: std::collections::HashMap<(i32, i32), char> = selection_content
+        .into_iter()
+        .map(|(x, y, ch)| ((x, y), ch))
+        .collect();
+
     for y in 0..area.height.saturating_sub(2) {
         let mut line_chars = vec![];
         for x in 0..area.width.saturating_sub(2) {
@@ -29,11 +42,28 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
             if x == app.cursor_x && y == app.cursor_y && !app.is_drawing() {
                 // Show cursor only when not drawing
                 line_chars.push(Span::styled("█", Style::default().fg(Color::Yellow)));
-            } else if let Some(&ch) = preview_char {
-                // Show preview while drawing
+            } else if let Some(&ch) = selection_content_map.get(&(x as i32, y as i32)) {
+                // Show selected content in yellow
+                line_chars.push(Span::styled(
+                    ch.to_string(),
+                    Style::default().fg(Color::Yellow),
+                ));
+            } else if let Some(&ch) = selection_box_map.get(&(x as i32, y as i32)) {
+                // Show selection box in grey
                 line_chars.push(Span::styled(
                     ch.to_string(),
                     Style::default().fg(Color::DarkGray),
+                ));
+            } else if let Some(&ch) = preview_char {
+                // Show preview while drawing
+                let preview_color = if app.is_select_tool() {
+                    Color::Yellow
+                } else {
+                    Color::DarkGray
+                };
+                line_chars.push(Span::styled(
+                    ch.to_string(),
+                    Style::default().fg(preview_color),
                 ));
             } else if let Some(ch) = content {
                 // Show drawn content
