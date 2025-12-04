@@ -1,8 +1,9 @@
 mod canvas;
 mod sidebar;
-mod statusbar;
+pub mod statusbar;
 
 use crate::app::App;
+use crate::component::Component;
 use ratatui::{
     layout::{Constraint, Layout},
     Frame,
@@ -26,7 +27,9 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     let sidebar_areas = sidebar::render(frame, main_layout[0], app);
 
     canvas::render(frame, main_layout[1], app);
-    statusbar::render(frame, outer_layout[1], app);
+
+    // Use component for statusbar
+    app.statusbar.draw(app, frame, outer_layout[1]);
 
     // Needed for event handling
     app.canvas_area = Some(main_layout[1]);

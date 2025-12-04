@@ -1,5 +1,6 @@
 mod app;
 mod canvas;
+mod component;
 mod drawing;
 mod element;
 mod events;
