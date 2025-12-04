@@ -4,6 +4,7 @@ mod components;
 mod drawing;
 mod element;
 mod events;
+mod input;
 mod tools;
 mod types;
 mod ui;
@@ -30,6 +31,7 @@ fn main() -> Result<()> {
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut app = App::new();
+    let handlers = events::default_handlers();
 
     // Main render and event loop.
     //
@@ -58,7 +60,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
         // Event phase: Block until next event, then handle it (mutates app state)
         let event = crossterm::event::read()?;
-        let should_quit = events::handle_event(&mut app, event)?;
+        let should_quit = events::handle_event(&mut app, event, &handlers)?;
 
         if should_quit {
             break;

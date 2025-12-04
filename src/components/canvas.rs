@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
 use crate::types::{EventHandler, EventResult, Panel, SelectionMode};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
@@ -44,6 +44,170 @@ impl EventHandler for CanvasComponent {
             }
             _ => EventResult::Ignored,
         }
+    }
+
+    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        // If text tool is active and we're in text input mode, finish the text
+        if app.is_text_input_mode() {
+            app.finish_text_input();
+        }
+
+        // Only handle if canvas is active
+        if app.active_panel != Panel::Canvas {
+            return EventResult::Ignored;
+        }
+
+        // Convert to canvas coordinates
+        let canvas_coords = self.to_canvas_coords(app, mouse_event.column, mouse_event.row);
+        let Some((canvas_x, canvas_y)) = canvas_coords else {
+            return EventResult::Ignored;
+        };
+
+        // Handle based on tool
+        if app.is_select_tool() {
+            self.handle_selection_mouse_down(app, canvas_x, canvas_y);
+        } else {
+            app.start_drawing(canvas_x, canvas_y);
+        }
+
+        EventResult::Consumed
+    }
+
+    fn handle_mouse_up(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        // Only handle if canvas is active
+        if app.active_panel != Panel::Canvas {
+            return EventResult::Ignored;
+        }
+
+        let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) else {
+            return EventResult::Ignored;
+        };
+
+        if app.is_select_tool() {
+            // Selection mode: finish selection or move
+            match app.selection_state.mode {
+                SelectionMode::Selecting => {
+                    app.finish_selection(canvas_x, canvas_y);
+                }
+                SelectionMode::Moving => {
+                    app.finish_move_selection();
+                }
+                _ => {}
+            }
+        } else {
+            // Finish drawing on mouse up (except for text tool which finishes on Enter)
+            if app.is_drawing() && !app.is_text_input_mode() {
+                app.finish_drawing(canvas_x, canvas_y);
+            }
+        }
+
+        EventResult::Consumed
+    }
+
+    fn handle_mouse_moved(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        // Only handle if canvas is active
+        if app.active_panel != Panel::Canvas {
+            return EventResult::Ignored;
+        }
+
+        // Update cursor position
+        if let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) {
+            app.update_cursor(canvas_x, canvas_y);
+        }
+
+        EventResult::Consumed
+    }
+
+    fn handle_mouse_drag(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        // Only handle if canvas is active
+        if app.active_panel != Panel::Canvas {
+            return EventResult::Ignored;
+        }
+
+        let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) else {
+            return EventResult::Ignored;
+        };
+
+        app.update_cursor(canvas_x, canvas_y);
+
+        if app.is_select_tool() {
+            // Selection mode: update selection or move
+            if app.is_in_selection_mode() {
+                if app.selection_state.mode == SelectionMode::Selecting {
+                    app.update_selection(canvas_x, canvas_y);
+                } else if app.selection_state.mode == SelectionMode::Moving {
+                    app.update_move_selection(canvas_x, canvas_y);
+                }
+            }
+        } else {
+            // Handle dragging for drawing preview
+            if app.is_drawing() {
+                app.update_drawing(canvas_x, canvas_y);
+            }
+        }
+
+        EventResult::Consumed
+    }
+}
+
+impl CanvasComponent {
+    /// Convert screen coordinates to canvas coordinates
+    fn to_canvas_coords(&self, app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
+        if let Some(canvas_area) = app.layout.canvas {
+            // First check if click is within the canvas area at all
+            if column < canvas_area.x || column >= canvas_area.x + canvas_area.width
+                || row < canvas_area.y || row >= canvas_area.y + canvas_area.height
+            {
+                return None;
+            }
+
+            let canvas_x = column.saturating_sub(canvas_area.x + 1);
+            let canvas_y = row.saturating_sub(canvas_area.y + 1);
+
+            // Check if within canvas bounds (excluding borders)
+            if canvas_x < canvas_area.width.saturating_sub(2)
+                && canvas_y < canvas_area.height.saturating_sub(2)
+            {
+                return Some((canvas_x, canvas_y));
+            }
+        }
+        None
+    }
+
+    /// Handle mouse down in selection mode
+    fn handle_selection_mouse_down(&self, app: &mut App, canvas_x: u16, canvas_y: u16) {
+        if app.is_in_selection_mode() {
+            // Check if clicking inside any selected element's bounds
+            let clicked_selected = self.is_clicking_selected_element(app, canvas_x, canvas_y);
+
+            if clicked_selected {
+                // Start moving selection
+                app.start_move_selection(canvas_x, canvas_y);
+            } else {
+                // Clicked outside selected elements - deselect and start new selection
+                app.deselect();
+                app.start_selection(canvas_x, canvas_y);
+            }
+        } else {
+            // No selection - start new selection
+            app.start_selection(canvas_x, canvas_y);
+        }
+    }
+
+    /// Check if click is inside any selected element
+    fn is_clicking_selected_element(&self, app: &App, canvas_x: u16, canvas_y: u16) -> bool {
+        let px = canvas_x as i32;
+        let py = canvas_y as i32;
+
+        for element_id in app.get_selected_element_ids() {
+            if let Some(element) = app.canvas.get_element(*element_id) {
+                if element.point_in_bounds(px, py) {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
-use crate::types::{EventHandler, EventResult, Panel, Tool};
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::types::{Coord, EventHandler, EventResult, Panel, Tool};
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -14,6 +14,24 @@ pub struct ToolsPanel;
 impl ToolsPanel {
     pub fn new() -> Self {
         Self
+    }
+
+    /// Detect which tool was clicked based on mouse coordinates within the tools panel
+    fn detect_tool_click(&self, coord: Coord, layout: &crate::types::AppLayout) -> Option<Tool> {
+        let area = layout.tools?;
+
+        // Calculate relative Y position within tools panel
+        let relative_y = coord.y.saturating_sub(area.y + 1); // +1 for border
+
+        // Tools start at line 1 (after empty line), one tool per line
+        let tool_index = relative_y.saturating_sub(1);
+        let tools = Tool::all();
+
+        if (tool_index as usize) < tools.len() {
+            Some(tools[tool_index as usize])
+        } else {
+            None
+        }
     }
 }
 
@@ -35,6 +53,25 @@ impl EventHandler for ToolsPanel {
             }
             _ => EventResult::Ignored,
         }
+    }
+
+    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        // Only handle tool clicks when Tools panel is active
+        if app.active_panel != Panel::Tools {
+            return EventResult::Ignored;
+        }
+
+        // Check for tool click within the tools panel
+        let coord = Coord {
+            x: mouse_event.column,
+            y: mouse_event.row,
+        };
+        if let Some(tool) = self.detect_tool_click(coord, &app.layout) {
+            app.select_tool(tool);
+            return EventResult::Consumed;
+        }
+
+        EventResult::Ignored
     }
 }
 

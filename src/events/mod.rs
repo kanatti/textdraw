@@ -1,75 +1,62 @@
-mod mouse;
+mod global;
 
 use crate::app::App;
 use crate::components::{CanvasComponent, ElementsPanel, PropertiesPanel, StatusBar, ToolsPanel};
-use crate::types::{EventHandler, EventResult, Panel, Tool};
+use crate::types::{ActionType, EventHandler, EventResult};
 use anyhow::Result;
-use crossterm::event::{Event, KeyCode, KeyEvent};
+use crossterm::event::{Event, KeyEvent, MouseEventKind};
 
-static EVENT_HANDLERS: &[&dyn EventHandler] = &[
-    &ToolsPanel,
-    &ElementsPanel,
-    &PropertiesPanel,
-    &CanvasComponent,
-    &StatusBar,
-];
+use global::GlobalHandler;
 
-pub fn handle_event(app: &mut App, event: Event) -> Result<bool> {
-    match event {
-        Event::Key(key_event) => handle_key_event(app, key_event),
-        Event::Mouse(mouse_event) => handle_mouse_event(app, mouse_event),
-        _ => Ok(false),
-    }
+/// Type alias for a slice of event handlers
+type EventHandlers<'a> = &'a [&'a dyn EventHandler];
+
+pub fn default_handlers() -> Vec<&'static dyn EventHandler> {
+    vec![
+        &ToolsPanel,
+        &ElementsPanel,
+        &PropertiesPanel,
+        &CanvasComponent,
+        &StatusBar,
+        &GlobalHandler,
+    ]
 }
 
-fn handle_key_event(app: &mut App, key_event: KeyEvent) -> Result<bool> {
-    // Give components first chance to handle key events
-    for handler in EVENT_HANDLERS {
-        if handler.handle_key_event(app, &key_event) == EventResult::Consumed {
-            return Ok(false);
-        }
-    }
-
-    // Fall through to global key handling
-    match key_event.code {
-        KeyCode::Char('q') => Ok(true), // Signal to quit
-        // Panel shortcuts
-        KeyCode::Char(c @ '0'..='3') => {
-            let panel = match c {
-                '0' => Panel::Canvas,
-                '1' => Panel::Tools,
-                '2' => Panel::Elements,
-                '3' => Panel::Properties,
-                _ => unreachable!("Unhandled panel switch"),
-            };
-            app.switch_panel(panel);
-            Ok(false)
-        }
-        // Tool shortcuts
-        KeyCode::Esc => {
-            app.select_tool(Tool::Select);
-            Ok(false)
-        }
-        // Tool selection - automatically handles all tools defined in types.rs
-        KeyCode::Char(c) => {
-            if let Some(tool) = Tool::from_key(c) {
-                app.select_tool(tool);
+macro_rules! dispatch_event {
+    ($handlers:expr, $app:expr, $event:expr, $method:ident) => {{
+        for handler in $handlers {
+            match handler.$method($app, $event) {
+                EventResult::Consumed => break,
+                EventResult::Action(ActionType::Quit) => return Ok(true),
+                EventResult::Ignored => continue,
             }
-            Ok(false)
         }
+    }};
+}
+
+pub fn handle_event(app: &mut App, event: Event, handlers: EventHandlers) -> Result<bool> {
+    match event {
+        Event::Key(key_event) => handle_key_event(app, key_event, handlers),
+        Event::Mouse(mouse_event) => handle_mouse_event(app, mouse_event, handlers),
         _ => Ok(false),
     }
 }
 
-fn handle_mouse_event(app: &mut App, mouse_event: crossterm::event::MouseEvent) -> Result<bool> {
-    // Give components first chance to handle mouse events
-    for handler in EVENT_HANDLERS {
-        if handler.handle_mouse_event(app, &mouse_event) == EventResult::Consumed {
-            return Ok(false);
-        }
-    }
-
-    // Fall through to existing handler
-    mouse::handle_mouse_event(app, mouse_event.kind, mouse_event.column, mouse_event.row);
+fn handle_key_event(app: &mut App, key_event: KeyEvent, handlers: EventHandlers) -> Result<bool> {
+    dispatch_event!(handlers, app, &key_event, handle_key_event);
     Ok(false)
 }
+
+fn handle_mouse_event(app: &mut App, mouse_event: crossterm::event::MouseEvent, handlers: EventHandlers) -> Result<bool> {
+    match mouse_event.kind {
+        MouseEventKind::Down(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_down),
+        MouseEventKind::Up(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_up),
+        MouseEventKind::Moved => dispatch_event!(handlers, app, &mouse_event, handle_mouse_moved),
+        MouseEventKind::Drag(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_drag),
+        _ => {}
+    }
+    Ok(false)
+}
+
+#[cfg(test)]
+mod tests;

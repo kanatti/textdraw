@@ -1,8 +1,21 @@
 //! Core types and enums used throughout the application.
 
 use crate::app::App;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::layout::Rect;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Coord {
+    pub x: u16,
+    pub y: u16,
+}
+
+/// Actions that can be triggered by event handlers
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ActionType {
+    /// Quit the application
+    Quit,
+}
 
 /// Result of handling an event - consumed or ignored for event propagation control.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,6 +24,8 @@ pub enum EventResult {
     Consumed,
     /// Event was not handled, continue to next component
     Ignored,
+    /// Event triggers an application-level action
+    Action(ActionType),
 }
 
 /// Event handler trait for components
@@ -20,7 +35,22 @@ pub trait EventHandler: Sync {
         EventResult::Ignored
     }
 
-    fn handle_mouse_event(&self, app: &mut App, mouse_event: &crossterm::event::MouseEvent) -> EventResult {
+    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (app, mouse_event);
+        EventResult::Ignored
+    }
+
+    fn handle_mouse_up(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (app, mouse_event);
+        EventResult::Ignored
+    }
+
+    fn handle_mouse_moved(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (app, mouse_event);
+        EventResult::Ignored
+    }
+
+    fn handle_mouse_drag(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
         let _ = (app, mouse_event);
         EventResult::Ignored
     }

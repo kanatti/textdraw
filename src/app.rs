@@ -3,7 +3,6 @@ use crate::tools::{
     arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
 };
 use crate::types::{AppLayout, Panel, SelectionMode, Tool};
-use ratatui::layout::Rect;
 
 pub struct SelectionState {
     pub mode: SelectionMode,
@@ -304,57 +303,6 @@ impl App {
     pub fn update_cursor(&mut self, x: u16, y: u16) {
         self.cursor_x = x;
         self.cursor_y = y;
-    }
-
-    /// Check if a coordinate is inside a rect
-    pub fn is_inside(&self, x: u16, y: u16, rect: Rect) -> bool {
-        x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height
-    }
-
-    /// Detect which panel was clicked based on mouse coordinates
-    pub fn detect_panel_click(&self, x: u16, y: u16) -> Option<Panel> {
-        if let Some(area) = self.layout.canvas {
-            if self.is_inside(x, y, area) {
-                return Some(Panel::Canvas);
-            }
-        }
-        if let Some(area) = self.layout.tools {
-            if self.is_inside(x, y, area) {
-                return Some(Panel::Tools);
-            }
-        }
-        if let Some(area) = self.layout.elements {
-            if self.is_inside(x, y, area) {
-                return Some(Panel::Elements);
-            }
-        }
-        if let Some(area) = self.layout.properties {
-            if self.is_inside(x, y, area) {
-                return Some(Panel::Properties);
-            }
-        }
-        None
-    }
-
-    /// Detect which tool was clicked based on mouse coordinates
-    pub fn detect_tool_click(&self, x: u16, y: u16) -> Option<Tool> {
-        if let Some(area) = self.layout.tools {
-            if !self.is_inside(x, y, area) {
-                return None;
-            }
-
-            // Calculate relative Y position within tools panel
-            let relative_y = y.saturating_sub(area.y + 1); // +1 for border
-
-            // Tools start at line 1 (after empty line), one tool per line
-            let tool_index = relative_y.saturating_sub(1);
-            let tools = Tool::all();
-
-            if (tool_index as usize) < tools.len() {
-                return Some(tools[tool_index as usize]);
-            }
-        }
-        None
     }
 
     pub fn select_tool(&mut self, tool: Tool) {
