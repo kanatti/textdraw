@@ -1,15 +1,14 @@
+pub mod canvas;
+pub mod panels;
+pub mod statusbar;
+
+pub use panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
+pub use statusbar::StatusBar;
+
 use crate::app::App;
+use crate::types::EventResult;
 use crossterm::event::Event;
 use ratatui::Frame;
-
-/// Result of handling an event - consumed or ignored for event propagation control.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EventResult {
-    /// Event was handled, stop propagation
-    Consumed,
-    /// Event was not handled, continue to next component
-    Ignored,
-}
 
 /// UI component that handles both rendering and events with direct App access.
 pub trait Component {

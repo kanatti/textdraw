@@ -1,12 +1,6 @@
-mod canvas;
-pub mod panels;
-pub mod statusbar;
-
 use crate::app::App;
-use crate::component::Component;
+use crate::components::{Component, ElementsPanel, PropertiesPanel, StatusBar, ToolsPanel};
 use crate::types::AppLayout;
-use crate::ui::panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
-use crate::ui::statusbar::StatusBar;
 use ratatui::{
     layout::{Constraint, Layout},
     Frame,
@@ -28,7 +22,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         component.draw(app, frame);
     }
 
-    canvas::render(frame, app.layout.canvas.unwrap(), app);
+    crate::components::canvas::render(frame, app.layout.canvas.unwrap(), app);
 }
 
 fn calculate_layout(frame: &Frame) -> AppLayout {

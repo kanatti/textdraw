@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::component::Component;
+use crate::components::Component;
 use crate::types::Panel;
 use ratatui::{
     text::Line,

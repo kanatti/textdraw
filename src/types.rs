@@ -2,6 +2,15 @@
 
 use ratatui::layout::Rect;
 
+/// Result of handling an event - consumed or ignored for event propagation control.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventResult {
+    /// Event was handled, stop propagation
+    Consumed,
+    /// Event was not handled, continue to next component
+    Ignored,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Panel {
     Canvas,
