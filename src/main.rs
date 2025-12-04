@@ -4,6 +4,7 @@ mod drawing;
 mod element;
 mod events;
 mod tools;
+mod types;
 mod ui;
 
 use anyhow::Result;

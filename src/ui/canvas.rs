@@ -1,4 +1,5 @@
-use crate::app::{App, Panel};
+use crate::app::App;
+use crate::types::{Panel, SelectionMode};
 use ratatui::{
     layout::Rect,
     style::{Color, Style},
@@ -63,7 +64,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
             // Check if actively selecting or moving
             let is_actively_selecting_or_moving = matches!(
                 app.selection_state.mode,
-                crate::app::SelectionMode::Selecting | crate::app::SelectionMode::Moving
+                SelectionMode::Selecting | SelectionMode::Moving
             );
 
             // Check if hovering over a selected element (to hide cursor)

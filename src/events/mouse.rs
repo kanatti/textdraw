@@ -1,4 +1,5 @@
-use crate::app::{App, Panel};
+use crate::app::App;
+use crate::types::{Panel, SelectionMode};
 use crossterm::event::MouseEventKind;
 
 pub fn handle_mouse_event(app: &mut App, kind: MouseEventKind, column: u16, row: u16) {
@@ -103,7 +104,6 @@ fn handle_mouse_up(app: &mut App, column: u16, row: u16) {
         if let Some((canvas_x, canvas_y)) = to_canvas_coords(app, column, row) {
             if app.is_select_tool() {
                 // Selection mode: finish selection or move
-                use crate::app::SelectionMode;
                 match app.selection_state.mode {
                     SelectionMode::Selecting => {
                         app.finish_selection(canvas_x, canvas_y);
@@ -143,9 +143,9 @@ fn handle_mouse_drag(app: &mut App, column: u16, row: u16) {
             if app.is_select_tool() {
                 // Selection mode: update selection or move
                 if app.is_in_selection_mode() {
-                    if app.selection_state.mode == crate::app::SelectionMode::Selecting {
+                    if app.selection_state.mode == SelectionMode::Selecting {
                         app.update_selection(canvas_x, canvas_y);
-                    } else if app.selection_state.mode == crate::app::SelectionMode::Moving
+                    } else if app.selection_state.mode == SelectionMode::Moving
                     {
                         app.update_move_selection(canvas_x, canvas_y);
                     }

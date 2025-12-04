@@ -2,85 +2,8 @@ use crate::canvas::Canvas;
 use crate::tools::{
     arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
 };
+use crate::types::{Panel, SelectionMode, Tool};
 use ratatui::layout::Rect;
-use std::collections::HashMap;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Panel {
-    Canvas = 0,
-    Tools = 1,
-    Elements = 2,
-    Properties = 3,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Tool {
-    Select,
-    Line,
-    Rectangle,
-    Arrow,
-    Text,
-}
-
-impl Tool {
-    pub fn all() -> Vec<Tool> {
-        vec![
-            Tool::Select,
-            Tool::Line,
-            Tool::Rectangle,
-            Tool::Arrow,
-            Tool::Text,
-        ]
-    }
-
-    pub fn name(&self) -> &str {
-        match self {
-            Tool::Select => "Select",
-            Tool::Line => "Line",
-            Tool::Rectangle => "Rectangle",
-            Tool::Arrow => "Arrow",
-            Tool::Text => "Text",
-        }
-    }
-
-    pub fn key(&self) -> char {
-        match self {
-            Tool::Select => 's',
-            Tool::Line => 'l',
-            Tool::Rectangle => 'r',
-            Tool::Arrow => 'a',
-            Tool::Text => 't',
-        }
-    }
-}
-
-/// Main application state
-pub struct App {
-    pub cursor_x: u16,
-    pub cursor_y: u16,
-    pub canvas_area: Option<Rect>,
-    pub active_panel: Panel,
-    pub selected_tool: Tool,
-    pub tool_index: usize, // For arrow key navigation
-    // Store panel areas for click detection
-    pub tools_area: Option<Rect>,
-    pub elements_area: Option<Rect>,
-    pub properties_area: Option<Rect>,
-    // Drawing canvas
-    pub canvas: Canvas,
-    // Active tool instance (None when in Select mode)
-    active_tool: Option<Box<dyn DrawingTool>>,
-    // Selection state (for Select tool)
-    pub selection_state: SelectionState,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum SelectionMode {
-    Idle,
-    Selecting,
-    Selected,
-    Moving,
-}
 
 pub struct SelectionState {
     pub mode: SelectionMode,
@@ -114,6 +37,26 @@ impl SelectionState {
         self.move_start = None;
         self.move_offset = (0, 0);
     }
+}
+
+/// Main application state
+pub struct App {
+    pub cursor_x: u16,
+    pub cursor_y: u16,
+    pub canvas_area: Option<Rect>,
+    pub active_panel: Panel,
+    pub selected_tool: Tool,
+    pub tool_index: usize, // For arrow key navigation
+    // Store panel areas for click detection
+    pub tools_area: Option<Rect>,
+    pub elements_area: Option<Rect>,
+    pub properties_area: Option<Rect>,
+    // Drawing canvas
+    pub canvas: Canvas,
+    // Active tool instance (None when in Select mode)
+    active_tool: Option<Box<dyn DrawingTool>>,
+    // Selection state (for Select tool)
+    pub selection_state: SelectionState,
 }
 
 impl App {

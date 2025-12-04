@@ -1,4 +1,5 @@
-use crate::app::{App, Panel, Tool};
+use crate::app::App;
+use crate::types::{Panel, Tool};
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent};
 
@@ -31,18 +32,6 @@ fn handle_keycode(app: &mut App, key_code: KeyCode) -> Result<bool> {
             app.select_tool(Tool::Select);
             Ok(false)
         }
-        KeyCode::Char(c @ ('s' | 'l' | 'r' | 'a' | 't')) => {
-            let tool = match c {
-                's' => Tool::Select,
-                'l' => Tool::Line,
-                'r' => Tool::Rectangle,
-                'a' => Tool::Arrow,
-                't' => Tool::Text,
-                _ => unreachable!(),
-            };
-            app.select_tool(tool);
-            Ok(false)
-        }
         // Arrow key navigation in Tools panel
         KeyCode::Up | KeyCode::Char('k') => {
             if app.active_panel == Panel::Tools {
@@ -53,6 +42,13 @@ fn handle_keycode(app: &mut App, key_code: KeyCode) -> Result<bool> {
         KeyCode::Down | KeyCode::Char('j') => {
             if app.active_panel == Panel::Tools {
                 app.select_next_tool();
+            }
+            Ok(false)
+        }
+        // Tool selection - automatically handles all tools defined in types.rs
+        KeyCode::Char(c) => {
+            if let Some(tool) = Tool::from_key(c) {
+                app.select_tool(tool);
             }
             Ok(false)
         }

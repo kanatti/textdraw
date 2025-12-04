@@ -1,4 +1,5 @@
-use crate::app::{App, Panel, Tool};
+use crate::app::App;
+use crate::types::{Panel, Tool};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
