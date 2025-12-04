@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::components::{Component, ElementsPanel, PropertiesPanel, StatusBar, ToolsPanel};
+use crate::components::{CanvasComponent, Component, ElementsPanel, PropertiesPanel, StatusBar, ToolsPanel};
 use crate::types::AppLayout;
 use ratatui::{
     layout::{Constraint, Layout},
@@ -15,14 +15,13 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         Box::new(ToolsPanel::new()),
         Box::new(ElementsPanel::new()),
         Box::new(PropertiesPanel::new()),
+        Box::new(CanvasComponent::new()),
         Box::new(StatusBar::new()),
     ];
 
     for component in components {
         component.draw(app, frame);
     }
-
-    crate::components::canvas::render(frame, app.layout.canvas.unwrap(), app);
 }
 
 fn calculate_layout(frame: &Frame) -> AppLayout {

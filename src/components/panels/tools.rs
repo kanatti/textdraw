@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
-use crate::types::{Panel, Tool};
+use crate::types::{EventHandler, EventResult, Panel, Tool};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -13,6 +14,27 @@ pub struct ToolsPanel;
 impl ToolsPanel {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl EventHandler for ToolsPanel {
+    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+        // Only handle when Tools panel is active
+        if app.active_panel != Panel::Tools {
+            return EventResult::Ignored;
+        }
+
+        match key_event.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                app.select_prev_tool();
+                EventResult::Consumed
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                app.select_next_tool();
+                EventResult::Consumed
+            }
+            _ => EventResult::Ignored,
+        }
     }
 }
 

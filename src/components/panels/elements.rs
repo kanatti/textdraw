@@ -1,6 +1,6 @@
 use crate::app::App;
 use crate::components::Component;
-use crate::types::Panel;
+use crate::types::{EventHandler, Panel};
 use ratatui::{
     text::Line,
     widgets::Paragraph,
@@ -14,6 +14,8 @@ impl ElementsPanel {
         Self
     }
 }
+
+impl EventHandler for ElementsPanel {}
 
 impl Component for ElementsPanel {
     fn draw(&self, app: &App, frame: &mut Frame) {

@@ -1,5 +1,7 @@
 //! Core types and enums used throughout the application.
 
+use crate::app::App;
+use crossterm::event::KeyEvent;
 use ratatui::layout::Rect;
 
 /// Result of handling an event - consumed or ignored for event propagation control.
@@ -9,6 +11,19 @@ pub enum EventResult {
     Consumed,
     /// Event was not handled, continue to next component
     Ignored,
+}
+
+/// Event handler trait for components
+pub trait EventHandler: Sync {
+    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+        let _ = (app, key_event);
+        EventResult::Ignored
+    }
+
+    fn handle_mouse_event(&self, app: &mut App, mouse_event: &crossterm::event::MouseEvent) -> EventResult {
+        let _ = (app, mouse_event);
+        EventResult::Ignored
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

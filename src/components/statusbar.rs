@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::components::Component;
+use crate::types::EventHandler;
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
@@ -14,6 +15,8 @@ impl StatusBar {
         Self
     }
 }
+
+impl EventHandler for StatusBar {}
 
 impl Component for StatusBar {
     fn draw(&self, app: &App, frame: &mut Frame) {
