@@ -1,5 +1,5 @@
 mod canvas;
-mod sidebar;
+pub mod panels;
 pub mod statusbar;
 
 use crate::app::App;
@@ -17,23 +17,34 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     ])
     .split(frame.area());
 
-    // Main area with sidebar and canvas
+    // Main area with side panels and canvas
     let main_layout = Layout::horizontal([
-        Constraint::Length(22), // Sidebar
+        Constraint::Length(22), // Side panels
         Constraint::Min(0),     // Canvas
     ])
     .split(outer_layout[0]);
 
-    let sidebar_areas = sidebar::render(frame, main_layout[0], app);
+    // Split side into panels
+    let panel_layout = Layout::vertical([
+        Constraint::Length(9), // Tools section
+        Constraint::Length(9), // Elements section
+        Constraint::Min(0),    // Properties section
+    ])
+    .split(main_layout[0]);
+
+    // Draw panels using components
+    app.tools_panel.draw(app, frame, panel_layout[0]);
+    app.elements_panel.draw(app, frame, panel_layout[1]);
+    app.properties_panel.draw(app, frame, panel_layout[2]);
 
     canvas::render(frame, main_layout[1], app);
 
     // Use component for statusbar
     app.statusbar.draw(app, frame, outer_layout[1]);
 
-    // Needed for event handling
+    // Store areas for event handling
     app.canvas_area = Some(main_layout[1]);
-    app.tools_area = Some(sidebar_areas.0);
-    app.elements_area = Some(sidebar_areas.1);
-    app.properties_area = Some(sidebar_areas.2);
+    app.tools_area = Some(panel_layout[0]);
+    app.elements_area = Some(panel_layout[1]);
+    app.properties_area = Some(panel_layout[2]);
 }

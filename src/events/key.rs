@@ -9,6 +9,14 @@ pub fn handle_key_event(app: &mut App, key_event: KeyEvent) -> Result<bool> {
         return handle_text_input(app, key_event.code);
     }
 
+    // Try panel-specific handlers first
+    if app.active_panel == Panel::Tools {
+        if handle_tools_panel_keys(app, key_event.code)? {
+            return Ok(false);
+        }
+    }
+
+    // Fall back to global key handling
     handle_keycode(app, key_event.code)
 }
 
@@ -32,25 +40,27 @@ fn handle_keycode(app: &mut App, key_code: KeyCode) -> Result<bool> {
             app.select_tool(Tool::Select);
             Ok(false)
         }
-        // Arrow key navigation in Tools panel
-        KeyCode::Up | KeyCode::Char('k') => {
-            if app.active_panel == Panel::Tools {
-                app.select_prev_tool();
-            }
-            Ok(false)
-        }
-        KeyCode::Down | KeyCode::Char('j') => {
-            if app.active_panel == Panel::Tools {
-                app.select_next_tool();
-            }
-            Ok(false)
-        }
         // Tool selection - automatically handles all tools defined in types.rs
         KeyCode::Char(c) => {
             if let Some(tool) = Tool::from_key(c) {
                 app.select_tool(tool);
             }
             Ok(false)
+        }
+        _ => Ok(false),
+    }
+}
+
+/// Handle keys specific to Tools panel. Returns true if key was handled.
+fn handle_tools_panel_keys(app: &mut App, key_code: KeyCode) -> Result<bool> {
+    match key_code {
+        KeyCode::Up | KeyCode::Char('k') => {
+            app.select_prev_tool();
+            Ok(true)
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            app.select_next_tool();
+            Ok(true)
         }
         _ => Ok(false),
     }

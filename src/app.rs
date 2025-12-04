@@ -3,6 +3,7 @@ use crate::tools::{
     arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
 };
 use crate::types::{Panel, SelectionMode, Tool};
+use crate::ui::panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
 use crate::ui::statusbar::StatusBar;
 use ratatui::layout::Rect;
 
@@ -59,6 +60,9 @@ pub struct App {
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
     // Components
+    pub tools_panel: ToolsPanel,
+    pub elements_panel: ElementsPanel,
+    pub properties_panel: PropertiesPanel,
     pub statusbar: StatusBar,
 }
 
@@ -77,6 +81,9 @@ impl App {
             canvas: Canvas::default(),
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
+            tools_panel: ToolsPanel::new(),
+            elements_panel: ElementsPanel::new(),
+            properties_panel: PropertiesPanel::new(),
             statusbar: StatusBar::new(),
         }
     }
