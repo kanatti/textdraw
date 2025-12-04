@@ -2,7 +2,6 @@ use crate::app::App;
 use crate::component::Component;
 use crate::types::{Panel, Tool};
 use ratatui::{
-    layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
@@ -18,7 +17,11 @@ impl ToolsPanel {
 }
 
 impl Component for ToolsPanel {
-    fn draw(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn draw(&self, app: &App, frame: &mut Frame) {
+        let Some(area) = app.layout.tools else {
+            return;
+        };
+
         let mut lines = vec![Line::from("")];
 
         for tool in Tool::all() {

@@ -162,7 +162,7 @@ fn handle_mouse_drag(app: &mut App, column: u16, row: u16) {
 
 /// Convert screen coordinates to canvas coordinates
 fn to_canvas_coords(app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
-    if let Some(canvas_area) = app.canvas_area {
+    if let Some(canvas_area) = app.layout.canvas {
         let canvas_x = column.saturating_sub(canvas_area.x + 1);
         let canvas_y = row.saturating_sub(canvas_area.y + 1);
 

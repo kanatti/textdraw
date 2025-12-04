@@ -2,7 +2,6 @@ use crate::app::App;
 use crate::component::Component;
 use crate::types::Panel;
 use ratatui::{
-    layout::Rect,
     text::Line,
     widgets::Paragraph,
     Frame,
@@ -17,7 +16,11 @@ impl PropertiesPanel {
 }
 
 impl Component for PropertiesPanel {
-    fn draw(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn draw(&self, app: &App, frame: &mut Frame) {
+        let Some(area) = app.layout.properties else {
+            return;
+        };
+
         let props = vec![Line::from(""), Line::from("  (no selection)")];
 
         let block = super::create_panel_block("[3]-Properties", Panel::Properties, app.active_panel);

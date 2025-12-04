@@ -2,9 +2,7 @@ use crate::canvas::Canvas;
 use crate::tools::{
     arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
 };
-use crate::types::{Panel, SelectionMode, Tool};
-use crate::ui::panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
-use crate::ui::statusbar::StatusBar;
+use crate::types::{AppLayout, Panel, SelectionMode, Tool};
 use ratatui::layout::Rect;
 
 pub struct SelectionState {
@@ -45,25 +43,16 @@ impl SelectionState {
 pub struct App {
     pub cursor_x: u16,
     pub cursor_y: u16,
-    pub canvas_area: Option<Rect>,
     pub active_panel: Panel,
     pub selected_tool: Tool,
     pub tool_index: usize, // For arrow key navigation
-    // Store panel areas for click detection
-    pub tools_area: Option<Rect>,
-    pub elements_area: Option<Rect>,
-    pub properties_area: Option<Rect>,
+    pub layout: AppLayout,
     // Drawing canvas
     pub canvas: Canvas,
     // Active tool instance (None when in Select mode)
     active_tool: Option<Box<dyn DrawingTool>>,
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
-    // Components
-    pub tools_panel: ToolsPanel,
-    pub elements_panel: ElementsPanel,
-    pub properties_panel: PropertiesPanel,
-    pub statusbar: StatusBar,
 }
 
 impl App {
@@ -71,20 +60,13 @@ impl App {
         Self {
             cursor_x: 0,
             cursor_y: 0,
-            canvas_area: None,
             active_panel: Panel::Canvas,
             selected_tool: Tool::Select,
             tool_index: 0,
-            tools_area: None,
-            elements_area: None,
-            properties_area: None,
+            layout: AppLayout::default(),
             canvas: Canvas::default(),
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
-            tools_panel: ToolsPanel::new(),
-            elements_panel: ElementsPanel::new(),
-            properties_panel: PropertiesPanel::new(),
-            statusbar: StatusBar::new(),
         }
     }
 
@@ -331,22 +313,22 @@ impl App {
 
     /// Detect which panel was clicked based on mouse coordinates
     pub fn detect_panel_click(&self, x: u16, y: u16) -> Option<Panel> {
-        if let Some(area) = self.canvas_area {
+        if let Some(area) = self.layout.canvas {
             if self.is_inside(x, y, area) {
                 return Some(Panel::Canvas);
             }
         }
-        if let Some(area) = self.tools_area {
+        if let Some(area) = self.layout.tools {
             if self.is_inside(x, y, area) {
                 return Some(Panel::Tools);
             }
         }
-        if let Some(area) = self.elements_area {
+        if let Some(area) = self.layout.elements {
             if self.is_inside(x, y, area) {
                 return Some(Panel::Elements);
             }
         }
-        if let Some(area) = self.properties_area {
+        if let Some(area) = self.layout.properties {
             if self.is_inside(x, y, area) {
                 return Some(Panel::Properties);
             }
@@ -356,7 +338,7 @@ impl App {
 
     /// Detect which tool was clicked based on mouse coordinates
     pub fn detect_tool_click(&self, x: u16, y: u16) -> Option<Tool> {
-        if let Some(area) = self.tools_area {
+        if let Some(area) = self.layout.tools {
             if !self.is_inside(x, y, area) {
                 return None;
             }

@@ -4,6 +4,9 @@ pub mod statusbar;
 
 use crate::app::App;
 use crate::component::Component;
+use crate::types::AppLayout;
+use crate::ui::panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
+use crate::ui::statusbar::StatusBar;
 use ratatui::{
     layout::{Constraint, Layout},
     Frame,
@@ -11,6 +14,24 @@ use ratatui::{
 
 /// Render the UI based on current App state.
 pub fn render(frame: &mut Frame, app: &mut App) {
+    app.layout = calculate_layout(frame);
+
+    // Draw components
+    let components: Vec<Box<dyn Component>> = vec![
+        Box::new(ToolsPanel::new()),
+        Box::new(ElementsPanel::new()),
+        Box::new(PropertiesPanel::new()),
+        Box::new(StatusBar::new()),
+    ];
+
+    for component in components {
+        component.draw(app, frame);
+    }
+
+    canvas::render(frame, app.layout.canvas.unwrap(), app);
+}
+
+fn calculate_layout(frame: &Frame) -> AppLayout {
     let outer_layout = Layout::vertical([
         Constraint::Min(0),    // Main area
         Constraint::Length(1), // Status bar
@@ -32,19 +53,11 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     ])
     .split(main_layout[0]);
 
-    // Draw panels using components
-    app.tools_panel.draw(app, frame, panel_layout[0]);
-    app.elements_panel.draw(app, frame, panel_layout[1]);
-    app.properties_panel.draw(app, frame, panel_layout[2]);
-
-    canvas::render(frame, main_layout[1], app);
-
-    // Use component for statusbar
-    app.statusbar.draw(app, frame, outer_layout[1]);
-
-    // Store areas for event handling
-    app.canvas_area = Some(main_layout[1]);
-    app.tools_area = Some(panel_layout[0]);
-    app.elements_area = Some(panel_layout[1]);
-    app.properties_area = Some(panel_layout[2]);
+    AppLayout {
+        canvas: Some(main_layout[1]),
+        tools: Some(panel_layout[0]),
+        elements: Some(panel_layout[1]),
+        properties: Some(panel_layout[2]),
+        statusbar: Some(outer_layout[1]),
+    }
 }

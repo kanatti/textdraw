@@ -1,11 +1,22 @@
 //! Core types and enums used throughout the application.
 
+use ratatui::layout::Rect;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Panel {
     Canvas,
     Tools,
     Elements,
     Properties,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct AppLayout {
+    pub canvas: Option<Rect>,
+    pub tools: Option<Rect>,
+    pub elements: Option<Rect>,
+    pub properties: Option<Rect>,
+    pub statusbar: Option<Rect>,
 }
 
 /// Macro to define the Tool enum with associated names and keyboard shortcuts.

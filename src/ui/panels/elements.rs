@@ -2,7 +2,6 @@ use crate::app::App;
 use crate::component::Component;
 use crate::types::Panel;
 use ratatui::{
-    layout::Rect,
     text::Line,
     widgets::Paragraph,
     Frame,
@@ -17,7 +16,11 @@ impl ElementsPanel {
 }
 
 impl Component for ElementsPanel {
-    fn draw(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn draw(&self, app: &App, frame: &mut Frame) {
+        let Some(area) = app.layout.elements else {
+            return;
+        };
+
         let elements = vec![Line::from(""), Line::from("  (empty)")];
 
         let block = super::create_panel_block("[2]-Elements", Panel::Elements, app.active_panel);

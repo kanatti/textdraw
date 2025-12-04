@@ -1,7 +1,6 @@
 use crate::app::App;
 use crate::component::Component;
 use ratatui::{
-    layout::Rect,
     style::{Color, Style},
     text::{Line, Span},
     widgets::Paragraph,
@@ -17,7 +16,11 @@ impl StatusBar {
 }
 
 impl Component for StatusBar {
-    fn draw(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn draw(&self, app: &App, frame: &mut Frame) {
+        let Some(area) = app.layout.statusbar else {
+            return;
+        };
+
         let status = Paragraph::new(Line::from(vec![
             Span::raw(" Cursor: ("),
             Span::raw(app.cursor_x.to_string()),

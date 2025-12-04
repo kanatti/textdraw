@@ -1,6 +1,6 @@
 use crate::app::App;
 use crossterm::event::Event;
-use ratatui::{layout::Rect, Frame};
+use ratatui::Frame;
 
 /// Result of handling an event - consumed or ignored for event propagation control.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,6 +19,6 @@ pub trait Component {
         EventResult::Ignored
     }
 
-    /// Draw the component. This method is called every frame during render phase.
-    fn draw(&self, app: &App, frame: &mut Frame, area: Rect);
+    /// Draw the component. Component reads its area from app state.
+    fn draw(&self, app: &App, frame: &mut Frame);
 }
