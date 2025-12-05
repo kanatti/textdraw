@@ -24,16 +24,36 @@ impl Component for StatusBar {
             return;
         };
 
-        let status = Paragraph::new(Line::from(vec![
+        let mut spans = vec![
             Span::raw(" Cursor: ("),
             Span::raw(app.cursor_x.to_string()),
             Span::raw(", "),
             Span::raw(app.cursor_y.to_string()),
             Span::raw(") | Tool: "),
             Span::styled(app.selected_tool.name(), Style::default().fg(Color::Yellow)),
-            Span::raw(" | 0:Canvas 1:Tools 2:Elements 3:Props | q:Quit"),
-        ]))
-        .style(Style::default().fg(Color::White).bg(Color::DarkGray));
+        ];
+
+        // Add contextual help based on selection state
+        if app.is_select_tool() {
+            let selected_ids = app.get_selected_element_ids();
+            if !selected_ids.is_empty() {
+                spans.push(Span::raw(" | Selected: "));
+                spans.push(Span::styled(
+                    selected_ids.len().to_string(),
+                    Style::default().fg(Color::Yellow),
+                ));
+                spans.push(Span::raw(" | Move: "));
+                spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
+                spans.push(Span::raw(" | Delete: "));
+                spans.push(Span::styled("⌫", Style::default().fg(Color::Cyan)));
+            }
+        }
+
+        spans.push(Span::raw(" | Quit: "));
+        spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
+
+        let status = Paragraph::new(Line::from(spans))
+            .style(Style::default().fg(Color::White));
 
         frame.render_widget(status, area);
     }
