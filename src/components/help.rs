@@ -12,13 +12,15 @@ use ratatui::{
 
 const KEY_COLUMN_WIDTH: usize = 11;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum HelpLine {
     Title(&'static str),
     Subtitle(&'static str),
     Description(&'static str),
     Section(&'static str),
     KeyBinding { key: &'static str, desc: &'static str },
+    CommandHeader,
+    Command { cmd: &'static str, args: &'static str, aliases: &'static [&'static str], desc: &'static str },
     Blank,
 }
 
@@ -56,6 +58,56 @@ impl HelpLine {
                     Span::raw(desc.to_string()),
                 ])
             }
+            HelpLine::CommandHeader => {
+                const CMD_COL_WIDTH: usize = 20;
+                const DESC_COL_WIDTH: usize = 18;
+
+                Line::from(vec![
+                    Span::styled(
+                        format!("  {:<width$}", "Command", width = CMD_COL_WIDTH - 2),
+                        Style::default().add_modifier(Modifier::BOLD)
+                    ),
+                    Span::styled(
+                        format!("{:<width$}", "Description", width = DESC_COL_WIDTH),
+                        Style::default().add_modifier(Modifier::BOLD)
+                    ),
+                    Span::styled(
+                        "Alias",
+                        Style::default().add_modifier(Modifier::BOLD)
+                    ),
+                ])
+            }
+            HelpLine::Command { cmd, args, aliases, desc } => {
+                const CMD_COL_WIDTH: usize = 20;
+                const DESC_COL_WIDTH: usize = 18;
+
+                let mut spans = vec![];
+
+                // Command column
+                let cmd_with_args = if args.is_empty() {
+                    format!("  {}", cmd)
+                } else {
+                    format!("  {} {}", cmd, args)
+                };
+
+                spans.push(Span::styled(
+                    format!("{:<width$}", cmd_with_args, width = CMD_COL_WIDTH),
+                    Style::default().fg(Color::Yellow)
+                ));
+
+                // Description column
+                spans.push(Span::raw(format!("{:<width$}", desc, width = DESC_COL_WIDTH)));
+
+                // Alias column
+                if !aliases.is_empty() {
+                    spans.push(Span::styled(
+                        aliases.join(", "),
+                        Style::default().fg(Color::DarkGray)
+                    ));
+                }
+
+                Line::from(spans)
+            }
             HelpLine::Blank => Line::from(""),
         }
     }
@@ -79,6 +131,14 @@ const fn section(text: &'static str) -> HelpLine {
 
 const fn keybinding(key: &'static str, desc: &'static str) -> HelpLine {
     HelpLine::KeyBinding { key, desc }
+}
+
+const fn command_header() -> HelpLine {
+    HelpLine::CommandHeader
+}
+
+const fn command(cmd: &'static str, args: &'static str, aliases: &'static [&'static str], desc: &'static str) -> HelpLine {
+    HelpLine::Command { cmd, args, aliases, desc }
 }
 
 const fn blank() -> HelpLine {
@@ -115,9 +175,20 @@ const HELP_LINES: &[HelpLine] = &[
     keybinding("3", "Properties"),
     blank(),
     section("General"),
+    keybinding(":", "Enter command mode"),
+    keybinding("Ctrl+S", "Quick save command"),
+    keybinding("Ctrl+O", "Quick open command"),
     keybinding("Esc", "Select tool / Cancel"),
     keybinding("?", "Toggle help"),
     keybinding("q", "Quit"),
+    blank(),
+    title("Command Mode"),
+    blank(),
+    description("Press : to enter command mode. Type commands to save/load files."),
+    blank(),
+    command_header(),
+    command(":save", "<file>", &[":w", ":s"], "Save diagram"),
+    command(":open", "<file>", &[":e", ":o"], "Open diagram"),
     blank(),
 ];
 
