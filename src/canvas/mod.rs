@@ -112,6 +112,39 @@ impl Canvas {
         self.elements.clear();
     }
 
+    /// Check if canvas has any elements
+    pub fn has_elements(&self) -> bool {
+        !self.elements.is_empty()
+    }
+
+    /// Check if canvas is empty
+    pub fn is_empty(&self) -> bool {
+        self.elements.is_empty()
+    }
+
+    /// Get the bounding box of all elements (min_x, min_y, max_x, max_y)
+    /// Returns (0, 0, 0, 0) if canvas is empty
+    pub fn bounds(&self) -> (i32, i32, i32, i32) {
+        if self.elements.is_empty() {
+            return (0, 0, 0, 0);
+        }
+
+        let mut min_x = i32::MAX;
+        let mut min_y = i32::MAX;
+        let mut max_x = i32::MIN;
+        let mut max_y = i32::MIN;
+
+        for element in &self.elements {
+            let bounds = element.bounds();
+            min_x = min_x.min(bounds.0);
+            min_y = min_y.min(bounds.1);
+            max_x = max_x.max(bounds.2);
+            max_y = max_y.max(bounds.3);
+        }
+
+        (min_x, min_y, max_x, max_y)
+    }
+
     /// Save the canvas to a file
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let diagram = DiagramFile {
