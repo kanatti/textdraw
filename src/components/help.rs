@@ -1,0 +1,241 @@
+use crate::app::App;
+use crate::components::Component;
+use crate::types::{EventHandler, EventResult};
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
+use ratatui::{
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    Frame,
+};
+
+const KEY_COLUMN_WIDTH: usize = 11;
+
+#[derive(Debug, Clone, Copy)]
+enum HelpLine {
+    Title(&'static str),
+    Subtitle(&'static str),
+    Description(&'static str),
+    Section(&'static str),
+    KeyBinding { key: &'static str, desc: &'static str },
+    Blank,
+}
+
+impl HelpLine {
+    fn to_line(&self) -> Line<'static> {
+        match self {
+            HelpLine::Title(text) => {
+                Line::from(Span::styled(
+                    text.to_string(),
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                ))
+            }
+            HelpLine::Subtitle(text) => {
+                Line::from(Span::styled(
+                    text.to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ))
+            }
+            HelpLine::Description(text) => {
+                Line::from(Span::styled(
+                    text.to_string(),
+                    Style::default(),
+                ))
+            }
+            HelpLine::Section(text) => {
+                Line::from(Span::styled(
+                    text.to_string(),
+                    Style::default().add_modifier(Modifier::BOLD),
+                ))
+            }
+            HelpLine::KeyBinding { key, desc } => {
+                let formatted_key = format!("  {:<width$}", key, width = KEY_COLUMN_WIDTH);
+                Line::from(vec![
+                    Span::styled(formatted_key, Style::default().fg(Color::Cyan)),
+                    Span::raw(desc.to_string()),
+                ])
+            }
+            HelpLine::Blank => Line::from(""),
+        }
+    }
+}
+
+const fn title(text: &'static str) -> HelpLine {
+    HelpLine::Title(text)
+}
+
+const fn subtitle(text: &'static str) -> HelpLine {
+    HelpLine::Subtitle(text)
+}
+
+const fn description(text: &'static str) -> HelpLine {
+    HelpLine::Description(text)
+}
+
+const fn section(text: &'static str) -> HelpLine {
+    HelpLine::Section(text)
+}
+
+const fn keybinding(key: &'static str, desc: &'static str) -> HelpLine {
+    HelpLine::KeyBinding { key, desc }
+}
+
+const fn blank() -> HelpLine {
+    HelpLine::Blank
+}
+
+const HELP_LINES: &[HelpLine] = &[
+    subtitle("Press Esc to close"),
+    blank(),
+    title("TextDraw v0.1.0"),
+    blank(),
+    description("Interactive terminal ASCII diagram editor built with Ratatui."),
+    description("Create and edit diagrams using simple drawing tools and keyboard shortcuts."),
+    blank(),
+    title("Keyboard Shortcuts"),
+    blank(),
+    section("Tools"),
+    keybinding("s", "Select tool"),
+    keybinding("l", "Line tool"),
+    keybinding("r", "Rectangle tool"),
+    keybinding("a", "Arrow tool"),
+    keybinding("t", "Text tool"),
+    blank(),
+    section("Selection"),
+    keybinding("Click", "Select element"),
+    keybinding("Drag", "Select multiple elements"),
+    keybinding("←↑↓→", "Move selected elements"),
+    keybinding("⌫/Del", "Delete selected elements"),
+    blank(),
+    section("Panels"),
+    keybinding("0", "Canvas"),
+    keybinding("1", "Tools"),
+    keybinding("2", "Elements"),
+    keybinding("3", "Properties"),
+    blank(),
+    section("General"),
+    keybinding("Esc", "Select tool / Cancel"),
+    keybinding("?", "Toggle help"),
+    keybinding("q", "Quit"),
+    blank(),
+];
+
+pub struct HelpModal;
+
+impl HelpModal {
+    pub fn new() -> Self {
+        Self
+    }
+
+    fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+        let popup_layout = Layout::vertical([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+        Layout::horizontal([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
+    }
+
+    /// Calculate maximum scroll offset based on content and viewport height
+    pub fn max_scroll(viewport_height: u16) -> u16 {
+        let total_lines = HELP_LINES.len() as u16;
+        let visible_lines = viewport_height.saturating_sub(2); // Account for borders
+        total_lines.saturating_sub(visible_lines)
+    }
+}
+
+impl EventHandler for HelpModal {
+    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+        if !app.show_help {
+            return EventResult::Ignored;
+        }
+
+        match key_event.code {
+            KeyCode::Up | KeyCode::Char('k') => {
+                app.scroll_help_up();
+                EventResult::Consumed
+            }
+            KeyCode::Down | KeyCode::Char('j') => {
+                app.scroll_help_down();
+                EventResult::Consumed
+            }
+            _ => EventResult::Ignored,
+        }
+    }
+
+    fn handle_mouse_scroll(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        if !app.show_help {
+            return EventResult::Ignored;
+        }
+
+        match mouse_event.kind {
+            MouseEventKind::ScrollUp => {
+                app.scroll_help_up();
+                EventResult::Consumed
+            }
+            MouseEventKind::ScrollDown => {
+                app.scroll_help_down();
+                EventResult::Consumed
+            }
+            _ => EventResult::Ignored,
+        }
+    }
+}
+
+impl Component for HelpModal {
+    fn draw(&self, app: &App, frame: &mut Frame) {
+        if !app.show_help {
+            return;
+        }
+
+        let area = Self::centered_rect(60, 60, frame.area());
+
+        // Clear the area
+        frame.render_widget(Clear, area);
+
+        let help_text: Vec<Line> = HELP_LINES
+            .iter()
+            .map(|line| line.to_line())
+            .collect();
+
+        let help = Paragraph::new(help_text)
+            .block(
+                Block::default()
+                    .title(" Help ")
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(Color::Green))
+                    .padding(Padding::new(1, 1, 1, 1)),
+            )
+            .alignment(Alignment::Left)
+            .scroll((app.help_scroll, 0));
+
+        frame.render_widget(help, area);
+
+        // Render scrollbar - inside the block area (not overlapping borders)
+        let scrollbar_area = Rect {
+            x: area.x + area.width - 1,
+            y: area.y + 1,
+            width: 1,
+            height: area.height.saturating_sub(2),
+        };
+
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓"));
+
+        let max_scroll = Self::max_scroll(area.height);
+        let mut scrollbar_state = ScrollbarState::new(max_scroll as usize)
+            .position(app.help_scroll as usize);
+
+        frame.render_stateful_widget(scrollbar, scrollbar_area, &mut scrollbar_state);
+    }
+}

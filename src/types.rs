@@ -54,6 +54,11 @@ pub trait EventHandler: Sync {
         let _ = (app, mouse_event);
         EventResult::Ignored
     }
+
+    fn handle_mouse_scroll(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (app, mouse_event);
+        EventResult::Ignored
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

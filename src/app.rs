@@ -1,4 +1,5 @@
 use crate::canvas::Canvas;
+use crate::components::HelpModal;
 use crate::tools::{
     arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
 };
@@ -46,6 +47,8 @@ pub struct App {
     pub selected_tool: Tool,
     pub tool_index: usize, // For arrow key navigation
     pub layout: AppLayout,
+    pub show_help: bool,
+    pub help_scroll: u16,
     // Drawing canvas
     pub canvas: Canvas,
     // Active tool instance (None when in Select mode)
@@ -63,10 +66,31 @@ impl App {
             selected_tool: Tool::Select,
             tool_index: 0,
             layout: AppLayout::default(),
+            show_help: false,
+            help_scroll: 0,
             canvas: Canvas::default(),
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
         }
+    }
+
+    pub fn toggle_help(&mut self) {
+        self.show_help = !self.show_help;
+        if self.show_help {
+            self.help_scroll = 0; // Reset scroll when opening
+        }
+    }
+
+    pub fn scroll_help_up(&mut self) {
+        self.help_scroll = self.help_scroll.saturating_sub(1);
+    }
+
+    pub fn scroll_help_down(&mut self) {
+        // Calculate max scroll based on terminal height (60% for modal)
+        let terminal_height = self.layout.canvas.map(|r| r.height).unwrap_or(40);
+        let modal_height = (terminal_height * 60) / 100;
+        let max_scroll = HelpModal::max_scroll(modal_height);
+        self.help_scroll = self.help_scroll.saturating_add(1).min(max_scroll);
     }
 
     pub fn start_drawing(&mut self, x: u16, y: u16) {

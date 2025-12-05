@@ -25,7 +25,7 @@ impl Component for ElementsPanel {
 
         let elements = vec![Line::from(""), Line::from("  (empty)")];
 
-        let block = super::create_panel_block("[2]-Elements", Panel::Elements, app.active_panel);
+        let block = super::create_panel_block("[2]-Elements", Panel::Elements, app);
         let widget = Paragraph::new(elements).block(block);
 
         frame.render_widget(widget, area);

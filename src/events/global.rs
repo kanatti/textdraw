@@ -10,6 +10,10 @@ impl EventHandler for GlobalHandler {
     fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
         match key_event.code {
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
+            KeyCode::Char('?') => {
+                app.toggle_help();
+                EventResult::Consumed
+            }
             // Panel shortcuts
             KeyCode::Char(c @ '0'..='3') => {
                 let panel = match c {
@@ -24,7 +28,12 @@ impl EventHandler for GlobalHandler {
             }
             // Tool shortcuts
             KeyCode::Esc => {
-                app.select_tool(Tool::Select);
+                // Close help modal if open, otherwise switch to Select tool
+                if app.show_help {
+                    app.toggle_help();
+                } else {
+                    app.select_tool(Tool::Select);
+                }
                 EventResult::Consumed
             }
             // Tool selection - automatically handles all tools defined in types.rs

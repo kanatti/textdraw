@@ -1,7 +1,7 @@
 mod global;
 
 use crate::app::App;
-use crate::components::{CanvasComponent, ElementsPanel, PropertiesPanel, StatusBar, ToolsPanel};
+use crate::components::{CanvasComponent, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel};
 use crate::types::{ActionType, EventHandler, EventResult};
 use anyhow::Result;
 use crossterm::event::{Event, KeyEvent, MouseEventKind};
@@ -13,6 +13,7 @@ type EventHandlers<'a> = &'a [&'a dyn EventHandler];
 
 pub fn default_handlers() -> Vec<&'static dyn EventHandler> {
     vec![
+        &HelpModal,
         &ToolsPanel,
         &ElementsPanel,
         &PropertiesPanel,
@@ -53,7 +54,12 @@ fn handle_mouse_event(app: &mut App, mouse_event: crossterm::event::MouseEvent, 
         MouseEventKind::Up(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_up),
         MouseEventKind::Moved => dispatch_event!(handlers, app, &mouse_event, handle_mouse_moved),
         MouseEventKind::Drag(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_drag),
-        _ => {}
+        MouseEventKind::ScrollDown
+        | MouseEventKind::ScrollUp
+        | MouseEventKind::ScrollLeft
+        | MouseEventKind::ScrollRight => {
+            dispatch_event!(handlers, app, &mouse_event, handle_mouse_scroll)
+        }
     }
     Ok(false)
 }

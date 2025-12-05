@@ -112,7 +112,7 @@ impl Component for ToolsPanel {
             lines.push(line);
         }
 
-        let block = super::create_panel_block("[1]-Tools", Panel::Tools, app.active_panel);
+        let block = super::create_panel_block("[1]-Tools", Panel::Tools, app);
         let widget = Paragraph::new(lines).block(block);
 
         frame.render_widget(widget, area);

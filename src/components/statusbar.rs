@@ -49,6 +49,8 @@ impl Component for StatusBar {
             }
         }
 
+        spans.push(Span::raw(" | Help: "));
+        spans.push(Span::styled("?", Style::default().fg(Color::Cyan)));
         spans.push(Span::raw(" | Quit: "));
         spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
 

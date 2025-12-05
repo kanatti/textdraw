@@ -1,8 +1,10 @@
 pub mod canvas;
+pub mod help;
 pub mod panels;
 pub mod statusbar;
 
 pub use canvas::CanvasComponent;
+pub use help::HelpModal;
 pub use panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
 pub use statusbar::StatusBar;
 

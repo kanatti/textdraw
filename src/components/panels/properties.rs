@@ -25,7 +25,7 @@ impl Component for PropertiesPanel {
 
         let props = vec![Line::from(""), Line::from("  (no selection)")];
 
-        let block = super::create_panel_block("[3]-Properties", Panel::Properties, app.active_panel);
+        let block = super::create_panel_block("[3]-Properties", Panel::Properties, app);
         let widget = Paragraph::new(props).block(block);
 
         frame.render_widget(widget, area);
