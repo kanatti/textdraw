@@ -379,11 +379,23 @@ impl Component for CanvasComponent {
             Style::default()
         };
 
+        // Build title with filename if available
+        let title = if let Some(ref file) = app.current_file {
+            // Extract just the filename from the path
+            let filename = std::path::Path::new(file)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(file);
+            format!("[0]-Canvas --- {} ---", filename)
+        } else {
+            "[0]-Canvas".to_string()
+        };
+
         let canvas = Paragraph::new(lines).block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
-                .title("[0]-Canvas")
+                .title(title)
                 .border_style(canvas_style),
         );
 

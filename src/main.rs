@@ -20,17 +20,26 @@ use ratatui::DefaultTerminal;
 #[command(name = "textdraw")]
 #[command(about = "An interactive terminal ASCII diagram editor", long_about = None)]
 struct Cli {
-    /// Render a .textdraw file to the terminal without entering TUI mode
-    #[arg(short, long, value_name = "FILE")]
-    render: Option<String>,
+    /// File to open (or render with --render flag)
+    #[arg(value_name = "FILE")]
+    file: Option<String>,
+
+    /// Render the file to the terminal without entering TUI mode
+    #[arg(short, long)]
+    render: bool,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Handle render mode
-    if let Some(file_path) = cli.render {
-        return render_file(&file_path);
+    if cli.render {
+        if let Some(file_path) = cli.file {
+            return render_file(&file_path);
+        } else {
+            eprintln!("Error: --render requires a file argument");
+            std::process::exit(1);
+        }
     }
 
     // Normal TUI mode
@@ -38,7 +47,7 @@ fn main() -> Result<()> {
     execute!(std::io::stdout(), EnableMouseCapture)?;
 
     let terminal = ratatui::init();
-    let result = run(terminal);
+    let result = run(terminal, cli.file);
     ratatui::restore();
 
     // Disable mouse capture
@@ -47,8 +56,17 @@ fn main() -> Result<()> {
     result
 }
 
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
+fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
     let mut app = App::new();
+
+    // Load file if provided (silently, no status message)
+    if let Some(file_path) = file {
+        if let Err(e) = app.load_from_file_silent(&file_path) {
+            eprintln!("Error loading file: {}", e);
+            std::process::exit(1);
+        }
+    }
+
     let handlers = events::default_handlers();
 
     // Main render and event loop.
@@ -104,14 +122,18 @@ fn render_file(file_path: &str) -> Result<()> {
     // Get bounding box of all elements
     let (min_x, min_y, max_x, max_y) = canvas.bounds();
 
-    // Render to stdout
+    // Build entire output string
+    let mut output = String::new();
     for y in min_y..=max_y {
         for x in min_x..=max_x {
             let ch = canvas.get(x, y).unwrap_or(' ');
-            print!("{}", ch);
+            output.push(ch);
         }
-        println!();
+        output.push('\n');
     }
+
+    // Print in one shot
+    print!("{}", output);
 
     Ok(())
 }

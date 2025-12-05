@@ -568,10 +568,22 @@ impl App {
 
     /// Load a diagram from a file
     pub fn load_from_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        self.load_from_file_with_message(&path, true)
+    }
+
+    /// Load a diagram from a file, optionally showing a status message
+    fn load_from_file_with_message(&mut self, path: impl AsRef<std::path::Path>, show_message: bool) -> anyhow::Result<()> {
         self.canvas.load_from_file(&path)?;
         self.current_file = Some(path.as_ref().display().to_string());
-        self.status_message = Some(format!("Loaded from {}", path.as_ref().display()));
+        if show_message {
+            self.status_message = Some(format!("Loaded from {}", path.as_ref().display()));
+        }
         Ok(())
+    }
+
+    /// Load a diagram from a file silently (for initial load)
+    pub fn load_from_file_silent(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        self.load_from_file_with_message(&path, false)
     }
 
     /// Set a status message to display
