@@ -274,6 +274,19 @@ impl App {
         self.selection_state.reset();
     }
 
+    /// Move selected elements by offset (used for arrow key movement)
+    pub fn move_selected_elements(&mut self, dx: i32, dy: i32) {
+        if self.selection_state.selected_ids.is_empty() {
+            return;
+        }
+
+        for element_id in &self.selection_state.selected_ids {
+            if let Some(element) = self.canvas.get_element_mut(*element_id) {
+                element.translate(dx, dy);
+            }
+        }
+    }
+
     pub fn add_text_char(&mut self, c: char) {
         if let Some(tool) = &mut self.active_tool {
             if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {

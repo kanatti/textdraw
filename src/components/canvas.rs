@@ -20,30 +20,43 @@ impl CanvasComponent {
 impl EventHandler for CanvasComponent {
     fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
         // Handle text input when text tool is active and in drawing mode
-        if !app.is_text_input_mode() {
-            return EventResult::Ignored;
+        if app.is_text_input_mode() {
+            return match key_event.code {
+                KeyCode::Char(c) => {
+                    app.add_text_char(c);
+                    EventResult::Consumed
+                }
+                KeyCode::Backspace => {
+                    app.text_backspace();
+                    EventResult::Consumed
+                }
+                KeyCode::Enter | KeyCode::Esc => {
+                    // Commit or cancel text
+                    if key_event.code == KeyCode::Enter {
+                        app.finish_text_input();
+                    } else {
+                        app.cancel_drawing();
+                    }
+                    EventResult::Consumed
+                }
+                _ => EventResult::Ignored,
+            };
         }
 
-        match key_event.code {
-            KeyCode::Char(c) => {
-                app.add_text_char(c);
-                EventResult::Consumed
-            }
-            KeyCode::Backspace => {
-                app.text_backspace();
-                EventResult::Consumed
-            }
-            KeyCode::Enter | KeyCode::Esc => {
-                // Commit or cancel text
-                if key_event.code == KeyCode::Enter {
-                    app.finish_text_input();
-                } else {
-                    app.cancel_drawing();
-                }
-                EventResult::Consumed
-            }
-            _ => EventResult::Ignored,
+        // Handle arrow keys for moving selected elements
+        if app.is_select_tool() && app.is_in_selection_mode() {
+            let (dx, dy) = match key_event.code {
+                KeyCode::Up => (0, -1),
+                KeyCode::Down => (0, 1),
+                KeyCode::Left => (-1, 0),
+                KeyCode::Right => (1, 0),
+                _ => return EventResult::Ignored,
+            };
+            app.move_selected_elements(dx, dy);
+            return EventResult::Consumed;
         }
+
+        EventResult::Ignored
     }
 
     fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
