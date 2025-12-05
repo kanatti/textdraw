@@ -46,6 +46,7 @@ pub struct App {
     pub active_panel: Panel,
     pub selected_tool: Tool,
     pub tool_index: usize, // For arrow key navigation
+    pub tool_locked: bool, // If true, tool stays active after drawing
     pub layout: AppLayout,
     pub show_help: bool,
     pub help_scroll: u16,
@@ -65,6 +66,7 @@ impl App {
             active_panel: Panel::Canvas,
             selected_tool: Tool::Select,
             tool_index: 0,
+            tool_locked: false,
             layout: AppLayout::default(),
             show_help: false,
             help_scroll: 0,
@@ -72,6 +74,10 @@ impl App {
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
         }
+    }
+
+    pub fn toggle_tool_lock(&mut self) {
+        self.tool_locked = !self.tool_locked;
     }
 
     pub fn toggle_help(&mut self) {
@@ -105,9 +111,15 @@ impl App {
         }
     }
 
-    pub fn finish_drawing(&mut self, x: u16, y: u16) {
+    pub fn finish_drawing(&mut self, x: u16, y: u16) -> bool {
         if let Some(tool) = &mut self.active_tool {
+            let elements_before = self.canvas.elements().len();
             tool.on_mouse_up(x, y, &mut self.canvas);
+            let elements_after = self.canvas.elements().len();
+            // Return true if an element was actually created
+            elements_after > elements_before
+        } else {
+            false
         }
     }
 
@@ -342,9 +354,15 @@ impl App {
         }
     }
 
-    pub fn finish_text_input(&mut self) {
+    pub fn finish_text_input(&mut self) -> bool {
         if let Some(tool) = &mut self.active_tool {
+            let elements_before = self.canvas.elements().len();
             tool.on_mouse_up(0, 0, &mut self.canvas);
+            let elements_after = self.canvas.elements().len();
+            // Return true if an element was actually created
+            elements_after > elements_before
+        } else {
+            false
         }
     }
 

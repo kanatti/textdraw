@@ -41,9 +41,9 @@ fn calculate_layout(frame: &Frame) -> AppLayout {
 
     // Split side into panels
     let panel_layout = Layout::vertical([
-        Constraint::Length(9), // Tools section
-        Constraint::Length(9), // Elements section
-        Constraint::Min(0),    // Properties section
+        Constraint::Length(11), // Tools section (5 tools + empty + lock + borders)
+        Constraint::Length(9),  // Elements section
+        Constraint::Min(0),     // Properties section
     ])
     .split(main_layout[0]);
 

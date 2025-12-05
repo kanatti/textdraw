@@ -16,9 +16,20 @@ impl ToolsPanel {
         Self
     }
 
+    /// Check if a coordinate is within the tools panel bounds
+    fn is_within_panel(&self, coord: Coord, area: ratatui::layout::Rect) -> bool {
+        coord.x >= area.x && coord.x < area.x + area.width &&
+        coord.y >= area.y && coord.y < area.y + area.height
+    }
+
     /// Detect which tool was clicked based on mouse coordinates within the tools panel
     fn detect_tool_click(&self, coord: Coord, layout: &crate::types::AppLayout) -> Option<Tool> {
         let area = layout.tools?;
+
+        // Check if click is within the tools panel bounds
+        if !self.is_within_panel(coord, area) {
+            return None;
+        }
 
         // Calculate relative Y position within tools panel
         let relative_y = coord.y.saturating_sub(area.y + 1); // +1 for border
@@ -32,6 +43,27 @@ impl ToolsPanel {
         } else {
             None
         }
+    }
+
+    /// Detect if lock line was clicked (anywhere on the line within the tools panel)
+    fn detect_lock_click(&self, coord: Coord, layout: &crate::types::AppLayout) -> bool {
+        let Some(area) = layout.tools else {
+            return false;
+        };
+
+        // Check if click is within the tools panel bounds
+        if !self.is_within_panel(coord, area) {
+            return false;
+        }
+
+        // Calculate relative position within tools panel
+        let relative_y = coord.y.saturating_sub(area.y + 1); // +1 for border
+
+        // Lock checkbox is at line (tools.len() + 2)
+        let lock_line = Tool::all().len() as u16 + 2;
+
+        // Allow clicking anywhere on the lock line
+        relative_y == lock_line
     }
 }
 
@@ -61,11 +93,18 @@ impl EventHandler for ToolsPanel {
             return EventResult::Ignored;
         }
 
-        // Check for tool click within the tools panel
+        // Check for lock checkbox click
         let coord = Coord {
             x: mouse_event.column,
             y: mouse_event.row,
         };
+
+        if self.detect_lock_click(coord, &app.layout) {
+            app.toggle_tool_lock();
+            return EventResult::Consumed;
+        }
+
+        // Check for tool click within the tools panel
         if let Some(tool) = self.detect_tool_click(coord, &app.layout) {
             app.select_tool(tool);
             return EventResult::Consumed;
@@ -111,6 +150,22 @@ impl Component for ToolsPanel {
 
             lines.push(line);
         }
+
+        // Add empty line separator
+        lines.push(Line::from(""));
+
+        // Add lock indicator
+        let (icon, text, color) = if app.tool_locked {
+            ("✓", " Locked  ", Color::Green)
+        } else {
+            ("✗", " Unlocked", Color::Red)
+        };
+        let lock_line = Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(icon, Style::default().fg(color)),
+            Span::styled(text, Style::default()),
+        ]);
+        lines.push(lock_line);
 
         let block = super::create_panel_block("[1]-Tools", Panel::Tools, app);
         let widget = Paragraph::new(lines).block(block);

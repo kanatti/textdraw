@@ -33,7 +33,12 @@ impl EventHandler for CanvasComponent {
                 KeyCode::Enter | KeyCode::Esc => {
                     // Commit or cancel text
                     if key_event.code == KeyCode::Enter {
-                        app.finish_text_input();
+                        let element_created = app.finish_text_input();
+
+                        // Switch to Select tool if not locked AND an element was actually created
+                        if !app.tool_locked && element_created {
+                            app.select_tool(crate::types::Tool::Select);
+                        }
                     } else {
                         app.cancel_drawing();
                     }
@@ -71,7 +76,12 @@ impl EventHandler for CanvasComponent {
     fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
         // If text tool is active and we're in text input mode, finish the text
         if app.is_text_input_mode() {
-            app.finish_text_input();
+            let element_created = app.finish_text_input();
+
+            // Switch to Select tool if not locked AND an element was actually created
+            if !app.tool_locked && element_created {
+                app.select_tool(crate::types::Tool::Select);
+            }
         }
 
         // Only handle if canvas is active
@@ -119,7 +129,12 @@ impl EventHandler for CanvasComponent {
         } else {
             // Finish drawing on mouse up (except for text tool which finishes on Enter)
             if app.is_drawing() && !app.is_text_input_mode() {
-                app.finish_drawing(canvas_x, canvas_y);
+                let element_created = app.finish_drawing(canvas_x, canvas_y);
+
+                // Switch to Select tool if not locked AND an element was actually created
+                if !app.tool_locked && element_created {
+                    app.select_tool(crate::types::Tool::Select);
+                }
             }
         }
 
