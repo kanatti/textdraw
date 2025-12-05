@@ -24,6 +24,53 @@ impl Component for StatusBar {
             return;
         };
 
+        // If command mode is active, show it
+        if app.is_command_mode_active() {
+            // Split command from arguments (e.g., "save filename" -> "save" + " filename")
+            let mut spans = vec![Span::raw(" ")];
+
+            if let Some(space_idx) = app.command_mode.buffer.find(' ') {
+                // Has arguments - show command in yellow, args in white
+                let (cmd, args) = app.command_mode.buffer.split_at(space_idx);
+                spans.push(Span::styled(format!(":{}", cmd), Style::default().fg(Color::Yellow)));
+                spans.push(Span::raw(args));
+            } else {
+                // No arguments - show entire thing in yellow
+                spans.push(Span::styled(format!(":{}", app.command_mode.buffer), Style::default().fg(Color::Yellow)));
+            }
+
+            // Add cursor block
+            spans.push(Span::styled("█", Style::default().fg(Color::White)));
+
+            let status = Paragraph::new(Line::from(spans))
+                .style(Style::default().fg(Color::White));
+
+            frame.render_widget(status, area);
+            return;
+        }
+
+        // If there's a status message, show it
+        if let Some(ref message) = app.status_message {
+            // Show errors in red, success messages in green
+            let color = if message.starts_with("Error") {
+                Color::Red
+            } else {
+                Color::Green
+            };
+
+            let spans = vec![
+                Span::styled(" ", Style::default()),
+                Span::styled(message, Style::default().fg(color)),
+            ];
+
+            let status = Paragraph::new(Line::from(spans))
+                .style(Style::default().fg(Color::White));
+
+            frame.render_widget(status, area);
+            return;
+        }
+
+        // Normal statusbar
         let mut spans = vec![
             Span::raw(" Cursor: ("),
             Span::raw(app.cursor_x.to_string()),

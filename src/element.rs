@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Element {
     Line(LineElement),
     Rectangle(RectangleElement),
@@ -96,13 +97,15 @@ impl Element {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineElement {
     pub id: usize,
     pub name: String,
     pub start: (i32, i32),
     pub end: (i32, i32),
+    #[serde(skip)]
     pub points: HashMap<(i32, i32), char>,
+    #[serde(skip)]
     pub bounds: (i32, i32, i32, i32),
 }
 
@@ -134,13 +137,15 @@ impl LineElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RectangleElement {
     pub id: usize,
     pub name: String,
     pub top_left: (i32, i32),
     pub bottom_right: (i32, i32),
+    #[serde(skip)]
     pub points: HashMap<(i32, i32), char>,
+    #[serde(skip)]
     pub bounds: (i32, i32, i32, i32),
 }
 
@@ -172,13 +177,15 @@ impl RectangleElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrowElement {
     pub id: usize,
     pub name: String,
     pub start: (i32, i32),
     pub end: (i32, i32),
+    #[serde(skip)]
     pub points: HashMap<(i32, i32), char>,
+    #[serde(skip)]
     pub bounds: (i32, i32, i32, i32),
 }
 
@@ -210,13 +217,15 @@ impl ArrowElement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextElement {
     pub id: usize,
     pub name: String,
     pub position: (i32, i32),
     pub text: String,
+    #[serde(skip)]
     pub points: HashMap<(i32, i32), char>,
+    #[serde(skip)]
     pub bounds: (i32, i32, i32, i32),
 }
 
@@ -249,7 +258,7 @@ impl TextElement {
 
 // Helper functions
 
-fn calculate_bounds(points: &HashMap<(i32, i32), char>) -> (i32, i32, i32, i32) {
+pub fn calculate_bounds(points: &HashMap<(i32, i32), char>) -> (i32, i32, i32, i32) {
     if points.is_empty() {
         return (0, 0, 0, 0);
     }

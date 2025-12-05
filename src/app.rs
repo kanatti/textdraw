@@ -39,6 +39,13 @@ impl SelectionState {
     }
 }
 
+/// Command mode state - vim-like command line
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommandMode {
+    pub buffer: String,
+    pub active: bool,
+}
+
 /// Main application state
 pub struct App {
     pub cursor_x: u16,
@@ -50,6 +57,10 @@ pub struct App {
     pub layout: AppLayout,
     pub show_help: bool,
     pub help_scroll: u16,
+    // File state
+    pub current_file: Option<String>, // Path to currently open file
+    pub status_message: Option<String>, // Temporary message for statusbar
+    pub command_mode: CommandMode, // Command mode state
     // Drawing canvas
     pub canvas: Canvas,
     // Active tool instance (None when in Select mode)
@@ -70,10 +81,123 @@ impl App {
             layout: AppLayout::default(),
             show_help: false,
             help_scroll: 0,
+            current_file: None,
+            status_message: None,
+            command_mode: CommandMode {
+                buffer: String::new(),
+                active: false,
+            },
             canvas: Canvas::default(),
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
         }
+    }
+
+    // Command mode methods
+    pub fn enter_command_mode(&mut self) {
+        self.command_mode.active = true;
+        self.command_mode.buffer.clear();
+    }
+
+    pub fn enter_command_mode_with(&mut self, command: &str) {
+        self.command_mode.active = true;
+        self.command_mode.buffer = command.to_string();
+    }
+
+    pub fn exit_command_mode(&mut self) {
+        self.exit_command_mode_with_clear(true);
+    }
+
+    fn exit_command_mode_with_clear(&mut self, clear_message: bool) {
+        self.command_mode.active = false;
+        self.command_mode.buffer.clear();
+        if clear_message {
+            self.status_message = None; // Clear status message when manually exiting
+        }
+    }
+
+    pub fn is_command_mode_active(&self) -> bool {
+        self.command_mode.active
+    }
+
+    pub fn add_char_to_command(&mut self, c: char) {
+        if self.command_mode.active {
+            self.command_mode.buffer.push(c);
+        }
+    }
+
+    pub fn backspace_command(&mut self) {
+        if self.command_mode.active {
+            self.command_mode.buffer.pop();
+        }
+    }
+
+    pub fn execute_command(&mut self) {
+        if !self.command_mode.active {
+            return;
+        }
+
+        let command = self.command_mode.buffer.trim();
+
+        // Parse command
+        let parts: Vec<&str> = command.split_whitespace().collect();
+        if parts.is_empty() {
+            self.exit_command_mode();
+            return;
+        }
+
+        match parts[0] {
+            "save" | "s" | "w" => {
+                // :save filename or :w filename
+                if parts.len() > 1 {
+                    let filename = parts[1..].join(" ");
+                    let full_path = if filename.ends_with(".textdraw") {
+                        filename
+                    } else {
+                        format!("{}.textdraw", filename)
+                    };
+
+                    if let Err(e) = self.save_to_file(&full_path) {
+                        self.status_message = Some(format!("Error: {}", e));
+                    }
+                } else if let Some(current) = self.current_file.clone() {
+                    // Save to current file (clone to avoid borrow issues)
+                    if let Err(e) = self.save_to_file(&current) {
+                        self.status_message = Some(format!("Error: {}", e));
+                    }
+                } else {
+                    self.status_message = Some("No filename specified".to_string());
+                }
+            }
+            "open" | "o" | "e" => {
+                // :open filename or :e filename
+                if parts.len() > 1 {
+                    let filename = parts[1..].join(" ");
+                    let full_path = if filename.ends_with(".textdraw") {
+                        filename
+                    } else {
+                        format!("{}.textdraw", filename)
+                    };
+
+                    if let Err(e) = self.load_from_file(&full_path) {
+                        self.status_message = Some(format!("Error: {}", e));
+                    }
+                } else {
+                    self.status_message = Some("No filename specified".to_string());
+                }
+            }
+            "q" | "quit" => {
+                // Handle quit - you might want to add a confirmation if unsaved
+                // For now, just exit command mode
+                self.status_message = Some("Use 'q' key to quit".to_string());
+            }
+            _ => {
+                self.status_message = Some(format!("Unknown command: {}", parts[0]));
+            }
+        }
+
+        // Exit command mode but keep status message to show result
+        self.exit_command_mode_with_clear(false);
     }
 
     pub fn toggle_tool_lock(&mut self) {
@@ -432,6 +556,32 @@ impl App {
         };
         let tool = tools[self.tool_index];
         self.select_tool(tool);
+    }
+
+    /// Save the diagram to a file
+    pub fn save_to_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        self.canvas.save_to_file(&path)?;
+        self.current_file = Some(path.as_ref().display().to_string());
+        self.status_message = Some(format!("Saved to {}", path.as_ref().display()));
+        Ok(())
+    }
+
+    /// Load a diagram from a file
+    pub fn load_from_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        self.canvas.load_from_file(&path)?;
+        self.current_file = Some(path.as_ref().display().to_string());
+        self.status_message = Some(format!("Loaded from {}", path.as_ref().display()));
+        Ok(())
+    }
+
+    /// Set a status message to display
+    pub fn set_status_message(&mut self, message: String) {
+        self.status_message = Some(message);
+    }
+
+    /// Clear the status message
+    pub fn clear_status_message(&mut self) {
+        self.status_message = None;
     }
 }
 

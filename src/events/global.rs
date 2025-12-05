@@ -1,14 +1,59 @@
 use crate::app::App;
 use crate::input;
 use crate::types::{ActionType, Coord, EventHandler, EventResult, Panel, Tool};
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 
 /// Global event handler that handles fallthrough events not consumed by components
 pub struct GlobalHandler;
 
 impl EventHandler for GlobalHandler {
     fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+        // Handle command mode if active
+        if app.is_command_mode_active() {
+            return match key_event.code {
+                KeyCode::Char(c) => {
+                    app.add_char_to_command(c);
+                    EventResult::Consumed
+                }
+                KeyCode::Backspace => {
+                    app.backspace_command();
+                    EventResult::Consumed
+                }
+                KeyCode::Enter => {
+                    app.execute_command();
+                    EventResult::Consumed
+                }
+                KeyCode::Esc => {
+                    app.exit_command_mode();
+                    EventResult::Consumed
+                }
+                _ => EventResult::Consumed, // Consume all other keys while in command mode
+            };
+        }
+
+        // Handle Ctrl+S and Ctrl+O - enter command mode with pre-filled command
+        if key_event.modifiers.contains(KeyModifiers::CONTROL) {
+            return match key_event.code {
+                KeyCode::Char('s') => {
+                    // Pre-fill with :save or :w
+                    app.enter_command_mode_with("save ");
+                    EventResult::Consumed
+                }
+                KeyCode::Char('o') => {
+                    // Pre-fill with :open or :e
+                    app.enter_command_mode_with("open ");
+                    EventResult::Consumed
+                }
+                _ => EventResult::Ignored,
+            };
+        }
+
         match key_event.code {
+            KeyCode::Char(':') => {
+                // Enter command mode
+                app.enter_command_mode();
+                EventResult::Consumed
+            }
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
             KeyCode::Char('?') => {
                 app.toggle_help();

@@ -1,4 +1,9 @@
+use crate::drawing::algorithms;
 use crate::element::Element;
+use crate::types::DiagramFile;
+use anyhow::{Context, Result};
+use std::fs;
+use std::path::Path;
 
 /// Represents the drawing canvas with element-based storage
 pub struct Canvas {
@@ -105,6 +110,84 @@ impl Canvas {
     /// Clear all elements
     pub fn clear(&mut self) {
         self.elements.clear();
+    }
+
+    /// Save the canvas to a file
+    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        let diagram = DiagramFile {
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            elements: self.elements.clone(),
+            next_id: self.next_id,
+        };
+
+        let json = serde_json::to_string_pretty(&diagram)
+            .context("Failed to serialize diagram")?;
+
+        fs::write(path.as_ref(), json)
+            .context(format!("Failed to write to file: {}", path.as_ref().display()))?;
+
+        Ok(())
+    }
+
+    /// Load the canvas from a file
+    pub fn load_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        let json = fs::read_to_string(path.as_ref())
+            .context(format!("Failed to read file: {}", path.as_ref().display()))?;
+
+        let mut diagram: DiagramFile = serde_json::from_str(&json)
+            .context("Failed to parse diagram file")?;
+
+        // Rebuild points and bounds for all elements after deserialization
+        for element in &mut diagram.elements {
+            Self::rebuild_element(element);
+        }
+
+        self.elements = diagram.elements;
+        self.next_id = diagram.next_id;
+
+        Ok(())
+    }
+
+    /// Rebuild points and bounds for an element (used after deserialization)
+    fn rebuild_element(element: &mut Element) {
+        match element {
+            Element::Line(line) => {
+                line.points = algorithms::generate_line_points(
+                    line.start.0,
+                    line.start.1,
+                    line.end.0,
+                    line.end.1,
+                );
+                line.bounds = crate::element::calculate_bounds(&line.points);
+            }
+            Element::Rectangle(rect) => {
+                rect.points = algorithms::generate_box_points(
+                    rect.top_left.0,
+                    rect.top_left.1,
+                    rect.bottom_right.0,
+                    rect.bottom_right.1,
+                );
+                rect.bounds = crate::element::calculate_bounds(&rect.points);
+            }
+            Element::Arrow(arrow) => {
+                arrow.points = algorithms::generate_arrow_points(
+                    arrow.start.0,
+                    arrow.start.1,
+                    arrow.end.0,
+                    arrow.end.1,
+                );
+                arrow.bounds = crate::element::calculate_bounds(&arrow.points);
+            }
+            Element::Text(text) => {
+                // Rebuild text points: place each character horizontally
+                text.points = text.text
+                    .chars()
+                    .enumerate()
+                    .map(|(i, ch)| ((text.position.0 + i as i32, text.position.1), ch))
+                    .collect();
+                text.bounds = crate::element::calculate_bounds(&text.points);
+            }
+        }
     }
 }
 
