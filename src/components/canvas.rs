@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
 use crate::types::{EventHandler, EventResult, Panel, SelectionMode};
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
@@ -97,7 +97,8 @@ impl EventHandler for CanvasComponent {
 
         // Handle based on tool
         if app.is_select_tool() {
-            self.handle_selection_mouse_down(app, canvas_x, canvas_y);
+            let shift_pressed = mouse_event.modifiers.contains(KeyModifiers::SHIFT);
+            self.handle_selection_mouse_down(app, canvas_x, canvas_y, shift_pressed);
         } else {
             app.start_drawing(canvas_x, canvas_y);
         }
@@ -212,7 +213,14 @@ impl CanvasComponent {
     }
 
     /// Handle mouse down in selection mode
-    fn handle_selection_mouse_down(&self, app: &mut App, canvas_x: u16, canvas_y: u16) {
+    fn handle_selection_mouse_down(&self, app: &mut App, canvas_x: u16, canvas_y: u16, shift_pressed: bool) {
+        // Shift+Click: toggle selection at this position (additive selection)
+        if shift_pressed {
+            app.toggle_selection_at(canvas_x as i32, canvas_y as i32);
+            return;
+        }
+
+        // Normal click behavior
         if app.is_in_selection_mode() {
             // Check if clicking inside any selected element's bounds
             let clicked_selected = self.is_clicking_selected_element(app, canvas_x, canvas_y);

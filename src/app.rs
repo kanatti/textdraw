@@ -240,6 +240,28 @@ impl App {
         }
     }
 
+    /// Toggle selection of element at position (for Shift+Click additive selection)
+    pub fn toggle_selection_at(&mut self, x: i32, y: i32) {
+        // Find element at this position
+        if let Some(element_id) = self.canvas.find_element_at(x, y) {
+            // Check if already selected
+            if let Some(pos) = self.selection_state.selected_ids.iter().position(|&id| id == element_id) {
+                // Remove from selection
+                self.selection_state.selected_ids.remove(pos);
+            } else {
+                // Add to selection
+                self.selection_state.selected_ids.push(element_id);
+            }
+
+            // Update mode based on whether we have selections
+            if self.selection_state.selected_ids.is_empty() {
+                self.selection_state.mode = SelectionMode::Idle;
+            } else {
+                self.selection_state.mode = SelectionMode::Selected;
+            }
+        }
+    }
+
     fn select_rectangle(&mut self, x1: u16, y1: u16, x2: u16, y2: u16) {
         let (left, right) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
         let (top, bottom) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
