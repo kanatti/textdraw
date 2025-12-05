@@ -43,17 +43,26 @@ impl EventHandler for CanvasComponent {
             };
         }
 
-        // Handle arrow keys for moving selected elements
+        // Handle selection operations (move/delete)
         if app.is_select_tool() && app.is_in_selection_mode() {
-            let (dx, dy) = match key_event.code {
-                KeyCode::Up => (0, -1),
-                KeyCode::Down => (0, 1),
-                KeyCode::Left => (-1, 0),
-                KeyCode::Right => (1, 0),
-                _ => return EventResult::Ignored,
-            };
-            app.move_selected_elements(dx, dy);
-            return EventResult::Consumed;
+            match key_event.code {
+                KeyCode::Up | KeyCode::Down | KeyCode::Left | KeyCode::Right => {
+                    let (dx, dy) = match key_event.code {
+                        KeyCode::Up => (0, -1),
+                        KeyCode::Down => (0, 1),
+                        KeyCode::Left => (-1, 0),
+                        KeyCode::Right => (1, 0),
+                        _ => unreachable!(),
+                    };
+                    app.move_selected_elements(dx, dy);
+                    return EventResult::Consumed;
+                }
+                KeyCode::Delete | KeyCode::Backspace => {
+                    app.delete_selected_elements();
+                    return EventResult::Consumed;
+                }
+                _ => {}
+            }
         }
 
         EventResult::Ignored

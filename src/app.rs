@@ -287,6 +287,21 @@ impl App {
         }
     }
 
+    /// Delete selected elements
+    pub fn delete_selected_elements(&mut self) {
+        if self.selection_state.selected_ids.is_empty() {
+            return;
+        }
+
+        // Remove elements from canvas
+        for element_id in &self.selection_state.selected_ids {
+            self.canvas.remove_element(*element_id);
+        }
+
+        // Clear selection
+        self.selection_state.reset();
+    }
+
     pub fn add_text_char(&mut self, c: char) {
         if let Some(tool) = &mut self.active_tool {
             if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {
