@@ -79,6 +79,7 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
     loop {
         // Render phase: Draw UI based on current app state (read-only)
         terminal.draw(|frame| {
+            // Layout has to be recalculated each frame to account for terminal resizes
             app.layout = ui::calculate_layout(frame);
             ui::render(frame, &app);
         })?;

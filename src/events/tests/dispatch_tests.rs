@@ -1,7 +1,6 @@
 use super::fixtures::*;
 use crate::app::App;
-use crate::events::{handle_key_event, handle_mouse_event};
-use crate::types::EventHandler;
+use crate::events::{EventHandler, handle_key_event, handle_mouse_event};
 
 #[test]
 fn test_event_chain_all_ignore() {

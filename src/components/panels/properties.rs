@@ -1,7 +1,8 @@
 use crate::app::App;
 use crate::components::Component;
 use crate::element::Element;
-use crate::types::{EventHandler, Panel};
+use crate::events::EventHandler;
+use crate::types::Panel;
 use ratatui::{
     Frame,
     style::{Color, Modifier, Style},

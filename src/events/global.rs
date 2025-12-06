@@ -1,6 +1,7 @@
 use crate::app::App;
+use crate::events::{ActionType, EventHandler, EventResult};
 use crate::input;
-use crate::types::{ActionType, Coord, EventHandler, EventResult, Panel, Tool};
+use crate::types::{Coord, Panel, Tool};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 
 /// Global event handler that handles fallthrough events not consumed by components

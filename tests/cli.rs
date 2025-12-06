@@ -1,8 +1,8 @@
 use assert_cmd::cargo;
 use assert_cmd::prelude::*;
+use assert_fs::TempDir;
 use assert_fs::fixture::ChildPath;
 use assert_fs::prelude::*;
-use assert_fs::TempDir;
 use predicates::prelude::*;
 use std::path::Path;
 use std::process::Command;
@@ -55,17 +55,15 @@ Options:
         .stdout(expected);
 
     // Test -h
-    textdraw_cmd()
-        .arg("-h")
-        .assert()
-        .success()
-        .stdout(expected);
+    textdraw_cmd().arg("-h").assert().success().stdout(expected);
 }
 
 /// Test rendering a diagram file to stdout with --render and -r flags
 #[test]
 fn test_render() {
-    let diagram_file = TempDiagramFile::new("test.textdraw", r#"{
+    let diagram_file = TempDiagramFile::new(
+        "test.textdraw",
+        r#"{
   "version": "0.1.0",
   "elements": [
     {
@@ -78,7 +76,8 @@ fn test_render() {
     }
   ],
   "next_id": 1
-}"#);
+}"#,
+    );
 
     let expected = "\
 ┌────┐
@@ -107,11 +106,14 @@ fn test_render() {
 /// Test rendering an empty diagram
 #[test]
 fn test_render_empty_file() {
-    let diagram_file = TempDiagramFile::new("empty.textdraw", r#"{
+    let diagram_file = TempDiagramFile::new(
+        "empty.textdraw",
+        r#"{
   "version": "0.1.0",
   "elements": [],
   "next_id": 0
-}"#);
+}"#,
+    );
 
     textdraw_cmd()
         .arg("--render")
@@ -128,7 +130,9 @@ fn test_render_missing_file() {
         .arg("--render")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("--render requires a file argument"));
+        .stderr(predicate::str::contains(
+            "--render requires a file argument",
+        ));
 }
 
 /// Test rendering a non-existent file

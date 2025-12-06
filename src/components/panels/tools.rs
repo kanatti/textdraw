@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
-use crate::types::{Coord, EventHandler, EventResult, Panel, Tool};
+use crate::events::{EventHandler, EventResult};
+use crate::types::{Coord, Panel, Tool};
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::{
     Frame,

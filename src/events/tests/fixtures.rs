@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::types::{ActionType, EventHandler, EventResult};
+use crate::events::{ActionType, EventHandler, EventResult};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use std::sync::atomic::{AtomicBool, Ordering};
 
