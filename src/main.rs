@@ -91,7 +91,8 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
     loop {
         // Render phase: Draw UI based on current app state (read-only)
         terminal.draw(|frame| {
-            ui::render(frame, &mut app);
+            app.layout = ui::calculate_layout(frame);
+            ui::render(frame, &app);
         })?;
 
         // Event phase: Block until next event, then handle it (mutates app state)

@@ -7,9 +7,7 @@ use ratatui::{
 };
 
 /// Render the UI based on current App state.
-pub fn render(frame: &mut Frame, app: &mut App) {
-    app.layout = calculate_layout(frame);
-
+pub fn render(frame: &mut Frame, app: &App) {
     // Draw components
     let components: Vec<Box<dyn Component>> = vec![
         Box::new(ToolsPanel::new()),
@@ -25,7 +23,8 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     }
 }
 
-fn calculate_layout(frame: &Frame) -> AppLayout {
+/// Calculate the layout of the UI.
+pub fn calculate_layout(frame: &Frame) -> AppLayout {
     let outer_layout = Layout::vertical([
         Constraint::Min(0),    // Main area
         Constraint::Length(1), // Status bar
