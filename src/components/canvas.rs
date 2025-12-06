@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
+use crate::tools::Tool;
 use crate::types::{Panel, SelectionMode};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{
@@ -38,7 +39,7 @@ impl EventHandler for CanvasComponent {
 
                         // Switch to Select tool if not locked AND an element was actually created
                         if !app.tool_locked && element_created {
-                            app.select_tool(crate::types::Tool::Select);
+                            app.select_tool(Tool::Select);
                         }
                     } else {
                         app.cancel_drawing();
@@ -81,7 +82,7 @@ impl EventHandler for CanvasComponent {
 
             // Switch to Select tool if not locked AND an element was actually created
             if !app.tool_locked && element_created {
-                app.select_tool(crate::types::Tool::Select);
+                app.select_tool(Tool::Select);
             }
         }
 
@@ -137,7 +138,7 @@ impl EventHandler for CanvasComponent {
 
                 // Switch to Select tool if not locked AND an element was actually created
                 if !app.tool_locked && element_created {
-                    app.select_tool(crate::types::Tool::Select);
+                    app.select_tool(Tool::Select);
                 }
             }
         }

@@ -1,9 +1,7 @@
 use crate::canvas::Canvas;
 use crate::components::HelpModal;
-use crate::tools::{
-    DrawingTool, arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool,
-};
-use crate::types::{AppLayout, Panel, SelectionMode, Tool};
+use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
+use crate::types::{AppLayout, Panel, SelectionMode};
 
 pub struct SelectionState {
     pub mode: SelectionMode,
