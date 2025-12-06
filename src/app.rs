@@ -1,27 +1,23 @@
 use crate::canvas::Canvas;
-use crate::state::{CommandExecutor, CommandState, HelpState, SelectionState};
-use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
+use crate::state::{
+    CommandExecutor, CommandState, FileState, HelpState, SelectionState, ToolState,
+};
 use crate::types::Panel;
 use crate::ui::UILayout;
+use std::path::Path;
 
 /// Main application state
 pub struct App {
     pub cursor_x: u16,
     pub cursor_y: u16,
     pub active_panel: Panel,
-    pub selected_tool: Tool,
-    pub tool_index: usize, // For arrow key navigation
-    pub tool_locked: bool, // If true, tool stays active after drawing
     pub layout: UILayout,
     pub help: HelpState,
     pub command: CommandState,
-    // File state
-    pub current_file: Option<String>, // Path to currently open file
-    pub status_message: Option<String>, // Temporary message for statusbar
+    pub tool: ToolState,
+    pub file: FileState,
     // Drawing canvas
     pub canvas: Canvas,
-    // Active tool instance (None when in Select mode)
-    active_tool: Option<Box<dyn DrawingTool>>,
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
 }
@@ -32,16 +28,12 @@ impl App {
             cursor_x: 0,
             cursor_y: 0,
             active_panel: Panel::Canvas,
-            selected_tool: Tool::Select,
-            tool_index: 0,
-            tool_locked: false,
             layout: UILayout::default(),
             help: HelpState::new(),
             command: CommandState::new(),
-            current_file: None,
-            status_message: None,
+            tool: ToolState::new(),
+            file: FileState::new(),
             canvas: Canvas::default(),
-            active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
         }
     }
@@ -59,7 +51,7 @@ impl App {
 
     pub fn exit_command_mode(&mut self) {
         self.command.exit();
-        self.status_message = None; // Clear status message when manually exiting
+        self.file.clear_status_message(); // Clear status message when manually exiting
     }
 
     pub fn is_command_mode_active(&self) -> bool {
@@ -101,130 +93,71 @@ impl App {
     // ============================================================================
 
     pub fn toggle_tool_lock(&mut self) {
-        self.tool_locked = !self.tool_locked;
+        self.tool.toggle_tool_lock();
     }
 
-    pub fn select_tool(&mut self, tool: Tool) {
-        self.selected_tool = tool;
-        self.tool_index = Tool::all().iter().position(|&t| t == tool).unwrap_or(0);
-
-        // Create new tool instance based on selection (None for Select mode)
-        self.active_tool = match tool {
-            Tool::Select => None, // Selection is handled by selection_state, not as a tool
-            Tool::Line => Some(Box::new(LineTool::new())),
-            Tool::Rectangle => Some(Box::new(RectangleTool::new())),
-            Tool::Arrow => Some(Box::new(ArrowTool::new())),
-            Tool::Text => Some(Box::new(TextTool::new())),
-        };
-
+    pub fn select_tool(&mut self, tool: crate::tools::Tool) {
+        let should_deselect = self.tool.select_tool(tool);
         // Deselect when switching away from Select tool
-        if tool != Tool::Select && self.is_in_selection_mode() {
+        if should_deselect && self.is_in_selection_mode() {
             self.deselect();
         }
     }
 
     pub fn select_next_tool(&mut self) {
-        let tools = Tool::all();
-        self.tool_index = (self.tool_index + 1) % tools.len();
-        let tool = tools[self.tool_index];
-        self.select_tool(tool);
+        self.tool.select_next_tool();
     }
 
     pub fn select_prev_tool(&mut self) {
-        let tools = Tool::all();
-        self.tool_index = if self.tool_index == 0 {
-            tools.len() - 1
-        } else {
-            self.tool_index - 1
-        };
-        let tool = tools[self.tool_index];
-        self.select_tool(tool);
+        self.tool.select_prev_tool();
     }
 
     pub fn is_select_tool(&self) -> bool {
-        self.selected_tool == Tool::Select
+        self.tool.is_select_tool()
     }
 
     // Drawing tool operations
 
     pub fn start_drawing(&mut self, x: u16, y: u16) {
-        if let Some(tool) = &mut self.active_tool {
-            tool.on_mouse_down(x, y);
-        }
+        self.tool.start_drawing(x, y);
     }
 
     pub fn update_drawing(&mut self, x: u16, y: u16) {
-        if let Some(tool) = &mut self.active_tool {
-            tool.on_mouse_drag(x, y);
-        }
+        self.tool.update_drawing(x, y);
     }
 
     pub fn finish_drawing(&mut self, x: u16, y: u16) -> bool {
-        if let Some(tool) = &mut self.active_tool {
-            let elements_before = self.canvas.elements().len();
-            tool.on_mouse_up(x, y, &mut self.canvas);
-            let elements_after = self.canvas.elements().len();
-            // Return true if an element was actually created
-            elements_after > elements_before
-        } else {
-            false
-        }
+        self.tool.finish_drawing(x, y, &mut self.canvas)
     }
 
     pub fn cancel_drawing(&mut self) {
-        if let Some(tool) = &mut self.active_tool {
-            tool.cancel();
-        }
+        self.tool.cancel_drawing();
     }
 
     pub fn is_drawing(&self) -> bool {
-        if let Some(tool) = &self.active_tool {
-            tool.is_drawing()
-        } else {
-            false
-        }
+        self.tool.is_drawing()
     }
 
     pub fn get_preview_points(&self) -> Vec<(i32, i32, char)> {
-        if let Some(tool) = &self.active_tool {
-            tool.preview_points()
-        } else {
-            vec![]
-        }
+        self.tool.get_preview_points()
     }
 
     pub fn is_text_input_mode(&self) -> bool {
-        self.selected_tool == Tool::Text && self.is_drawing()
+        self.tool.is_text_input_mode()
     }
 
     // Text tool operations
 
     pub fn add_text_char(&mut self, c: char) {
-        if let Some(tool) = &mut self.active_tool {
-            if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {
-                text_tool.add_char(c);
-            }
-        }
+        self.tool.add_text_char(c);
     }
 
     pub fn text_backspace(&mut self) {
-        if let Some(tool) = &mut self.active_tool {
-            if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {
-                text_tool.backspace();
-            }
-        }
+        self.tool.text_backspace();
     }
 
     pub fn finish_text_input(&mut self) -> bool {
-        if let Some(tool) = &mut self.active_tool {
-            let elements_before = self.canvas.elements().len();
-            tool.on_mouse_up(0, 0, &mut self.canvas);
-            let elements_after = self.canvas.elements().len();
-            // Return true if an element was actually created
-            elements_after > elements_before
-        } else {
-            false
-        }
+        self.tool.finish_text_input(&mut self.canvas)
     }
 
     // ============================================================================
@@ -316,48 +249,28 @@ impl App {
     // ============================================================================
 
     /// Save the diagram to a file
-    pub fn save_to_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
-        self.canvas.save_to_file(&path)?;
-        self.current_file = Some(path.as_ref().display().to_string());
-        self.status_message = Some(format!("Saved to {}", path.as_ref().display()));
-        Ok(())
+    pub fn save_to_file(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
+        self.file.save_to_file(&self.canvas, path)
     }
 
     /// Load a diagram from a file
-    pub fn load_from_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
-        self.load_from_file_with_message(&path, true)
-    }
-
-    /// Load a diagram from a file, optionally showing a status message
-    fn load_from_file_with_message(
-        &mut self,
-        path: impl AsRef<std::path::Path>,
-        show_message: bool,
-    ) -> anyhow::Result<()> {
-        self.canvas.load_from_file(&path)?;
-        self.current_file = Some(path.as_ref().display().to_string());
-        if show_message {
-            self.status_message = Some(format!("Loaded from {}", path.as_ref().display()));
-        }
-        Ok(())
+    pub fn load_from_file(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
+        self.file.load_from_file(&mut self.canvas, path)
     }
 
     /// Load a diagram from a file silently (for initial load)
-    pub fn load_from_file_silent(
-        &mut self,
-        path: impl AsRef<std::path::Path>,
-    ) -> anyhow::Result<()> {
-        self.load_from_file_with_message(&path, false)
+    pub fn load_from_file_silent(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
+        self.file.load_from_file_silent(&mut self.canvas, path)
     }
 
     /// Set a status message to display
     pub fn set_status_message(&mut self, message: String) {
-        self.status_message = Some(message);
+        self.file.set_status_message(message);
     }
 
     /// Clear the status message
     pub fn clear_status_message(&mut self) {
-        self.status_message = None;
+        self.file.clear_status_message();
     }
 }
 

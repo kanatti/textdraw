@@ -128,7 +128,7 @@ impl Component for ToolsPanel {
         let mut lines = vec![Line::from("")];
 
         for tool in Tool::all() {
-            let is_selected = app.selected_tool == tool;
+            let is_selected = app.tool.selected_tool == tool;
             let key = tool.key().to_string();
             let name = tool.name().to_string();
 
@@ -160,7 +160,7 @@ impl Component for ToolsPanel {
         lines.push(Line::from(""));
 
         // Add lock indicator
-        let (icon, text, color) = if app.tool_locked {
+        let (icon, text, color) = if app.tool.tool_locked {
             ("✓", " Locked  ", Color::Green)
         } else {
             ("✗", " Unlocked", Color::Red)

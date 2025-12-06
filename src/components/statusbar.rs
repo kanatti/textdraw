@@ -55,7 +55,7 @@ impl Component for StatusBar {
         }
 
         // If there's a status message, show it
-        if let Some(ref message) = app.status_message {
+        if let Some(ref message) = app.file.status_message {
             // Show errors in red, success messages in green
             let color = if message.starts_with("Error") {
                 Color::Red
@@ -81,7 +81,10 @@ impl Component for StatusBar {
             Span::raw(", "),
             Span::raw(app.cursor_y.to_string()),
             Span::raw(") | Tool: "),
-            Span::styled(app.selected_tool.name(), Style::default().fg(Color::Yellow)),
+            Span::styled(
+                app.tool.selected_tool.name(),
+                Style::default().fg(Color::Yellow),
+            ),
         ];
 
         // Add contextual help based on selection state

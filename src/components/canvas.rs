@@ -38,7 +38,7 @@ impl EventHandler for CanvasComponent {
                         let element_created = app.finish_text_input();
 
                         // Switch to Select tool if not locked AND an element was actually created
-                        if !app.tool_locked && element_created {
+                        if !app.tool.tool_locked && element_created {
                             app.select_tool(Tool::Select);
                         }
                     } else {
@@ -81,7 +81,7 @@ impl EventHandler for CanvasComponent {
             let element_created = app.finish_text_input();
 
             // Switch to Select tool if not locked AND an element was actually created
-            if !app.tool_locked && element_created {
+            if !app.tool.tool_locked && element_created {
                 app.select_tool(Tool::Select);
             }
         }
@@ -137,7 +137,7 @@ impl EventHandler for CanvasComponent {
                 let element_created = app.finish_drawing(canvas_x, canvas_y);
 
                 // Switch to Select tool if not locked AND an element was actually created
-                if !app.tool_locked && element_created {
+                if !app.tool.tool_locked && element_created {
                     app.select_tool(Tool::Select);
                 }
             }
@@ -396,7 +396,7 @@ impl Component for CanvasComponent {
         };
 
         // Build title with filename if available
-        let title = if let Some(ref file) = app.current_file {
+        let title = if let Some(ref file) = app.file.current_file {
             // Extract just the filename from the path
             let filename = std::path::Path::new(file)
                 .file_name()

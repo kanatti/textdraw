@@ -125,26 +125,26 @@ impl CommandExecutor {
     pub fn execute(action: CommandAction, app: &mut App) {
         match action {
             CommandAction::Save(path) => {
-                if let Err(e) = app.save_to_file(&path) {
-                    app.status_message = Some(format!("Error: {}", e));
+                if let Err(e) = app.file.save_to_file(&app.canvas, &path) {
+                    app.file.status_message = Some(format!("Error: {}", e));
                 }
             }
             CommandAction::SaveCurrent => {
-                if let Some(current) = app.current_file.clone() {
-                    if let Err(e) = app.save_to_file(&current) {
-                        app.status_message = Some(format!("Error: {}", e));
+                if let Some(current) = app.file.current_file.clone() {
+                    if let Err(e) = app.file.save_to_file(&app.canvas, &current) {
+                        app.file.status_message = Some(format!("Error: {}", e));
                     }
                 } else {
-                    app.status_message = Some("No filename specified".to_string());
+                    app.file.status_message = Some("No filename specified".to_string());
                 }
             }
             CommandAction::Open(path) => {
-                if let Err(e) = app.load_from_file(&path) {
-                    app.status_message = Some(format!("Error: {}", e));
+                if let Err(e) = app.file.load_from_file(&mut app.canvas, &path) {
+                    app.file.status_message = Some(format!("Error: {}", e));
                 }
             }
             CommandAction::Message(msg) => {
-                app.status_message = Some(msg);
+                app.file.status_message = Some(msg);
             }
             CommandAction::None => {}
         }
