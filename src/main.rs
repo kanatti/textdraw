@@ -1,5 +1,6 @@
 mod app;
 mod canvas;
+mod cli;
 mod components;
 mod drawing;
 mod element;
@@ -16,26 +17,13 @@ use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
 use ratatui::DefaultTerminal;
 
-#[derive(Parser, Debug)]
-#[command(name = "textdraw")]
-#[command(about = "An interactive terminal ASCII diagram editor", long_about = None)]
-struct Cli {
-    /// File to open (or render with --render flag)
-    #[arg(value_name = "FILE")]
-    file: Option<String>,
-
-    /// Render the file to the terminal without entering TUI mode
-    #[arg(short, long)]
-    render: bool,
-}
-
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let cli = cli::Cli::parse();
 
     // Handle render mode
     if cli.render {
         if let Some(file_path) = cli.file {
-            return render_file(&file_path);
+            return cli::render_file(&file_path);
         } else {
             eprintln!("Error: --render requires a file argument");
             std::process::exit(1);
@@ -107,34 +95,3 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
     Ok(())
 }
 
-fn render_file(file_path: &str) -> Result<()> {
-    use canvas::Canvas;
-
-    // Load the file
-    let mut canvas = Canvas::default();
-    canvas.load_from_file(file_path)?;
-
-    // Check if canvas has any elements
-    if canvas.is_empty() {
-        println!("(empty diagram)");
-        return Ok(());
-    }
-
-    // Get bounding box of all elements
-    let (min_x, min_y, max_x, max_y) = canvas.bounds();
-
-    // Build entire output string
-    let mut output = String::new();
-    for y in min_y..=max_y {
-        for x in min_x..=max_x {
-            let ch = canvas.get(x, y).unwrap_or(' ');
-            output.push(ch);
-        }
-        output.push('\n');
-    }
-
-    // Print in one shot
-    print!("{}", output);
-
-    Ok(())
-}
