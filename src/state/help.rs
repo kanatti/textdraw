@@ -1,4 +1,5 @@
 use crate::components::HelpModal;
+use crate::ui::UILayout;
 
 pub struct HelpState {
     pub show: bool,
@@ -24,7 +25,10 @@ impl HelpState {
         self.scroll = self.scroll.saturating_sub(1);
     }
 
-    pub fn scroll_down(&mut self, modal_height: u16) {
+    pub fn scroll_down(&mut self, layout: &UILayout) {
+        // Calculate max scroll based on terminal height (60% for modal)
+        let terminal_height = layout.canvas.map(|r| r.height).unwrap_or(40);
+        let modal_height = (terminal_height * 60) / 100;
         let max_scroll = HelpModal::max_scroll(modal_height);
         self.scroll = self.scroll.saturating_add(1).min(max_scroll);
     }

@@ -1,42 +1,8 @@
 use crate::canvas::Canvas;
-use crate::state::{CommandExecutor, CommandState, HelpState};
+use crate::state::{CommandExecutor, CommandState, HelpState, SelectionState};
 use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
-use crate::types::{Panel, SelectionMode};
+use crate::types::Panel;
 use crate::ui::UILayout;
-
-pub struct SelectionState {
-    pub mode: SelectionMode,
-    pub selected_ids: Vec<usize>,         // IDs of selected elements
-    pub select_start: Option<(u16, u16)>, // For drag-select box
-    pub select_current: Option<(u16, u16)>,
-    pub has_dragged: bool,
-    pub move_start: Option<(u16, u16)>,
-    pub move_offset: (i32, i32),
-}
-
-impl SelectionState {
-    pub fn new() -> Self {
-        Self {
-            mode: SelectionMode::Idle,
-            selected_ids: Vec::new(),
-            select_start: None,
-            select_current: None,
-            has_dragged: false,
-            move_start: None,
-            move_offset: (0, 0),
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.mode = SelectionMode::Idle;
-        self.selected_ids.clear();
-        self.select_start = None;
-        self.select_current = None;
-        self.has_dragged = false;
-        self.move_start = None;
-        self.move_offset = (0, 0);
-    }
-}
 
 /// Main application state
 pub struct App {
@@ -80,7 +46,9 @@ impl App {
         }
     }
 
-    // Command mode methods
+    // ============================================================================
+    // Command Mode
+    // ============================================================================
     pub fn enter_command_mode(&mut self) {
         self.command.enter();
     }
@@ -112,9 +80,9 @@ impl App {
         self.command.finish();
     }
 
-    pub fn toggle_tool_lock(&mut self) {
-        self.tool_locked = !self.tool_locked;
-    }
+    // ============================================================================
+    // Help Modal
+    // ============================================================================
 
     pub fn toggle_help(&mut self) {
         self.help.toggle();
@@ -125,11 +93,59 @@ impl App {
     }
 
     pub fn scroll_help_down(&mut self) {
-        // Calculate max scroll based on terminal height (60% for modal)
-        let terminal_height = self.layout.canvas.map(|r| r.height).unwrap_or(40);
-        let modal_height = (terminal_height * 60) / 100;
-        self.help.scroll_down(modal_height);
+        self.help.scroll_down(&self.layout);
     }
+
+    // ============================================================================
+    // Tool Management & Drawing
+    // ============================================================================
+
+    pub fn toggle_tool_lock(&mut self) {
+        self.tool_locked = !self.tool_locked;
+    }
+
+    pub fn select_tool(&mut self, tool: Tool) {
+        self.selected_tool = tool;
+        self.tool_index = Tool::all().iter().position(|&t| t == tool).unwrap_or(0);
+
+        // Create new tool instance based on selection (None for Select mode)
+        self.active_tool = match tool {
+            Tool::Select => None, // Selection is handled by selection_state, not as a tool
+            Tool::Line => Some(Box::new(LineTool::new())),
+            Tool::Rectangle => Some(Box::new(RectangleTool::new())),
+            Tool::Arrow => Some(Box::new(ArrowTool::new())),
+            Tool::Text => Some(Box::new(TextTool::new())),
+        };
+
+        // Deselect when switching away from Select tool
+        if tool != Tool::Select && self.is_in_selection_mode() {
+            self.deselect();
+        }
+    }
+
+    pub fn select_next_tool(&mut self) {
+        let tools = Tool::all();
+        self.tool_index = (self.tool_index + 1) % tools.len();
+        let tool = tools[self.tool_index];
+        self.select_tool(tool);
+    }
+
+    pub fn select_prev_tool(&mut self) {
+        let tools = Tool::all();
+        self.tool_index = if self.tool_index == 0 {
+            tools.len() - 1
+        } else {
+            self.tool_index - 1
+        };
+        let tool = tools[self.tool_index];
+        self.select_tool(tool);
+    }
+
+    pub fn is_select_tool(&self) -> bool {
+        self.selected_tool == Tool::Select
+    }
+
+    // Drawing tool operations
 
     pub fn start_drawing(&mut self, x: u16, y: u16) {
         if let Some(tool) = &mut self.active_tool {
@@ -181,221 +197,7 @@ impl App {
         self.selected_tool == Tool::Text && self.is_drawing()
     }
 
-    pub fn is_select_tool(&self) -> bool {
-        self.selected_tool == Tool::Select
-    }
-
-    /// Get selection box points for drag-selection visualization
-    pub fn get_selection_box_points(&self) -> Vec<(i32, i32, char)> {
-        let mut points = vec![];
-
-        // Only show selection box when actively selecting (dragging)
-        if matches!(self.selection_state.mode, SelectionMode::Selecting) {
-            if let (Some((sx, sy)), Some((cx, cy))) = (
-                self.selection_state.select_start,
-                self.selection_state.select_current,
-            ) {
-                let (left, right) = if sx <= cx { (sx, cx) } else { (cx, sx) };
-                let (top, bottom) = if sy <= cy { (sy, cy) } else { (cy, sy) };
-
-                // Rounded corners
-                points.push((left as i32, top as i32, '╭'));
-                points.push((right as i32, top as i32, '╮'));
-                points.push((left as i32, bottom as i32, '╰'));
-                points.push((right as i32, bottom as i32, '╯'));
-
-                // Edges
-                for x in (left + 1)..right {
-                    points.push((x as i32, top as i32, '─'));
-                    points.push((x as i32, bottom as i32, '─'));
-                }
-                for y in (top + 1)..bottom {
-                    points.push((left as i32, y as i32, '│'));
-                    points.push((right as i32, y as i32, '│'));
-                }
-            }
-        }
-
-        points
-    }
-
-    /// Get IDs of selected elements
-    pub fn get_selected_element_ids(&self) -> &[usize] {
-        &self.selection_state.selected_ids
-    }
-
-    /// Get move offset for selected elements during moving
-    pub fn get_move_offset(&self) -> Option<(i32, i32)> {
-        if matches!(self.selection_state.mode, SelectionMode::Moving) {
-            Some(self.selection_state.move_offset)
-        } else {
-            None
-        }
-    }
-
-    // Selection mode methods
-    pub fn start_selection(&mut self, x: u16, y: u16) {
-        self.selection_state.mode = SelectionMode::Selecting;
-        self.selection_state.select_start = Some((x, y));
-        self.selection_state.select_current = Some((x, y));
-        self.selection_state.has_dragged = false;
-    }
-
-    pub fn update_selection(&mut self, x: u16, y: u16) {
-        self.selection_state.select_current = Some((x, y));
-        self.selection_state.has_dragged = true;
-    }
-
-    pub fn finish_selection(&mut self, x: u16, y: u16) {
-        if let Some((sx, sy)) = self.selection_state.select_start {
-            if !self.selection_state.has_dragged || (sx == x && sy == y) {
-                // Click - select single element at this position
-                self.select_element_at(x as i32, y as i32);
-            } else {
-                // Drag - select rectangle
-                self.select_rectangle(sx, sy, x, y);
-            }
-        }
-        self.selection_state.select_start = None;
-        self.selection_state.select_current = None;
-        self.selection_state.has_dragged = false;
-    }
-
-    fn select_element_at(&mut self, x: i32, y: i32) {
-        // Find element at this position
-        if let Some(element_id) = self.canvas.find_element_at(x, y) {
-            self.selection_state.selected_ids.clear();
-            self.selection_state.selected_ids.push(element_id);
-            self.selection_state.mode = SelectionMode::Selected;
-        } else {
-            self.selection_state.mode = SelectionMode::Idle;
-        }
-    }
-
-    /// Toggle selection of element at position (for Shift+Click additive selection)
-    pub fn toggle_selection_at(&mut self, x: i32, y: i32) {
-        // Find element at this position
-        if let Some(element_id) = self.canvas.find_element_at(x, y) {
-            // Check if already selected
-            if let Some(pos) = self
-                .selection_state
-                .selected_ids
-                .iter()
-                .position(|&id| id == element_id)
-            {
-                // Remove from selection
-                self.selection_state.selected_ids.remove(pos);
-            } else {
-                // Add to selection
-                self.selection_state.selected_ids.push(element_id);
-            }
-
-            // Update mode based on whether we have selections
-            if self.selection_state.selected_ids.is_empty() {
-                self.selection_state.mode = SelectionMode::Idle;
-            } else {
-                self.selection_state.mode = SelectionMode::Selected;
-            }
-        }
-    }
-
-    fn select_rectangle(&mut self, x1: u16, y1: u16, x2: u16, y2: u16) {
-        let (left, right) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
-        let (top, bottom) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
-
-        // Find all elements that are fully contained within selection rectangle
-        let element_ids = self.canvas.find_elements_fully_inside_rect(
-            left as i32,
-            top as i32,
-            right as i32,
-            bottom as i32,
-        );
-
-        if !element_ids.is_empty() {
-            self.selection_state.selected_ids = element_ids;
-            self.selection_state.mode = SelectionMode::Selected;
-        } else {
-            self.selection_state.mode = SelectionMode::Idle;
-        }
-    }
-
-    pub fn start_move_selection(&mut self, x: u16, y: u16) {
-        // Check if clicking on or inside any selected element's bounds
-        let px = x as i32;
-        let py = y as i32;
-
-        for element_id in &self.selection_state.selected_ids {
-            if let Some(element) = self.canvas.get_element(*element_id) {
-                if element.point_in_bounds(px, py) {
-                    // Clicked inside a selected element's bounding box
-                    self.selection_state.mode = SelectionMode::Moving;
-                    self.selection_state.move_start = Some((x, y));
-                    self.selection_state.move_offset = (0, 0);
-                    return;
-                }
-            }
-        }
-    }
-
-    pub fn update_move_selection(&mut self, x: u16, y: u16) {
-        if let Some((start_x, start_y)) = self.selection_state.move_start {
-            self.selection_state.move_offset =
-                (x as i32 - start_x as i32, y as i32 - start_y as i32);
-        }
-    }
-
-    pub fn finish_move_selection(&mut self) {
-        let dx = self.selection_state.move_offset.0;
-        let dy = self.selection_state.move_offset.1;
-
-        // Move all selected elements by offset
-        for element_id in &self.selection_state.selected_ids {
-            if let Some(element) = self.canvas.get_element_mut(*element_id) {
-                element.translate(dx, dy);
-            }
-        }
-
-        self.selection_state.mode = SelectionMode::Selected;
-        self.selection_state.move_start = None;
-        self.selection_state.move_offset = (0, 0);
-    }
-
-    pub fn is_in_selection_mode(&self) -> bool {
-        !matches!(self.selection_state.mode, SelectionMode::Idle)
-    }
-
-    pub fn deselect(&mut self) {
-        // Just clear selection - elements are already on canvas
-        self.selection_state.reset();
-    }
-
-    /// Move selected elements by offset (used for arrow key movement)
-    pub fn move_selected_elements(&mut self, dx: i32, dy: i32) {
-        if self.selection_state.selected_ids.is_empty() {
-            return;
-        }
-
-        for element_id in &self.selection_state.selected_ids {
-            if let Some(element) = self.canvas.get_element_mut(*element_id) {
-                element.translate(dx, dy);
-            }
-        }
-    }
-
-    /// Delete selected elements
-    pub fn delete_selected_elements(&mut self) {
-        if self.selection_state.selected_ids.is_empty() {
-            return;
-        }
-
-        // Remove elements from canvas
-        for element_id in &self.selection_state.selected_ids {
-            self.canvas.remove_element(*element_id);
-        }
-
-        // Clear selection
-        self.selection_state.reset();
-    }
+    // Text tool operations
 
     pub fn add_text_char(&mut self, c: char) {
         if let Some(tool) = &mut self.active_tool {
@@ -425,6 +227,81 @@ impl App {
         }
     }
 
+    // ============================================================================
+    // Selection Mode
+    // ============================================================================
+
+    /// Get selection box points for drag-selection visualization
+    pub fn get_selection_box_points(&self) -> Vec<(i32, i32, char)> {
+        self.selection_state.get_selection_box_points()
+    }
+
+    /// Get IDs of selected elements
+    pub fn get_selected_element_ids(&self) -> &[usize] {
+        self.selection_state.get_selected_element_ids()
+    }
+
+    /// Get move offset for selected elements during moving
+    pub fn get_move_offset(&self) -> Option<(i32, i32)> {
+        self.selection_state.get_move_offset()
+    }
+
+    pub fn is_in_selection_mode(&self) -> bool {
+        self.selection_state.is_in_selection_mode()
+    }
+
+    // Selection operations
+
+    pub fn start_selection(&mut self, x: u16, y: u16) {
+        self.selection_state.start_selection(x, y);
+    }
+
+    pub fn update_selection(&mut self, x: u16, y: u16) {
+        self.selection_state.update_selection(x, y);
+    }
+
+    pub fn finish_selection(&mut self, x: u16, y: u16) {
+        self.selection_state.finish_selection(x, y, &self.canvas);
+    }
+
+    /// Toggle selection of element at position (for Shift+Click additive selection)
+    pub fn toggle_selection_at(&mut self, x: i32, y: i32) {
+        self.selection_state.toggle_selection_at(x, y, &self.canvas);
+    }
+
+    pub fn start_move_selection(&mut self, x: u16, y: u16) {
+        self.selection_state
+            .start_move_selection(x, y, &self.canvas);
+    }
+
+    pub fn update_move_selection(&mut self, x: u16, y: u16) {
+        self.selection_state.update_move_selection(x, y);
+    }
+
+    pub fn finish_move_selection(&mut self) {
+        self.selection_state.finish_move_selection(&mut self.canvas);
+    }
+
+    pub fn deselect(&mut self) {
+        self.selection_state.deselect();
+    }
+
+    /// Move selected elements by offset (used for arrow key movement)
+    pub fn move_selected_elements(&mut self, dx: i32, dy: i32) {
+        self.selection_state
+            .move_selected_elements(dx, dy, &mut self.canvas);
+    }
+
+    /// Delete selected elements
+    pub fn delete_selected_elements(&mut self) {
+        self.selection_state
+            .delete_selected_elements(&mut self.canvas);
+    }
+
+    // ============================================================================
+    // UI State
+    // ============================================================================
+
     pub fn switch_panel(&mut self, panel: Panel) {
         self.active_panel = panel;
     }
@@ -434,42 +311,9 @@ impl App {
         self.cursor_y = y;
     }
 
-    pub fn select_tool(&mut self, tool: Tool) {
-        self.selected_tool = tool;
-        self.tool_index = Tool::all().iter().position(|&t| t == tool).unwrap_or(0);
-
-        // Create new tool instance based on selection (None for Select mode)
-        self.active_tool = match tool {
-            Tool::Select => None, // Selection is handled by selection_state, not as a tool
-            Tool::Line => Some(Box::new(LineTool::new())),
-            Tool::Rectangle => Some(Box::new(RectangleTool::new())),
-            Tool::Arrow => Some(Box::new(ArrowTool::new())),
-            Tool::Text => Some(Box::new(TextTool::new())),
-        };
-
-        // Deselect when switching away from Select tool
-        if tool != Tool::Select && self.is_in_selection_mode() {
-            self.deselect();
-        }
-    }
-
-    pub fn select_next_tool(&mut self) {
-        let tools = Tool::all();
-        self.tool_index = (self.tool_index + 1) % tools.len();
-        let tool = tools[self.tool_index];
-        self.select_tool(tool);
-    }
-
-    pub fn select_prev_tool(&mut self) {
-        let tools = Tool::all();
-        self.tool_index = if self.tool_index == 0 {
-            tools.len() - 1
-        } else {
-            self.tool_index - 1
-        };
-        let tool = tools[self.tool_index];
-        self.select_tool(tool);
-    }
+    // ============================================================================
+    // File I/O
+    // ============================================================================
 
     /// Save the diagram to a file
     pub fn save_to_file(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
