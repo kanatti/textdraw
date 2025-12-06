@@ -1,4 +1,4 @@
-use crate::canvas::Canvas;
+use crate::state::CanvasState;
 use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
 
 pub struct ToolState {
@@ -77,7 +77,7 @@ impl ToolState {
         }
     }
 
-    pub fn finish_drawing(&mut self, x: u16, y: u16, canvas: &mut Canvas) -> bool {
+    pub fn finish_drawing(&mut self, x: u16, y: u16, canvas: &mut CanvasState) -> bool {
         if let Some(tool) = &mut self.active_tool {
             let elements_before = canvas.elements().len();
             tool.on_mouse_up(x, y, canvas);
@@ -133,7 +133,7 @@ impl ToolState {
         }
     }
 
-    pub fn finish_text_input(&mut self, canvas: &mut Canvas) -> bool {
+    pub fn finish_text_input(&mut self, canvas: &mut CanvasState) -> bool {
         if let Some(tool) = &mut self.active_tool {
             let elements_before = canvas.elements().len();
             tool.on_mouse_up(0, 0, canvas);

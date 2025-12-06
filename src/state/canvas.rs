@@ -1,17 +1,16 @@
-use crate::drawing::algorithms;
 use crate::element::Element;
 use crate::file::DiagramFile;
-use anyhow::{Context, Result};
-use std::fs;
+use crate::geometry;
+use anyhow::Result;
 use std::path::Path;
 
 /// Represents the drawing canvas with element-based storage
-pub struct Canvas {
+pub struct CanvasState {
     elements: Vec<Element>,
     next_id: usize,
 }
 
-impl Canvas {
+impl CanvasState {
     pub fn new() -> Self {
         Self {
             elements: Vec::new(),
@@ -170,7 +169,7 @@ impl Canvas {
     fn rebuild_element(element: &mut Element) {
         match element {
             Element::Line(line) => {
-                line.points = algorithms::generate_line_points(
+                line.points = geometry::generate_line_points(
                     line.start.0,
                     line.start.1,
                     line.end.0,
@@ -179,7 +178,7 @@ impl Canvas {
                 line.bounds = crate::element::calculate_bounds(&line.points);
             }
             Element::Rectangle(rect) => {
-                rect.points = algorithms::generate_box_points(
+                rect.points = geometry::generate_box_points(
                     rect.top_left.0,
                     rect.top_left.1,
                     rect.bottom_right.0,
@@ -188,7 +187,7 @@ impl Canvas {
                 rect.bounds = crate::element::calculate_bounds(&rect.points);
             }
             Element::Arrow(arrow) => {
-                arrow.points = algorithms::generate_arrow_points(
+                arrow.points = geometry::generate_arrow_points(
                     arrow.start.0,
                     arrow.start.1,
                     arrow.end.0,
@@ -210,7 +209,7 @@ impl Canvas {
     }
 }
 
-impl Default for Canvas {
+impl Default for CanvasState {
     fn default() -> Self {
         Self::new()
     }

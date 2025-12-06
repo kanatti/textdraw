@@ -1,5 +1,6 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
+use crate::controllers::help;
 use crate::events::{EventHandler, EventResult};
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
@@ -244,36 +245,36 @@ impl HelpModal {
 }
 
 impl EventHandler for HelpModal {
-    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
-        if !app.help.show {
+    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+        if !state.help.show {
             return EventResult::Ignored;
         }
 
         match key_event.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                app.scroll_help_up();
+                help::scroll_up(&mut state.help);
                 EventResult::Consumed
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                app.scroll_help_down();
+                help::scroll_down(&mut state.help, &state.layout);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,
         }
     }
 
-    fn handle_mouse_scroll(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        if !app.help.show {
+    fn handle_mouse_scroll(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        if !state.help.show {
             return EventResult::Ignored;
         }
 
         match mouse_event.kind {
             MouseEventKind::ScrollUp => {
-                app.scroll_help_up();
+                help::scroll_up(&mut state.help);
                 EventResult::Consumed
             }
             MouseEventKind::ScrollDown => {
-                app.scroll_help_down();
+                help::scroll_down(&mut state.help, &state.layout);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,
@@ -282,8 +283,8 @@ impl EventHandler for HelpModal {
 }
 
 impl Component for HelpModal {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        if !app.help.show {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        if !state.help.show {
             return;
         }
 
@@ -304,7 +305,7 @@ impl Component for HelpModal {
                     .padding(Padding::new(1, 1, 1, 1)),
             )
             .alignment(Alignment::Left)
-            .scroll((app.help.scroll, 0));
+            .scroll((state.help.scroll, 0));
 
         frame.render_widget(help, area);
 
@@ -322,7 +323,7 @@ impl Component for HelpModal {
 
         let max_scroll = Self::max_scroll(area.height);
         let mut scrollbar_state =
-            ScrollbarState::new(max_scroll as usize).position(app.help.scroll as usize);
+            ScrollbarState::new(max_scroll as usize).position(state.help.scroll as usize);
 
         frame.render_stateful_widget(scrollbar, scrollbar_area, &mut scrollbar_state);
     }

@@ -1,4 +1,4 @@
-use crate::canvas::Canvas;
+use crate::state::CanvasState;
 use crate::types::SelectionMode;
 
 pub struct SelectionState {
@@ -111,7 +111,7 @@ impl SelectionState {
 
     // Selection operations that need Canvas access
 
-    pub fn finish_selection(&mut self, x: u16, y: u16, canvas: &Canvas) {
+    pub fn finish_selection(&mut self, x: u16, y: u16, canvas: &CanvasState) {
         if let Some((sx, sy)) = self.select_start {
             if !self.has_dragged || (sx == x && sy == y) {
                 // Click - select single element at this position
@@ -126,7 +126,7 @@ impl SelectionState {
         self.has_dragged = false;
     }
 
-    fn select_element_at(&mut self, x: i32, y: i32, canvas: &Canvas) {
+    fn select_element_at(&mut self, x: i32, y: i32, canvas: &CanvasState) {
         // Find element at this position
         if let Some(element_id) = canvas.find_element_at(x, y) {
             self.selected_ids.clear();
@@ -137,7 +137,7 @@ impl SelectionState {
         }
     }
 
-    fn select_rectangle(&mut self, x1: u16, y1: u16, x2: u16, y2: u16, canvas: &Canvas) {
+    fn select_rectangle(&mut self, x1: u16, y1: u16, x2: u16, y2: u16, canvas: &CanvasState) {
         let (left, right) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
         let (top, bottom) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
 
@@ -158,7 +158,7 @@ impl SelectionState {
     }
 
     /// Toggle selection of element at position (for Shift+Click additive selection)
-    pub fn toggle_selection_at(&mut self, x: i32, y: i32, canvas: &Canvas) {
+    pub fn toggle_selection_at(&mut self, x: i32, y: i32, canvas: &CanvasState) {
         // Find element at this position
         if let Some(element_id) = canvas.find_element_at(x, y) {
             // Check if already selected
@@ -181,7 +181,7 @@ impl SelectionState {
 
     // Move operations
 
-    pub fn start_move_selection(&mut self, x: u16, y: u16, canvas: &Canvas) {
+    pub fn start_move_selection(&mut self, x: u16, y: u16, canvas: &CanvasState) {
         // Check if clicking on or inside any selected element's bounds
         let px = x as i32;
         let py = y as i32;
@@ -199,7 +199,7 @@ impl SelectionState {
         }
     }
 
-    pub fn finish_move_selection(&mut self, canvas: &mut Canvas) {
+    pub fn finish_move_selection(&mut self, canvas: &mut CanvasState) {
         let dx = self.move_offset.0;
         let dy = self.move_offset.1;
 
@@ -216,7 +216,7 @@ impl SelectionState {
     }
 
     /// Move selected elements by offset (used for arrow key movement)
-    pub fn move_selected_elements(&mut self, dx: i32, dy: i32, canvas: &mut Canvas) {
+    pub fn move_selected_elements(&mut self, dx: i32, dy: i32, canvas: &mut CanvasState) {
         if self.selected_ids.is_empty() {
             return;
         }
@@ -229,7 +229,7 @@ impl SelectionState {
     }
 
     /// Delete selected elements
-    pub fn delete_selected_elements(&mut self, canvas: &mut Canvas) {
+    pub fn delete_selected_elements(&mut self, canvas: &mut CanvasState) {
         if self.selected_ids.is_empty() {
             return;
         }

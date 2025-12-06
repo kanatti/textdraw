@@ -1,6 +1,6 @@
-use crate::canvas::Canvas;
-use crate::drawing::algorithms;
 use crate::element::{Element, RectangleElement};
+use crate::geometry;
+use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 
 pub struct RectangleTool {
@@ -27,12 +27,12 @@ impl DrawingTool for RectangleTool {
         self.current = Some((x, y));
     }
 
-    fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut Canvas) {
+    fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut CanvasState) {
         if let Some((sx, sy)) = self.start {
             // Only create rectangle if the user actually dragged (not a single click)
             if sx != x || sy != y {
                 let points =
-                    algorithms::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
+                    geometry::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
                 let id = canvas.get_next_id();
                 let (left, right) = if sx <= x { (sx, x) } else { (x, sx) };
                 let (top, bottom) = if sy <= y { (sy, y) } else { (y, sy) };
@@ -51,7 +51,7 @@ impl DrawingTool for RectangleTool {
 
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
         if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            algorithms::box_preview_points(sx as i32, sy as i32, cx as i32, cy as i32)
+            geometry::box_preview_points(sx as i32, sy as i32, cx as i32, cy as i32)
         } else {
             vec![]
         }

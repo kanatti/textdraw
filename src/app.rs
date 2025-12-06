@@ -1,13 +1,19 @@
-use crate::canvas::Canvas;
 use crate::state::{
-    CommandExecutor, CommandState, FileState, HelpState, SelectionState, ToolState,
+    CanvasState, CommandExecutor, CommandState, FileState, SelectionState, ToolState,
 };
 use crate::types::Panel;
 use crate::ui::UILayout;
 use std::path::Path;
 
+/// Help modal state
+#[derive(Debug, Default, Clone)]
+pub struct HelpState {
+    pub show: bool,
+    pub scroll: u16,
+}
+
 /// Main application state
-pub struct App {
+pub struct AppState {
     pub cursor_x: u16,
     pub cursor_y: u16,
     pub active_panel: Panel,
@@ -17,23 +23,23 @@ pub struct App {
     pub tool: ToolState,
     pub file: FileState,
     // Drawing canvas
-    pub canvas: Canvas,
+    pub canvas: CanvasState,
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
 }
 
-impl App {
+impl AppState {
     pub fn new() -> Self {
         Self {
             cursor_x: 0,
             cursor_y: 0,
             active_panel: Panel::Canvas,
             layout: UILayout::default(),
-            help: HelpState::new(),
+            help: HelpState::default(),
             command: CommandState::new(),
             tool: ToolState::new(),
             file: FileState::new(),
-            canvas: Canvas::default(),
+            canvas: CanvasState::default(),
             selection_state: SelectionState::new(),
         }
     }
@@ -75,18 +81,7 @@ impl App {
     // ============================================================================
     // Help Modal
     // ============================================================================
-
-    pub fn toggle_help(&mut self) {
-        self.help.toggle();
-    }
-
-    pub fn scroll_help_up(&mut self) {
-        self.help.scroll_up();
-    }
-
-    pub fn scroll_help_down(&mut self) {
-        self.help.scroll_down(&self.layout);
-    }
+    // Help operations are now handled by controllers::help
 
     // ============================================================================
     // Tool Management & Drawing
@@ -274,7 +269,7 @@ impl App {
     }
 }
 
-impl Default for App {
+impl Default for AppState {
     fn default() -> Self {
         Self::new()
     }

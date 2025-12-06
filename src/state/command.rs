@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 
 /// Actions that can be triggered by command execution
 #[derive(Debug, Clone, PartialEq)]
@@ -118,33 +118,33 @@ impl CommandState {
     }
 }
 
-/// Executes command actions on the app
+/// Executes command actions on the app state
 pub struct CommandExecutor;
 
 impl CommandExecutor {
-    pub fn execute(action: CommandAction, app: &mut App) {
+    pub fn execute(action: CommandAction, state: &mut AppState) {
         match action {
             CommandAction::Save(path) => {
-                if let Err(e) = app.file.save_to_file(&app.canvas, &path) {
-                    app.file.status_message = Some(format!("Error: {}", e));
+                if let Err(e) = state.file.save_to_file(&state.canvas, &path) {
+                    state.file.status_message = Some(format!("Error: {}", e));
                 }
             }
             CommandAction::SaveCurrent => {
-                if let Some(current) = app.file.current_file.clone() {
-                    if let Err(e) = app.file.save_to_file(&app.canvas, &current) {
-                        app.file.status_message = Some(format!("Error: {}", e));
+                if let Some(current) = state.file.current_file.clone() {
+                    if let Err(e) = state.file.save_to_file(&state.canvas, &current) {
+                        state.file.status_message = Some(format!("Error: {}", e));
                     }
                 } else {
-                    app.file.status_message = Some("No filename specified".to_string());
+                    state.file.status_message = Some("No filename specified".to_string());
                 }
             }
             CommandAction::Open(path) => {
-                if let Err(e) = app.file.load_from_file(&mut app.canvas, &path) {
-                    app.file.status_message = Some(format!("Error: {}", e));
+                if let Err(e) = state.file.load_from_file(&mut state.canvas, &path) {
+                    state.file.status_message = Some(format!("Error: {}", e));
                 }
             }
             CommandAction::Message(msg) => {
-                app.file.status_message = Some(msg);
+                state.file.status_message = Some(msg);
             }
             CommandAction::None => {}
         }

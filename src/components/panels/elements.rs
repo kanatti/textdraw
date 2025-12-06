@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
 use crate::types::Panel;
@@ -15,14 +15,14 @@ impl ElementsPanel {
 impl EventHandler for ElementsPanel {}
 
 impl Component for ElementsPanel {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        let Some(area) = app.layout.elements else {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        let Some(area) = state.layout.elements else {
             return;
         };
 
         let elements = vec![Line::from(""), Line::from("  (empty)")];
 
-        let block = super::create_panel_block("[2]-Elements", Panel::Elements, app);
+        let block = super::create_panel_block("[2]-Elements", Panel::Elements, state);
         let widget = Paragraph::new(elements).block(block);
 
         frame.render_widget(widget, area);

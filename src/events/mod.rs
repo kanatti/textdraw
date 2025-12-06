@@ -1,6 +1,6 @@
 mod global;
 
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::{
     CanvasComponent, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
@@ -29,33 +29,33 @@ pub enum EventResult {
 
 /// Event handler trait for components
 pub trait EventHandler: Sync {
-    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
-        let _ = (app, key_event);
+    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+        let _ = (state, key_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        let _ = (app, mouse_event);
+    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_up(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        let _ = (app, mouse_event);
+    fn handle_mouse_up(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_moved(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        let _ = (app, mouse_event);
+    fn handle_mouse_moved(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_drag(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        let _ = (app, mouse_event);
+    fn handle_mouse_drag(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_scroll(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        let _ = (app, mouse_event);
+    fn handle_mouse_scroll(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        let _ = (state, mouse_event);
         EventResult::Ignored
     }
 }
@@ -76,9 +76,9 @@ pub fn default_handlers() -> Vec<&'static dyn EventHandler> {
 }
 
 macro_rules! dispatch_event {
-    ($handlers:expr, $app:expr, $event:expr, $method:ident) => {{
+    ($handlers:expr, $state:expr, $event:expr, $method:ident) => {{
         for handler in $handlers {
-            match handler.$method($app, $event) {
+            match handler.$method($state, $event) {
                 EventResult::Consumed => break,
                 EventResult::Action(ActionType::Quit) => return Ok(true),
                 EventResult::Ignored => continue,
@@ -87,34 +87,36 @@ macro_rules! dispatch_event {
     }};
 }
 
-pub fn handle_event(app: &mut App, event: Event, handlers: EventHandlers) -> Result<bool> {
+pub fn handle_event(event: Event, handlers: EventHandlers, state: &mut AppState) -> Result<bool> {
     match event {
-        Event::Key(key_event) => handle_key_event(app, key_event, handlers),
-        Event::Mouse(mouse_event) => handle_mouse_event(app, mouse_event, handlers),
+        Event::Key(key_event) => {
+            dispatch_event!(handlers, state, &key_event, handle_key_event);
+            Ok(false)
+        }
+        Event::Mouse(mouse_event) => handle_mouse_event(mouse_event, handlers, state),
         _ => Ok(false),
     }
 }
 
-fn handle_key_event(app: &mut App, key_event: KeyEvent, handlers: EventHandlers) -> Result<bool> {
-    dispatch_event!(handlers, app, &key_event, handle_key_event);
-    Ok(false)
-}
-
 fn handle_mouse_event(
-    app: &mut App,
     mouse_event: crossterm::event::MouseEvent,
     handlers: EventHandlers,
+    state: &mut AppState,
 ) -> Result<bool> {
     match mouse_event.kind {
-        MouseEventKind::Down(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_down),
-        MouseEventKind::Up(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_up),
-        MouseEventKind::Moved => dispatch_event!(handlers, app, &mouse_event, handle_mouse_moved),
-        MouseEventKind::Drag(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_drag),
+        MouseEventKind::Down(_) => {
+            dispatch_event!(handlers, state, &mouse_event, handle_mouse_down)
+        }
+        MouseEventKind::Up(_) => dispatch_event!(handlers, state, &mouse_event, handle_mouse_up),
+        MouseEventKind::Moved => dispatch_event!(handlers, state, &mouse_event, handle_mouse_moved),
+        MouseEventKind::Drag(_) => {
+            dispatch_event!(handlers, state, &mouse_event, handle_mouse_drag)
+        }
         MouseEventKind::ScrollDown
         | MouseEventKind::ScrollUp
         | MouseEventKind::ScrollLeft
         | MouseEventKind::ScrollRight => {
-            dispatch_event!(handlers, app, &mouse_event, handle_mouse_scroll)
+            dispatch_event!(handlers, state, &mouse_event, handle_mouse_scroll)
         }
     }
     Ok(false)

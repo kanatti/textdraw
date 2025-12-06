@@ -9,7 +9,7 @@ pub use line::LineTool;
 pub use rectangle::RectangleTool;
 pub use text::TextTool;
 
-use crate::canvas::Canvas;
+use crate::state::CanvasState;
 
 /// Macro to define the Tool enum with associated names and keyboard shortcuts.
 ///
@@ -70,7 +70,7 @@ pub trait DrawingTool {
     fn on_mouse_drag(&mut self, x: u16, y: u16);
 
     /// Called when mouse button is released - commits drawing to canvas
-    fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut Canvas);
+    fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut CanvasState);
 
     /// Get preview points for rendering during drag (x, y, char)
     fn preview_points(&self) -> Vec<(i32, i32, char)> {

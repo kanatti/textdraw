@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::{
     CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
@@ -8,7 +8,7 @@ use ratatui::{
 };
 
 /// Render the UI based on current App state.
-pub fn render(frame: &mut Frame, app: &App) {
+pub fn render(frame: &mut Frame, state: &AppState) {
     // Draw components
     let components: Vec<Box<dyn Component>> = vec![
         Box::new(ToolsPanel::new()),
@@ -20,7 +20,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     ];
 
     for component in components {
-        component.draw(app, frame);
+        component.draw(state, frame);
     }
 }
 

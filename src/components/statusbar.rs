@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
 use ratatui::{
@@ -19,19 +19,19 @@ impl StatusBar {
 impl EventHandler for StatusBar {}
 
 impl Component for StatusBar {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        let Some(area) = app.layout.statusbar else {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        let Some(area) = state.layout.statusbar else {
             return;
         };
 
         // If command mode is active, show it
-        if app.is_command_mode_active() {
+        if state.is_command_mode_active() {
             // Split command from arguments (e.g., "save filename" -> "save" + " filename")
             let mut spans = vec![Span::raw(" ")];
 
-            if let Some(space_idx) = app.command.buffer.find(' ') {
+            if let Some(space_idx) = state.command.buffer.find(' ') {
                 // Has arguments - show command in yellow, args in white
-                let (cmd, args) = app.command.buffer.split_at(space_idx);
+                let (cmd, args) = state.command.buffer.split_at(space_idx);
                 spans.push(Span::styled(
                     format!(":{}", cmd),
                     Style::default().fg(Color::Yellow),
@@ -40,7 +40,7 @@ impl Component for StatusBar {
             } else {
                 // No arguments - show entire thing in yellow
                 spans.push(Span::styled(
-                    format!(":{}", app.command.buffer),
+                    format!(":{}", state.command.buffer),
                     Style::default().fg(Color::Yellow),
                 ));
             }
@@ -55,7 +55,7 @@ impl Component for StatusBar {
         }
 
         // If there's a status message, show it
-        if let Some(ref message) = app.file.status_message {
+        if let Some(ref message) = state.file.status_message {
             // Show errors in red, success messages in green
             let color = if message.starts_with("Error") {
                 Color::Red
@@ -77,19 +77,19 @@ impl Component for StatusBar {
         // Normal statusbar
         let mut spans = vec![
             Span::raw(" Cursor: ("),
-            Span::raw(app.cursor_x.to_string()),
+            Span::raw(state.cursor_x.to_string()),
             Span::raw(", "),
-            Span::raw(app.cursor_y.to_string()),
+            Span::raw(state.cursor_y.to_string()),
             Span::raw(") | Tool: "),
             Span::styled(
-                app.tool.selected_tool.name(),
+                state.tool.selected_tool.name(),
                 Style::default().fg(Color::Yellow),
             ),
         ];
 
         // Add contextual help based on selection state
-        if app.is_select_tool() {
-            let selected_ids = app.get_selected_element_ids();
+        if state.is_select_tool() {
+            let selected_ids = state.get_selected_element_ids();
             if !selected_ids.is_empty() {
                 spans.push(Span::raw(" | Selected: "));
                 spans.push(Span::styled(

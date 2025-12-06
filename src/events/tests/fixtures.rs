@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::events::{ActionType, EventHandler, EventResult};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -41,27 +41,27 @@ impl ConsumeHandler {
 }
 
 impl EventHandler for ConsumeHandler {
-    fn handle_key_event(&self, _app: &mut App, _key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&self, _state: &mut AppState, _key_event: &KeyEvent) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
 
-    fn handle_mouse_down(&self, _app: &mut App, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
 
-    fn handle_mouse_up(&self, _app: &mut App, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(&self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
 
-    fn handle_mouse_moved(&self, _app: &mut App, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(&self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&self, _app: &mut App, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(&self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
@@ -70,7 +70,7 @@ impl EventHandler for ConsumeHandler {
 // Dummy handler that returns quit action for 'q' key
 pub struct QuitHandler;
 impl EventHandler for QuitHandler {
-    fn handle_key_event(&self, _app: &mut App, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&self, _state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         match key_event.code {
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
             _ => EventResult::Ignored,

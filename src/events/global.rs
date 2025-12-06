@@ -1,4 +1,5 @@
-use crate::app::App;
+use crate::app::AppState;
+use crate::controllers::help;
 use crate::events::{ActionType, EventHandler, EventResult};
 use crate::input;
 use crate::tools::Tool;
@@ -9,24 +10,24 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 pub struct GlobalHandler;
 
 impl EventHandler for GlobalHandler {
-    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle command mode if active
-        if app.is_command_mode_active() {
+        if state.is_command_mode_active() {
             return match key_event.code {
                 KeyCode::Char(c) => {
-                    app.add_char_to_command(c);
+                    state.add_char_to_command(c);
                     EventResult::Consumed
                 }
                 KeyCode::Backspace => {
-                    app.backspace_command();
+                    state.backspace_command();
                     EventResult::Consumed
                 }
                 KeyCode::Enter => {
-                    app.execute_command();
+                    state.execute_command();
                     EventResult::Consumed
                 }
                 KeyCode::Esc => {
-                    app.exit_command_mode();
+                    state.exit_command_mode();
                     EventResult::Consumed
                 }
                 _ => EventResult::Consumed, // Consume all other keys while in command mode
@@ -38,12 +39,12 @@ impl EventHandler for GlobalHandler {
             return match key_event.code {
                 KeyCode::Char('s') => {
                     // Pre-fill with :save or :w
-                    app.enter_command_mode_with("save ");
+                    state.enter_command_mode_with("save ");
                     EventResult::Consumed
                 }
                 KeyCode::Char('o') => {
                     // Pre-fill with :open or :e
-                    app.enter_command_mode_with("open ");
+                    state.enter_command_mode_with("open ");
                     EventResult::Consumed
                 }
                 _ => EventResult::Ignored,
@@ -53,12 +54,12 @@ impl EventHandler for GlobalHandler {
         match key_event.code {
             KeyCode::Char(':') => {
                 // Enter command mode
-                app.enter_command_mode();
+                state.enter_command_mode();
                 EventResult::Consumed
             }
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
             KeyCode::Char('?') => {
-                app.toggle_help();
+                help::toggle(&mut state.help);
                 EventResult::Consumed
             }
             // Panel shortcuts
@@ -70,23 +71,23 @@ impl EventHandler for GlobalHandler {
                     '3' => Panel::Properties,
                     _ => unreachable!("Unhandled panel switch"),
                 };
-                app.switch_panel(panel);
+                state.switch_panel(panel);
                 EventResult::Consumed
             }
             // Tool shortcuts
             KeyCode::Esc => {
                 // Close help modal if open, otherwise switch to Select tool
-                if app.help.show {
-                    app.toggle_help();
+                if state.help.show {
+                    help::toggle(&mut state.help);
                 } else {
-                    app.select_tool(Tool::Select);
+                    state.select_tool(Tool::Select);
                 }
                 EventResult::Consumed
             }
             // Tool selection - automatically handles all tools defined in types.rs
             KeyCode::Char(c) => {
                 if let Some(tool) = Tool::from_key(c) {
-                    app.select_tool(tool);
+                    state.select_tool(tool);
                     EventResult::Consumed
                 } else {
                     EventResult::Ignored
@@ -96,15 +97,15 @@ impl EventHandler for GlobalHandler {
         }
     }
 
-    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Handle panel click - but if it's canvas, let it continue to canvas handling
         let coord = Coord {
             x: mouse_event.column,
             y: mouse_event.row,
         };
-        let panel_click = input::detect_panel_click(coord, &app.layout);
+        let panel_click = input::detect_panel_click(coord, &state.layout);
         if let Some(panel) = panel_click {
-            app.switch_panel(panel);
+            state.switch_panel(panel);
             // Only consume if it's NOT the canvas (canvas needs further processing by CanvasComponent)
             if panel != Panel::Canvas {
                 return EventResult::Consumed;

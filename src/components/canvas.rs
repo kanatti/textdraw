@@ -1,5 +1,6 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
+use crate::controllers::canvas;
 use crate::events::{EventHandler, EventResult};
 use crate::tools::Tool;
 use crate::types::{Panel, SelectionMode};
@@ -20,29 +21,29 @@ impl CanvasComponent {
 }
 
 impl EventHandler for CanvasComponent {
-    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle text input when text tool is active and in drawing mode
-        if app.is_text_input_mode() {
+        if state.is_text_input_mode() {
             return match key_event.code {
                 KeyCode::Char(c) => {
-                    app.add_text_char(c);
+                    state.add_text_char(c);
                     EventResult::Consumed
                 }
                 KeyCode::Backspace => {
-                    app.text_backspace();
+                    state.text_backspace();
                     EventResult::Consumed
                 }
                 KeyCode::Enter | KeyCode::Esc => {
                     // Commit or cancel text
                     if key_event.code == KeyCode::Enter {
-                        let element_created = app.finish_text_input();
+                        let element_created = state.finish_text_input();
 
                         // Switch to Select tool if not locked AND an element was actually created
-                        if !app.tool.tool_locked && element_created {
-                            app.select_tool(Tool::Select);
+                        if !state.tool.tool_locked && element_created {
+                            state.select_tool(Tool::Select);
                         }
                     } else {
-                        app.cancel_drawing();
+                        state.cancel_drawing();
                     }
                     EventResult::Consumed
                 }
@@ -51,7 +52,7 @@ impl EventHandler for CanvasComponent {
         }
 
         // Handle selection operations (move/delete)
-        if app.is_select_tool() && app.is_in_selection_mode() {
+        if state.is_select_tool() && state.is_in_selection_mode() {
             match key_event.code {
                 KeyCode::Up | KeyCode::Down | KeyCode::Left | KeyCode::Right => {
                     let (dx, dy) = match key_event.code {
@@ -61,11 +62,11 @@ impl EventHandler for CanvasComponent {
                         KeyCode::Right => (1, 0),
                         _ => unreachable!(),
                     };
-                    app.move_selected_elements(dx, dy);
+                    state.move_selected_elements(dx, dy);
                     return EventResult::Consumed;
                 }
                 KeyCode::Delete | KeyCode::Backspace => {
-                    app.delete_selected_elements();
+                    state.delete_selected_elements();
                     return EventResult::Consumed;
                 }
                 _ => {}
@@ -75,70 +76,70 @@ impl EventHandler for CanvasComponent {
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // If text tool is active and we're in text input mode, finish the text
-        if app.is_text_input_mode() {
-            let element_created = app.finish_text_input();
+        if state.is_text_input_mode() {
+            let element_created = state.finish_text_input();
 
             // Switch to Select tool if not locked AND an element was actually created
-            if !app.tool.tool_locked && element_created {
-                app.select_tool(Tool::Select);
+            if !state.tool.tool_locked && element_created {
+                state.select_tool(Tool::Select);
             }
         }
 
         // Only handle if canvas is active
-        if app.active_panel != Panel::Canvas {
+        if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
         }
 
         // Convert to canvas coordinates
-        let canvas_coords = self.to_canvas_coords(app, mouse_event.column, mouse_event.row);
+        let canvas_coords = self.to_canvas_coords(state, mouse_event.column, mouse_event.row);
         let Some((canvas_x, canvas_y)) = canvas_coords else {
             return EventResult::Ignored;
         };
 
         // Handle based on tool
-        if app.is_select_tool() {
+        if state.is_select_tool() {
             let shift_pressed = mouse_event.modifiers.contains(KeyModifiers::SHIFT);
-            self.handle_selection_mouse_down(app, canvas_x, canvas_y, shift_pressed);
+            self.handle_selection_mouse_down(state, canvas_x, canvas_y, shift_pressed);
         } else {
-            app.start_drawing(canvas_x, canvas_y);
+            state.start_drawing(canvas_x, canvas_y);
         }
 
         EventResult::Consumed
     }
 
-    fn handle_mouse_up(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
-        if app.active_panel != Panel::Canvas {
+        if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
         }
 
         let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
         else {
             return EventResult::Ignored;
         };
 
-        if app.is_select_tool() {
+        if state.is_select_tool() {
             // Selection mode: finish selection or move
-            match app.selection_state.mode {
+            match state.selection_state.mode {
                 SelectionMode::Selecting => {
-                    app.finish_selection(canvas_x, canvas_y);
+                    state.finish_selection(canvas_x, canvas_y);
                 }
                 SelectionMode::Moving => {
-                    app.finish_move_selection();
+                    state.finish_move_selection();
                 }
                 _ => {}
             }
         } else {
             // Finish drawing on mouse up (except for text tool which finishes on Enter)
-            if app.is_drawing() && !app.is_text_input_mode() {
-                let element_created = app.finish_drawing(canvas_x, canvas_y);
+            if state.is_drawing() && !state.is_text_input_mode() {
+                let element_created = state.finish_drawing(canvas_x, canvas_y);
 
                 // Switch to Select tool if not locked AND an element was actually created
-                if !app.tool.tool_locked && element_created {
-                    app.select_tool(Tool::Select);
+                if !state.tool.tool_locked && element_created {
+                    state.select_tool(Tool::Select);
                 }
             }
         }
@@ -146,49 +147,49 @@ impl EventHandler for CanvasComponent {
         EventResult::Consumed
     }
 
-    fn handle_mouse_moved(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
-        if app.active_panel != Panel::Canvas {
+        if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
         }
 
         // Update cursor position
         if let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
         {
-            app.update_cursor(canvas_x, canvas_y);
+            state.update_cursor(canvas_x, canvas_y);
         }
 
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
-        if app.active_panel != Panel::Canvas {
+        if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
         }
 
         let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
         else {
             return EventResult::Ignored;
         };
 
-        app.update_cursor(canvas_x, canvas_y);
+        state.update_cursor(canvas_x, canvas_y);
 
-        if app.is_select_tool() {
+        if state.is_select_tool() {
             // Selection mode: update selection or move
-            if app.is_in_selection_mode() {
-                if app.selection_state.mode == SelectionMode::Selecting {
-                    app.update_selection(canvas_x, canvas_y);
-                } else if app.selection_state.mode == SelectionMode::Moving {
-                    app.update_move_selection(canvas_x, canvas_y);
+            if state.is_in_selection_mode() {
+                if state.selection_state.mode == SelectionMode::Selecting {
+                    state.update_selection(canvas_x, canvas_y);
+                } else if state.selection_state.mode == SelectionMode::Moving {
+                    state.update_move_selection(canvas_x, canvas_y);
                 }
             }
         } else {
             // Handle dragging for drawing preview
-            if app.is_drawing() {
-                app.update_drawing(canvas_x, canvas_y);
+            if state.is_drawing() {
+                state.update_drawing(canvas_x, canvas_y);
             }
         }
 
@@ -198,8 +199,8 @@ impl EventHandler for CanvasComponent {
 
 impl CanvasComponent {
     /// Convert screen coordinates to canvas coordinates
-    fn to_canvas_coords(&self, app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
-        if let Some(canvas_area) = app.layout.canvas {
+    fn to_canvas_coords(&self, state: &AppState, column: u16, row: u16) -> Option<(u16, u16)> {
+        if let Some(canvas_area) = state.layout.canvas {
             // First check if click is within the canvas area at all
             if column < canvas_area.x
                 || column >= canvas_area.x + canvas_area.width
@@ -225,43 +226,43 @@ impl CanvasComponent {
     /// Handle mouse down in selection mode
     fn handle_selection_mouse_down(
         &self,
-        app: &mut App,
+        state: &mut AppState,
         canvas_x: u16,
         canvas_y: u16,
         shift_pressed: bool,
     ) {
         // Shift+Click: toggle selection at this position (additive selection)
         if shift_pressed {
-            app.toggle_selection_at(canvas_x as i32, canvas_y as i32);
+            state.toggle_selection_at(canvas_x as i32, canvas_y as i32);
             return;
         }
 
         // Normal click behavior
-        if app.is_in_selection_mode() {
+        if state.is_in_selection_mode() {
             // Check if clicking inside any selected element's bounds
-            let clicked_selected = self.is_clicking_selected_element(app, canvas_x, canvas_y);
+            let clicked_selected = self.is_clicking_selected_element(state, canvas_x, canvas_y);
 
             if clicked_selected {
                 // Start moving selection
-                app.start_move_selection(canvas_x, canvas_y);
+                state.start_move_selection(canvas_x, canvas_y);
             } else {
                 // Clicked outside selected elements - deselect and start new selection
-                app.deselect();
-                app.start_selection(canvas_x, canvas_y);
+                state.deselect();
+                state.start_selection(canvas_x, canvas_y);
             }
         } else {
             // No selection - start new selection
-            app.start_selection(canvas_x, canvas_y);
+            state.start_selection(canvas_x, canvas_y);
         }
     }
 
     /// Check if click is inside any selected element
-    fn is_clicking_selected_element(&self, app: &App, canvas_x: u16, canvas_y: u16) -> bool {
+    fn is_clicking_selected_element(&self, state: &AppState, canvas_x: u16, canvas_y: u16) -> bool {
         let px = canvas_x as i32;
         let py = canvas_y as i32;
 
-        for element_id in app.get_selected_element_ids() {
-            if let Some(element) = app.canvas.get_element(*element_id) {
+        for element_id in state.get_selected_element_ids() {
+            if let Some(element) = state.canvas.get_element(*element_id) {
                 if element.point_in_bounds(px, py) {
                     return true;
                 }
@@ -273,36 +274,36 @@ impl CanvasComponent {
 }
 
 impl Component for CanvasComponent {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        let Some(area) = app.layout.canvas else {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        let Some(area) = state.layout.canvas else {
             return;
         };
         let mut lines = vec![];
 
         // Get preview points from the active tool
-        let preview_points = app.get_preview_points();
+        let preview_points = state.get_preview_points();
         let preview_map: std::collections::HashMap<(i32, i32), char> = preview_points
             .into_iter()
             .map(|(x, y, ch)| ((x, y), ch))
             .collect();
 
         // Get selection box (grey) for drag-select
-        let selection_box = app.get_selection_box_points();
+        let selection_box = state.get_selection_box_points();
         let selection_box_map: std::collections::HashMap<(i32, i32), char> = selection_box
             .into_iter()
             .map(|(x, y, ch)| ((x, y), ch))
             .collect();
 
         // Get selected element IDs and move offset
-        let selected_ids = app.get_selected_element_ids();
-        let move_offset = app.get_move_offset();
+        let selected_ids = state.get_selected_element_ids();
+        let move_offset = state.get_move_offset();
 
         // Build render cache: map (x, y) -> (char, element_id)
         // This is O(total_points) instead of O(pixels × elements)
         let mut render_map: std::collections::HashMap<(i32, i32), (char, usize)> =
             std::collections::HashMap::new();
 
-        for element in app.canvas.elements() {
+        for element in state.canvas.elements() {
             let element_id = element.id();
             let is_selected = selected_ids.contains(&element_id);
 
@@ -331,15 +332,15 @@ impl Component for CanvasComponent {
 
                 // Check if actively selecting or moving
                 let is_actively_selecting_or_moving = matches!(
-                    app.selection_state.mode,
+                    state.selection_state.mode,
                     SelectionMode::Selecting | SelectionMode::Moving
                 );
 
                 // Check if hovering over a selected element (to hide cursor)
                 let mut hovering_selected = false;
-                if app.is_select_tool() && !selected_ids.is_empty() {
+                if state.is_select_tool() && !selected_ids.is_empty() {
                     for element_id in selected_ids {
-                        if let Some(element) = app.canvas.get_element(*element_id) {
+                        if let Some(element) = state.canvas.get_element(*element_id) {
                             if element.point_in_bounds(px, py) {
                                 hovering_selected = true;
                                 break;
@@ -348,9 +349,9 @@ impl Component for CanvasComponent {
                     }
                 }
 
-                if x == app.cursor_x
-                    && y == app.cursor_y
-                    && !app.is_drawing()
+                if x == state.cursor_x
+                    && y == state.cursor_y
+                    && !state.is_drawing()
                     && !is_actively_selecting_or_moving
                     && !hovering_selected
                 {
@@ -389,14 +390,14 @@ impl Component for CanvasComponent {
             lines.push(Line::from(line_chars));
         }
 
-        let canvas_style = if !app.help.show && app.active_panel == Panel::Canvas {
+        let canvas_style = if !state.help.show && state.active_panel == Panel::Canvas {
             Style::default().fg(Color::Green)
         } else {
             Style::default()
         };
 
         // Build title with filename if available
-        let title = if let Some(ref file) = app.file.current_file {
+        let title = if let Some(ref file) = state.file.current_file {
             // Extract just the filename from the path
             let filename = std::path::Path::new(file)
                 .file_name()

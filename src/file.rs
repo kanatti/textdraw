@@ -1,5 +1,5 @@
-use crate::canvas::Canvas;
 use crate::element::Element;
+use crate::state::CanvasState;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -49,7 +49,7 @@ impl DiagramFile {
 /// Render a diagram file to stdout without entering TUI mode
 pub fn render_file(file_path: &str) -> Result<()> {
     // Load the file
-    let mut canvas = Canvas::default();
+    let mut canvas = CanvasState::default();
     canvas.load_from_file(file_path)?;
 
     // Check if canvas has any elements

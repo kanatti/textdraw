@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
 use crate::tools::Tool;
@@ -73,28 +73,28 @@ impl ToolsPanel {
 }
 
 impl EventHandler for ToolsPanel {
-    fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Only handle when Tools panel is active
-        if app.active_panel != Panel::Tools {
+        if state.active_panel != Panel::Tools {
             return EventResult::Ignored;
         }
 
         match key_event.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                app.select_prev_tool();
+                state.select_prev_tool();
                 EventResult::Consumed
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                app.select_next_tool();
+                state.select_next_tool();
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,
         }
     }
 
-    fn handle_mouse_down(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle tool clicks when Tools panel is active
-        if app.active_panel != Panel::Tools {
+        if state.active_panel != Panel::Tools {
             return EventResult::Ignored;
         }
 
@@ -104,14 +104,14 @@ impl EventHandler for ToolsPanel {
             y: mouse_event.row,
         };
 
-        if self.detect_lock_click(coord, &app.layout) {
-            app.toggle_tool_lock();
+        if self.detect_lock_click(coord, &state.layout) {
+            state.toggle_tool_lock();
             return EventResult::Consumed;
         }
 
         // Check for tool click within the tools panel
-        if let Some(tool) = self.detect_tool_click(coord, &app.layout) {
-            app.select_tool(tool);
+        if let Some(tool) = self.detect_tool_click(coord, &state.layout) {
+            state.select_tool(tool);
             return EventResult::Consumed;
         }
 
@@ -120,15 +120,15 @@ impl EventHandler for ToolsPanel {
 }
 
 impl Component for ToolsPanel {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        let Some(area) = app.layout.tools else {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        let Some(area) = state.layout.tools else {
             return;
         };
 
         let mut lines = vec![Line::from("")];
 
         for tool in Tool::all() {
-            let is_selected = app.tool.selected_tool == tool;
+            let is_selected = state.tool.selected_tool == tool;
             let key = tool.key().to_string();
             let name = tool.name().to_string();
 
@@ -160,7 +160,7 @@ impl Component for ToolsPanel {
         lines.push(Line::from(""));
 
         // Add lock indicator
-        let (icon, text, color) = if app.tool.tool_locked {
+        let (icon, text, color) = if state.tool.tool_locked {
             ("✓", " Locked  ", Color::Green)
         } else {
             ("✗", " Unlocked", Color::Red)
@@ -172,7 +172,7 @@ impl Component for ToolsPanel {
         ]);
         lines.push(lock_line);
 
-        let block = super::create_panel_block("[1]-Tools", Panel::Tools, app);
+        let block = super::create_panel_block("[1]-Tools", Panel::Tools, state);
         let widget = Paragraph::new(lines).block(block);
 
         frame.render_widget(widget, area);

@@ -1,4 +1,4 @@
-use crate::canvas::Canvas;
+use crate::state::CanvasState;
 use std::path::Path;
 
 pub struct FileState {
@@ -27,7 +27,11 @@ impl FileState {
     // File I/O operations
 
     /// Save the diagram to a file
-    pub fn save_to_file(&mut self, canvas: &Canvas, path: impl AsRef<Path>) -> anyhow::Result<()> {
+    pub fn save_to_file(
+        &mut self,
+        canvas: &CanvasState,
+        path: impl AsRef<Path>,
+    ) -> anyhow::Result<()> {
         canvas.save_to_file(&path)?;
         self.current_file = Some(path.as_ref().display().to_string());
         self.status_message = Some(format!("Saved to {}", path.as_ref().display()));
@@ -37,7 +41,7 @@ impl FileState {
     /// Load a diagram from a file
     pub fn load_from_file(
         &mut self,
-        canvas: &mut Canvas,
+        canvas: &mut CanvasState,
         path: impl AsRef<Path>,
     ) -> anyhow::Result<()> {
         self.load_from_file_with_message(canvas, &path, true)
@@ -46,7 +50,7 @@ impl FileState {
     /// Load a diagram from a file, optionally showing a status message
     fn load_from_file_with_message(
         &mut self,
-        canvas: &mut Canvas,
+        canvas: &mut CanvasState,
         path: impl AsRef<Path>,
         show_message: bool,
     ) -> anyhow::Result<()> {
@@ -61,7 +65,7 @@ impl FileState {
     /// Load a diagram from a file silently (for initial load)
     pub fn load_from_file_silent(
         &mut self,
-        canvas: &mut Canvas,
+        canvas: &mut CanvasState,
         path: impl AsRef<Path>,
     ) -> anyhow::Result<()> {
         self.load_from_file_with_message(canvas, &path, false)

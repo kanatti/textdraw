@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::AppState;
 use crate::components::Component;
 use crate::element::Element;
 use crate::events::EventHandler;
@@ -135,18 +135,23 @@ impl PropertiesPanel {
 impl EventHandler for PropertiesPanel {}
 
 impl Component for PropertiesPanel {
-    fn draw(&self, app: &App, frame: &mut Frame) {
-        let Some(area) = app.layout.properties else {
+    fn draw(&self, state: &AppState, frame: &mut Frame) {
+        let Some(area) = state.layout.properties else {
             return;
         };
 
         let mut lines = vec![Self::blank_line()];
 
         // Check if exactly one element is selected
-        if app.selection_state.selected_ids.len() == 1 {
-            let element_id = app.selection_state.selected_ids[0];
+        if state.selection_state.selected_ids.len() == 1 {
+            let element_id = state.selection_state.selected_ids[0];
 
-            if let Some(element) = app.canvas.elements().iter().find(|e| e.id() == element_id) {
+            if let Some(element) = state
+                .canvas
+                .elements()
+                .iter()
+                .find(|e| e.id() == element_id)
+            {
                 // Common properties
                 let element_type = Self::get_element_type_name(element);
                 lines.push(Self::property_line("Type", element_type.to_string()));
@@ -164,7 +169,7 @@ impl Component for PropertiesPanel {
             } else {
                 lines.push(Line::from("  (element not found)"));
             }
-        } else if app.selection_state.selected_ids.is_empty() {
+        } else if state.selection_state.selected_ids.is_empty() {
             lines.push(Line::from("  (no selection)"));
         } else {
             lines.push(Line::from(vec![
@@ -172,14 +177,14 @@ impl Component for PropertiesPanel {
                 Span::styled(
                     format!(
                         "{} elements selected",
-                        app.selection_state.selected_ids.len()
+                        state.selection_state.selected_ids.len()
                     ),
                     Style::default().fg(Color::Yellow),
                 ),
             ]));
         }
 
-        let block = super::create_panel_block("[3]-Properties", Panel::Properties, app);
+        let block = super::create_panel_block("[3]-Properties", Panel::Properties, state);
         let widget = Paragraph::new(lines).block(block);
 
         frame.render_widget(widget, area);

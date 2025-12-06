@@ -6,7 +6,7 @@ pub use elements::ElementsPanel;
 pub use properties::PropertiesPanel;
 pub use tools::ToolsPanel;
 
-use crate::app::App;
+use crate::app::AppState;
 use crate::types::Panel;
 use ratatui::{
     style::{Color, Style},
@@ -14,8 +14,12 @@ use ratatui::{
 };
 
 /// Helper to create a styled panel block
-pub(super) fn create_panel_block<'a>(title: &'a str, panel: Panel, app: &'a App) -> Block<'a> {
-    let border_style = if !app.help.show && panel == app.active_panel {
+pub(super) fn create_panel_block<'a>(
+    title: &'a str,
+    panel: Panel,
+    state: &'a AppState,
+) -> Block<'a> {
+    let border_style = if !state.help.show && panel == state.active_panel {
         Style::default().fg(Color::Green)
     } else {
         Style::default()

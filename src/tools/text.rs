@@ -1,5 +1,5 @@
-use crate::canvas::Canvas;
 use crate::element::{Element, TextElement};
+use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use std::collections::HashMap;
 
@@ -40,7 +40,7 @@ impl DrawingTool for TextTool {
         // Text tool doesn't use drag
     }
 
-    fn on_mouse_up(&mut self, _x: u16, _y: u16, canvas: &mut Canvas) {
+    fn on_mouse_up(&mut self, _x: u16, _y: u16, canvas: &mut CanvasState) {
         // Commit text to canvas as a TextElement
         if let Some((px, py)) = self.position {
             if !self.text.is_empty() {
