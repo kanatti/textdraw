@@ -389,7 +389,7 @@ impl Component for CanvasComponent {
             lines.push(Line::from(line_chars));
         }
 
-        let canvas_style = if !app.show_help && app.active_panel == Panel::Canvas {
+        let canvas_style = if !app.help.show && app.active_panel == Panel::Canvas {
             Style::default().fg(Color::Green)
         } else {
             Style::default()

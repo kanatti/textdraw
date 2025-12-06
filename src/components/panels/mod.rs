@@ -15,7 +15,7 @@ use ratatui::{
 
 /// Helper to create a styled panel block
 pub(super) fn create_panel_block<'a>(title: &'a str, panel: Panel, app: &'a App) -> Block<'a> {
-    let border_style = if !app.show_help && panel == app.active_panel {
+    let border_style = if !app.help.show && panel == app.active_panel {
         Style::default().fg(Color::Green)
     } else {
         Style::default()

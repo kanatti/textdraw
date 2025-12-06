@@ -29,9 +29,9 @@ impl Component for StatusBar {
             // Split command from arguments (e.g., "save filename" -> "save" + " filename")
             let mut spans = vec![Span::raw(" ")];
 
-            if let Some(space_idx) = app.command_mode.buffer.find(' ') {
+            if let Some(space_idx) = app.command.buffer.find(' ') {
                 // Has arguments - show command in yellow, args in white
-                let (cmd, args) = app.command_mode.buffer.split_at(space_idx);
+                let (cmd, args) = app.command.buffer.split_at(space_idx);
                 spans.push(Span::styled(
                     format!(":{}", cmd),
                     Style::default().fg(Color::Yellow),
@@ -40,7 +40,7 @@ impl Component for StatusBar {
             } else {
                 // No arguments - show entire thing in yellow
                 spans.push(Span::styled(
-                    format!(":{}", app.command_mode.buffer),
+                    format!(":{}", app.command.buffer),
                     Style::default().fg(Color::Yellow),
                 ));
             }

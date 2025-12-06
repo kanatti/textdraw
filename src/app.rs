@@ -1,5 +1,5 @@
 use crate::canvas::Canvas;
-use crate::components::HelpModal;
+use crate::state::{CommandExecutor, CommandState, HelpState};
 use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
 use crate::types::{Panel, SelectionMode};
 use crate::ui::UILayout;
@@ -38,13 +38,6 @@ impl SelectionState {
     }
 }
 
-/// Command mode state - vim-like command line
-#[derive(Debug, Clone, PartialEq)]
-pub struct CommandMode {
-    pub buffer: String,
-    pub active: bool,
-}
-
 /// Main application state
 pub struct App {
     pub cursor_x: u16,
@@ -54,12 +47,11 @@ pub struct App {
     pub tool_index: usize, // For arrow key navigation
     pub tool_locked: bool, // If true, tool stays active after drawing
     pub layout: UILayout,
-    pub show_help: bool,
-    pub help_scroll: u16,
+    pub help: HelpState,
+    pub command: CommandState,
     // File state
     pub current_file: Option<String>, // Path to currently open file
     pub status_message: Option<String>, // Temporary message for statusbar
-    pub command_mode: CommandMode,    // Command mode state
     // Drawing canvas
     pub canvas: Canvas,
     // Active tool instance (None when in Select mode)
@@ -78,14 +70,10 @@ impl App {
             tool_index: 0,
             tool_locked: false,
             layout: UILayout::default(),
-            show_help: false,
-            help_scroll: 0,
+            help: HelpState::new(),
+            command: CommandState::new(),
             current_file: None,
             status_message: None,
-            command_mode: CommandMode {
-                buffer: String::new(),
-                active: false,
-            },
             canvas: Canvas::default(),
             active_tool: None, // No active tool when in Select mode
             selection_state: SelectionState::new(),
@@ -94,109 +82,34 @@ impl App {
 
     // Command mode methods
     pub fn enter_command_mode(&mut self) {
-        self.command_mode.active = true;
-        self.command_mode.buffer.clear();
+        self.command.enter();
     }
 
     pub fn enter_command_mode_with(&mut self, command: &str) {
-        self.command_mode.active = true;
-        self.command_mode.buffer = command.to_string();
+        self.command.enter_with(command);
     }
 
     pub fn exit_command_mode(&mut self) {
-        self.exit_command_mode_with_clear(true);
-    }
-
-    fn exit_command_mode_with_clear(&mut self, clear_message: bool) {
-        self.command_mode.active = false;
-        self.command_mode.buffer.clear();
-        if clear_message {
-            self.status_message = None; // Clear status message when manually exiting
-        }
+        self.command.exit();
+        self.status_message = None; // Clear status message when manually exiting
     }
 
     pub fn is_command_mode_active(&self) -> bool {
-        self.command_mode.active
+        self.command.is_active()
     }
 
     pub fn add_char_to_command(&mut self, c: char) {
-        if self.command_mode.active {
-            self.command_mode.buffer.push(c);
-        }
+        self.command.add_char(c);
     }
 
     pub fn backspace_command(&mut self) {
-        if self.command_mode.active {
-            self.command_mode.buffer.pop();
-        }
+        self.command.backspace();
     }
 
     pub fn execute_command(&mut self) {
-        if !self.command_mode.active {
-            return;
-        }
-
-        let command = self.command_mode.buffer.trim();
-
-        // Parse command
-        let parts: Vec<&str> = command.split_whitespace().collect();
-        if parts.is_empty() {
-            self.exit_command_mode();
-            return;
-        }
-
-        match parts[0] {
-            "save" | "s" | "w" => {
-                // :save filename or :w filename
-                if parts.len() > 1 {
-                    let filename = parts[1..].join(" ");
-                    let full_path = if filename.ends_with(".textdraw") {
-                        filename
-                    } else {
-                        format!("{}.textdraw", filename)
-                    };
-
-                    if let Err(e) = self.save_to_file(&full_path) {
-                        self.status_message = Some(format!("Error: {}", e));
-                    }
-                } else if let Some(current) = self.current_file.clone() {
-                    // Save to current file (clone to avoid borrow issues)
-                    if let Err(e) = self.save_to_file(&current) {
-                        self.status_message = Some(format!("Error: {}", e));
-                    }
-                } else {
-                    self.status_message = Some("No filename specified".to_string());
-                }
-            }
-            "open" | "o" | "e" => {
-                // :open filename or :e filename
-                if parts.len() > 1 {
-                    let filename = parts[1..].join(" ");
-                    let full_path = if filename.ends_with(".textdraw") {
-                        filename
-                    } else {
-                        format!("{}.textdraw", filename)
-                    };
-
-                    if let Err(e) = self.load_from_file(&full_path) {
-                        self.status_message = Some(format!("Error: {}", e));
-                    }
-                } else {
-                    self.status_message = Some("No filename specified".to_string());
-                }
-            }
-            "q" | "quit" => {
-                // Handle quit - you might want to add a confirmation if unsaved
-                // For now, just exit command mode
-                self.status_message = Some("Use 'q' key to quit".to_string());
-            }
-            _ => {
-                self.status_message = Some(format!("Unknown command: {}", parts[0]));
-            }
-        }
-
-        // Exit command mode but keep status message to show result
-        self.exit_command_mode_with_clear(false);
+        let action = self.command.parse();
+        CommandExecutor::execute(action, self);
+        self.command.finish();
     }
 
     pub fn toggle_tool_lock(&mut self) {
@@ -204,22 +117,18 @@ impl App {
     }
 
     pub fn toggle_help(&mut self) {
-        self.show_help = !self.show_help;
-        if self.show_help {
-            self.help_scroll = 0; // Reset scroll when opening
-        }
+        self.help.toggle();
     }
 
     pub fn scroll_help_up(&mut self) {
-        self.help_scroll = self.help_scroll.saturating_sub(1);
+        self.help.scroll_up();
     }
 
     pub fn scroll_help_down(&mut self) {
         // Calculate max scroll based on terminal height (60% for modal)
         let terminal_height = self.layout.canvas.map(|r| r.height).unwrap_or(40);
         let modal_height = (terminal_height * 60) / 100;
-        let max_scroll = HelpModal::max_scroll(modal_height);
-        self.help_scroll = self.help_scroll.saturating_add(1).min(max_scroll);
+        self.help.scroll_down(modal_height);
     }
 
     pub fn start_drawing(&mut self, x: u16, y: u16) {

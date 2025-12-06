@@ -245,7 +245,7 @@ impl HelpModal {
 
 impl EventHandler for HelpModal {
     fn handle_key_event(&self, app: &mut App, key_event: &KeyEvent) -> EventResult {
-        if !app.show_help {
+        if !app.help.show {
             return EventResult::Ignored;
         }
 
@@ -263,7 +263,7 @@ impl EventHandler for HelpModal {
     }
 
     fn handle_mouse_scroll(&self, app: &mut App, mouse_event: &MouseEvent) -> EventResult {
-        if !app.show_help {
+        if !app.help.show {
             return EventResult::Ignored;
         }
 
@@ -283,7 +283,7 @@ impl EventHandler for HelpModal {
 
 impl Component for HelpModal {
     fn draw(&self, app: &App, frame: &mut Frame) {
-        if !app.show_help {
+        if !app.help.show {
             return;
         }
 
@@ -304,7 +304,7 @@ impl Component for HelpModal {
                     .padding(Padding::new(1, 1, 1, 1)),
             )
             .alignment(Alignment::Left)
-            .scroll((app.help_scroll, 0));
+            .scroll((app.help.scroll, 0));
 
         frame.render_widget(help, area);
 
@@ -322,7 +322,7 @@ impl Component for HelpModal {
 
         let max_scroll = Self::max_scroll(area.height);
         let mut scrollbar_state =
-            ScrollbarState::new(max_scroll as usize).position(app.help_scroll as usize);
+            ScrollbarState::new(max_scroll as usize).position(app.help.scroll as usize);
 
         frame.render_stateful_widget(scrollbar, scrollbar_area, &mut scrollbar_state);
     }

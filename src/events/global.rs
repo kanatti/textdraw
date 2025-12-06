@@ -76,7 +76,7 @@ impl EventHandler for GlobalHandler {
             // Tool shortcuts
             KeyCode::Esc => {
                 // Close help modal if open, otherwise switch to Select tool
-                if app.show_help {
+                if app.help.show {
                     app.toggle_help();
                 } else {
                     app.select_tool(Tool::Select);
