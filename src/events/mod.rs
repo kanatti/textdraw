@@ -1,7 +1,9 @@
 mod global;
 
 use crate::app::App;
-use crate::components::{CanvasComponent, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel};
+use crate::components::{
+    CanvasComponent, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
+};
 use crate::types::{ActionType, EventHandler, EventResult};
 use anyhow::Result;
 use crossterm::event::{Event, KeyEvent, MouseEventKind};
@@ -48,7 +50,11 @@ fn handle_key_event(app: &mut App, key_event: KeyEvent, handlers: EventHandlers)
     Ok(false)
 }
 
-fn handle_mouse_event(app: &mut App, mouse_event: crossterm::event::MouseEvent, handlers: EventHandlers) -> Result<bool> {
+fn handle_mouse_event(
+    app: &mut App,
+    mouse_event: crossterm::event::MouseEvent,
+    handlers: EventHandlers,
+) -> Result<bool> {
     match mouse_event.kind {
         MouseEventKind::Down(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_down),
         MouseEventKind::Up(_) => dispatch_event!(handlers, app, &mouse_event, handle_mouse_up),

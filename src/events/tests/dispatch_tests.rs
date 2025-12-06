@@ -24,7 +24,10 @@ fn test_event_chain_first_consumes() {
 
     assert_eq!(result, false);
     assert!(first.was_called(), "First handler should be called");
-    assert!(!second.was_called(), "Second handler should NOT be called (propagation stopped)");
+    assert!(
+        !second.was_called(),
+        "Second handler should NOT be called (propagation stopped)"
+    );
 }
 
 #[test]
@@ -58,7 +61,10 @@ fn test_event_chain_quit_action_stops_propagation() {
     let result = handle_key_event(&mut app, key_event('q'), &handlers).unwrap();
 
     assert_eq!(result, true);
-    assert!(!second.was_called(), "Second handler should NOT be called (quit stopped propagation)");
+    assert!(
+        !second.was_called(),
+        "Second handler should NOT be called (quit stopped propagation)"
+    );
 }
 
 #[test]
@@ -72,7 +78,10 @@ fn test_mouse_event_chain_consumes() {
 
     assert_eq!(result, false);
     assert!(first.was_called(), "First handler should be called");
-    assert!(!second.was_called(), "Second handler should NOT be called (propagation stopped)");
+    assert!(
+        !second.was_called(),
+        "Second handler should NOT be called (propagation stopped)"
+    );
 }
 
 #[test]

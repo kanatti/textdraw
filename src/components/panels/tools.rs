@@ -3,10 +3,10 @@ use crate::components::Component;
 use crate::types::{Coord, EventHandler, EventResult, Panel, Tool};
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::{
+    Frame,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 pub struct ToolsPanel;
@@ -18,8 +18,10 @@ impl ToolsPanel {
 
     /// Check if a coordinate is within the tools panel bounds
     fn is_within_panel(&self, coord: Coord, area: ratatui::layout::Rect) -> bool {
-        coord.x >= area.x && coord.x < area.x + area.width &&
-        coord.y >= area.y && coord.y < area.y + area.height
+        coord.x >= area.x
+            && coord.x < area.x + area.width
+            && coord.y >= area.y
+            && coord.y < area.y + area.height
     }
 
     /// Detect which tool was clicked based on mouse coordinates within the tools panel

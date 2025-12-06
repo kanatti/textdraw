@@ -1,11 +1,7 @@
 use crate::app::App;
 use crate::components::Component;
 use crate::types::{EventHandler, Panel};
-use ratatui::{
-    text::Line,
-    widgets::Paragraph,
-    Frame,
-};
+use ratatui::{Frame, text::Line, widgets::Paragraph};
 
 pub struct ElementsPanel;
 

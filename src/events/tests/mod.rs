@@ -1,2 +1,2 @@
-mod fixtures;
 mod dispatch_tests;
+mod fixtures;

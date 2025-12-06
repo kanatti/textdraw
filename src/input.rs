@@ -21,11 +21,9 @@ static PANELS: &[(Panel, fn(&AppLayout) -> Option<Rect>)] = &[
 
 /// Detect which panel was clicked based on mouse coordinates
 pub fn detect_panel_click(coord: Coord, layout: &AppLayout) -> Option<Panel> {
-    PANELS
-        .iter()
-        .find_map(|(panel, get_area)| {
-            get_area(layout)
-                .filter(|rect| is_inside(coord, *rect))
-                .map(|_| *panel)
-        })
+    PANELS.iter().find_map(|(panel, get_area)| {
+        get_area(layout)
+            .filter(|rect| is_inside(coord, *rect))
+            .map(|_| *panel)
+    })
 }

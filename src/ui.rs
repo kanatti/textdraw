@@ -1,9 +1,11 @@
 use crate::app::App;
-use crate::components::{CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel};
+use crate::components::{
+    CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
+};
 use crate::types::AppLayout;
 use ratatui::{
-    layout::{Constraint, Layout},
     Frame,
+    layout::{Constraint, Layout},
 };
 
 /// Render the UI based on current App state.

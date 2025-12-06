@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::canvas::Canvas;
+use anyhow::Result;
 use clap::Parser;
 
 #[derive(Parser, Debug)]

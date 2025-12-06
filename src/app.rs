@@ -1,7 +1,7 @@
 use crate::canvas::Canvas;
 use crate::components::HelpModal;
 use crate::tools::{
-    arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool, DrawingTool,
+    DrawingTool, arrow::ArrowTool, line::LineTool, rectangle::RectangleTool, text::TextTool,
 };
 use crate::types::{AppLayout, Panel, SelectionMode, Tool};
 
@@ -60,7 +60,7 @@ pub struct App {
     // File state
     pub current_file: Option<String>, // Path to currently open file
     pub status_message: Option<String>, // Temporary message for statusbar
-    pub command_mode: CommandMode, // Command mode state
+    pub command_mode: CommandMode,    // Command mode state
     // Drawing canvas
     pub canvas: Canvas,
     // Active tool instance (None when in Select mode)
@@ -369,7 +369,12 @@ impl App {
         // Find element at this position
         if let Some(element_id) = self.canvas.find_element_at(x, y) {
             // Check if already selected
-            if let Some(pos) = self.selection_state.selected_ids.iter().position(|&id| id == element_id) {
+            if let Some(pos) = self
+                .selection_state
+                .selected_ids
+                .iter()
+                .position(|&id| id == element_id)
+            {
                 // Remove from selection
                 self.selection_state.selected_ids.remove(pos);
             } else {
@@ -572,7 +577,11 @@ impl App {
     }
 
     /// Load a diagram from a file, optionally showing a status message
-    fn load_from_file_with_message(&mut self, path: impl AsRef<std::path::Path>, show_message: bool) -> anyhow::Result<()> {
+    fn load_from_file_with_message(
+        &mut self,
+        path: impl AsRef<std::path::Path>,
+        show_message: bool,
+    ) -> anyhow::Result<()> {
         self.canvas.load_from_file(&path)?;
         self.current_file = Some(path.as_ref().display().to_string());
         if show_message {
@@ -582,7 +591,10 @@ impl App {
     }
 
     /// Load a diagram from a file silently (for initial load)
-    pub fn load_from_file_silent(&mut self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+    pub fn load_from_file_silent(
+        &mut self,
+        path: impl AsRef<std::path::Path>,
+    ) -> anyhow::Result<()> {
         self.load_from_file_with_message(&path, false)
     }
 

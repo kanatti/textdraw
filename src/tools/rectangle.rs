@@ -31,7 +31,8 @@ impl DrawingTool for RectangleTool {
         if let Some((sx, sy)) = self.start {
             // Only create rectangle if the user actually dragged (not a single click)
             if sx != x || sy != y {
-                let points = algorithms::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
+                let points =
+                    algorithms::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
                 let id = canvas.get_next_id();
                 let (left, right) = if sx <= x { (sx, x) } else { (x, sx) };
                 let (top, bottom) = if sy <= y { (sy, y) } else { (y, sy) };

@@ -153,11 +153,12 @@ impl Canvas {
             next_id: self.next_id,
         };
 
-        let json = serde_json::to_string_pretty(&diagram)
-            .context("Failed to serialize diagram")?;
+        let json = serde_json::to_string_pretty(&diagram).context("Failed to serialize diagram")?;
 
-        fs::write(path.as_ref(), json)
-            .context(format!("Failed to write to file: {}", path.as_ref().display()))?;
+        fs::write(path.as_ref(), json).context(format!(
+            "Failed to write to file: {}",
+            path.as_ref().display()
+        ))?;
 
         Ok(())
     }
@@ -167,8 +168,8 @@ impl Canvas {
         let json = fs::read_to_string(path.as_ref())
             .context(format!("Failed to read file: {}", path.as_ref().display()))?;
 
-        let mut diagram: DiagramFile = serde_json::from_str(&json)
-            .context("Failed to parse diagram file")?;
+        let mut diagram: DiagramFile =
+            serde_json::from_str(&json).context("Failed to parse diagram file")?;
 
         // Rebuild points and bounds for all elements after deserialization
         for element in &mut diagram.elements {
@@ -213,7 +214,8 @@ impl Canvas {
             }
             Element::Text(text) => {
                 // Rebuild text points: place each character horizontally
-                text.points = text.text
+                text.points = text
+                    .text
                     .chars()
                     .enumerate()
                     .map(|(i, ch)| ((text.position.0 + i as i32, text.position.1), ch))

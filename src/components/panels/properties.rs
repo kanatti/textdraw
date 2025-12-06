@@ -3,10 +3,10 @@ use crate::components::Component;
 use crate::element::Element;
 use crate::types::{EventHandler, Panel};
 use ratatui::{
+    Frame,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 pub struct PropertiesPanel;
@@ -37,9 +37,10 @@ impl PropertiesPanel {
 
     /// Creates a section header line (bold, no color)
     fn section_header(text: &str) -> Line<'static> {
-        Line::from(vec![
-            Span::styled(format!("  {}:", text), Style::default().add_modifier(Modifier::BOLD)),
-        ])
+        Line::from(vec![Span::styled(
+            format!("  {}:", text),
+            Style::default().add_modifier(Modifier::BOLD),
+        )])
     }
 
     /// Creates a blank line for spacing
@@ -68,7 +69,10 @@ impl PropertiesPanel {
         lines.push(Self::property_line("height", height.to_string()));
     }
 
-    fn draw_rectangle_properties(lines: &mut Vec<Line<'static>>, rect: &crate::element::RectangleElement) {
+    fn draw_rectangle_properties(
+        lines: &mut Vec<Line<'static>>,
+        rect: &crate::element::RectangleElement,
+    ) {
         // Position (top-left corner)
         lines.push(Self::section_header("Position"));
         lines.push(Self::property_line("x", rect.top_left.0.to_string()));
@@ -165,8 +169,11 @@ impl Component for PropertiesPanel {
             lines.push(Line::from(vec![
                 Span::raw("  "),
                 Span::styled(
-                    format!("{} elements selected", app.selection_state.selected_ids.len()),
-                    Style::default().fg(Color::Yellow)
+                    format!(
+                        "{} elements selected",
+                        app.selection_state.selected_ids.len()
+                    ),
+                    Style::default().fg(Color::Yellow),
                 ),
             ]));
         }

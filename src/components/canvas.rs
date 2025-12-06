@@ -3,10 +3,10 @@ use crate::components::Component;
 use crate::types::{EventHandler, EventResult, Panel, SelectionMode};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{
+    Frame,
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
-    Frame,
 };
 
 pub struct CanvasComponent;
@@ -112,7 +112,9 @@ impl EventHandler for CanvasComponent {
             return EventResult::Ignored;
         }
 
-        let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) else {
+        let Some((canvas_x, canvas_y)) =
+            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+        else {
             return EventResult::Ignored;
         };
 
@@ -149,7 +151,9 @@ impl EventHandler for CanvasComponent {
         }
 
         // Update cursor position
-        if let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) {
+        if let Some((canvas_x, canvas_y)) =
+            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+        {
             app.update_cursor(canvas_x, canvas_y);
         }
 
@@ -162,7 +166,9 @@ impl EventHandler for CanvasComponent {
             return EventResult::Ignored;
         }
 
-        let Some((canvas_x, canvas_y)) = self.to_canvas_coords(app, mouse_event.column, mouse_event.row) else {
+        let Some((canvas_x, canvas_y)) =
+            self.to_canvas_coords(app, mouse_event.column, mouse_event.row)
+        else {
             return EventResult::Ignored;
         };
 
@@ -193,8 +199,10 @@ impl CanvasComponent {
     fn to_canvas_coords(&self, app: &App, column: u16, row: u16) -> Option<(u16, u16)> {
         if let Some(canvas_area) = app.layout.canvas {
             // First check if click is within the canvas area at all
-            if column < canvas_area.x || column >= canvas_area.x + canvas_area.width
-                || row < canvas_area.y || row >= canvas_area.y + canvas_area.height
+            if column < canvas_area.x
+                || column >= canvas_area.x + canvas_area.width
+                || row < canvas_area.y
+                || row >= canvas_area.y + canvas_area.height
             {
                 return None;
             }
@@ -213,7 +221,13 @@ impl CanvasComponent {
     }
 
     /// Handle mouse down in selection mode
-    fn handle_selection_mouse_down(&self, app: &mut App, canvas_x: u16, canvas_y: u16, shift_pressed: bool) {
+    fn handle_selection_mouse_down(
+        &self,
+        app: &mut App,
+        canvas_x: u16,
+        canvas_y: u16,
+        shift_pressed: bool,
+    ) {
         // Shift+Click: toggle selection at this position (additive selection)
         if shift_pressed {
             app.toggle_selection_at(canvas_x as i32, canvas_y as i32);

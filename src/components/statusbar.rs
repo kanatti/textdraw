@@ -2,10 +2,10 @@ use crate::app::App;
 use crate::components::Component;
 use crate::types::EventHandler;
 use ratatui::{
+    Frame,
     style::{Color, Style},
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 pub struct StatusBar;
@@ -32,18 +32,23 @@ impl Component for StatusBar {
             if let Some(space_idx) = app.command_mode.buffer.find(' ') {
                 // Has arguments - show command in yellow, args in white
                 let (cmd, args) = app.command_mode.buffer.split_at(space_idx);
-                spans.push(Span::styled(format!(":{}", cmd), Style::default().fg(Color::Yellow)));
+                spans.push(Span::styled(
+                    format!(":{}", cmd),
+                    Style::default().fg(Color::Yellow),
+                ));
                 spans.push(Span::raw(args));
             } else {
                 // No arguments - show entire thing in yellow
-                spans.push(Span::styled(format!(":{}", app.command_mode.buffer), Style::default().fg(Color::Yellow)));
+                spans.push(Span::styled(
+                    format!(":{}", app.command_mode.buffer),
+                    Style::default().fg(Color::Yellow),
+                ));
             }
 
             // Add cursor block
             spans.push(Span::styled("█", Style::default().fg(Color::White)));
 
-            let status = Paragraph::new(Line::from(spans))
-                .style(Style::default().fg(Color::White));
+            let status = Paragraph::new(Line::from(spans)).style(Style::default().fg(Color::White));
 
             frame.render_widget(status, area);
             return;
@@ -63,8 +68,7 @@ impl Component for StatusBar {
                 Span::styled(message, Style::default().fg(color)),
             ];
 
-            let status = Paragraph::new(Line::from(spans))
-                .style(Style::default().fg(Color::White));
+            let status = Paragraph::new(Line::from(spans)).style(Style::default().fg(Color::White));
 
             frame.render_widget(status, area);
             return;
@@ -101,8 +105,7 @@ impl Component for StatusBar {
         spans.push(Span::raw(" | Quit: "));
         spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
 
-        let status = Paragraph::new(Line::from(spans))
-            .style(Style::default().fg(Color::White));
+        let status = Paragraph::new(Line::from(spans)).style(Style::default().fg(Color::White));
 
         frame.render_widget(status, area);
     }

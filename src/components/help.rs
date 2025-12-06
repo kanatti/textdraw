@@ -3,11 +3,14 @@ use crate::components::Component;
 use crate::types::{EventHandler, EventResult};
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    Frame,
+    widgets::{
+        Block, BorderType, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState,
+    },
 };
 
 const KEY_COLUMN_WIDTH: usize = 11;
@@ -18,39 +21,40 @@ enum HelpLine {
     Subtitle(&'static str),
     Description(&'static str),
     Section(&'static str),
-    KeyBinding { key: &'static str, desc: &'static str },
+    KeyBinding {
+        key: &'static str,
+        desc: &'static str,
+    },
     CommandHeader,
-    Command { cmd: &'static str, args: &'static str, aliases: &'static [&'static str], desc: &'static str },
+    Command {
+        cmd: &'static str,
+        args: &'static str,
+        aliases: &'static [&'static str],
+        desc: &'static str,
+    },
     Blank,
 }
 
 impl HelpLine {
     fn to_line(&self) -> Line<'static> {
         match self {
-            HelpLine::Title(text) => {
-                Line::from(Span::styled(
-                    text.to_string(),
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-                ))
-            }
-            HelpLine::Subtitle(text) => {
-                Line::from(Span::styled(
-                    text.to_string(),
-                    Style::default().fg(Color::DarkGray),
-                ))
-            }
+            HelpLine::Title(text) => Line::from(Span::styled(
+                text.to_string(),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            HelpLine::Subtitle(text) => Line::from(Span::styled(
+                text.to_string(),
+                Style::default().fg(Color::DarkGray),
+            )),
             HelpLine::Description(text) => {
-                Line::from(Span::styled(
-                    text.to_string(),
-                    Style::default(),
-                ))
+                Line::from(Span::styled(text.to_string(), Style::default()))
             }
-            HelpLine::Section(text) => {
-                Line::from(Span::styled(
-                    text.to_string(),
-                    Style::default().add_modifier(Modifier::BOLD),
-                ))
-            }
+            HelpLine::Section(text) => Line::from(Span::styled(
+                text.to_string(),
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             HelpLine::KeyBinding { key, desc } => {
                 let formatted_key = format!("  {:<width$}", key, width = KEY_COLUMN_WIDTH);
                 Line::from(vec![
@@ -65,19 +69,21 @@ impl HelpLine {
                 Line::from(vec![
                     Span::styled(
                         format!("  {:<width$}", "Command", width = CMD_COL_WIDTH - 2),
-                        Style::default().add_modifier(Modifier::BOLD)
+                        Style::default().add_modifier(Modifier::BOLD),
                     ),
                     Span::styled(
                         format!("{:<width$}", "Description", width = DESC_COL_WIDTH),
-                        Style::default().add_modifier(Modifier::BOLD)
+                        Style::default().add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled(
-                        "Alias",
-                        Style::default().add_modifier(Modifier::BOLD)
-                    ),
+                    Span::styled("Alias", Style::default().add_modifier(Modifier::BOLD)),
                 ])
             }
-            HelpLine::Command { cmd, args, aliases, desc } => {
+            HelpLine::Command {
+                cmd,
+                args,
+                aliases,
+                desc,
+            } => {
                 const CMD_COL_WIDTH: usize = 20;
                 const DESC_COL_WIDTH: usize = 18;
 
@@ -92,17 +98,21 @@ impl HelpLine {
 
                 spans.push(Span::styled(
                     format!("{:<width$}", cmd_with_args, width = CMD_COL_WIDTH),
-                    Style::default().fg(Color::Yellow)
+                    Style::default().fg(Color::Yellow),
                 ));
 
                 // Description column
-                spans.push(Span::raw(format!("{:<width$}", desc, width = DESC_COL_WIDTH)));
+                spans.push(Span::raw(format!(
+                    "{:<width$}",
+                    desc,
+                    width = DESC_COL_WIDTH
+                )));
 
                 // Alias column
                 if !aliases.is_empty() {
                     spans.push(Span::styled(
                         aliases.join(", "),
-                        Style::default().fg(Color::DarkGray)
+                        Style::default().fg(Color::DarkGray),
                     ));
                 }
 
@@ -137,8 +147,18 @@ const fn command_header() -> HelpLine {
     HelpLine::CommandHeader
 }
 
-const fn command(cmd: &'static str, args: &'static str, aliases: &'static [&'static str], desc: &'static str) -> HelpLine {
-    HelpLine::Command { cmd, args, aliases, desc }
+const fn command(
+    cmd: &'static str,
+    args: &'static str,
+    aliases: &'static [&'static str],
+    desc: &'static str,
+) -> HelpLine {
+    HelpLine::Command {
+        cmd,
+        args,
+        aliases,
+        desc,
+    }
 }
 
 const fn blank() -> HelpLine {
@@ -272,10 +292,7 @@ impl Component for HelpModal {
         // Clear the area
         frame.render_widget(Clear, area);
 
-        let help_text: Vec<Line> = HELP_LINES
-            .iter()
-            .map(|line| line.to_line())
-            .collect();
+        let help_text: Vec<Line> = HELP_LINES.iter().map(|line| line.to_line()).collect();
 
         let help = Paragraph::new(help_text)
             .block(
@@ -304,8 +321,8 @@ impl Component for HelpModal {
             .end_symbol(Some("↓"));
 
         let max_scroll = Self::max_scroll(area.height);
-        let mut scrollbar_state = ScrollbarState::new(max_scroll as usize)
-            .position(app.help_scroll as usize);
+        let mut scrollbar_state =
+            ScrollbarState::new(max_scroll as usize).position(app.help_scroll as usize);
 
         frame.render_stateful_widget(scrollbar, scrollbar_area, &mut scrollbar_state);
     }

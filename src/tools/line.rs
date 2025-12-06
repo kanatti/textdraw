@@ -31,9 +31,11 @@ impl DrawingTool for LineTool {
         if let Some((sx, sy)) = self.start {
             // Only create line if the user actually dragged (not a single click)
             if sx != x || sy != y {
-                let points = algorithms::generate_line_points(sx as i32, sy as i32, x as i32, y as i32);
+                let points =
+                    algorithms::generate_line_points(sx as i32, sy as i32, x as i32, y as i32);
                 let id = canvas.get_next_id();
-                let line = LineElement::new(id, (sx as i32, sy as i32), (x as i32, y as i32), points);
+                let line =
+                    LineElement::new(id, (sx as i32, sy as i32), (x as i32, y as i32), points);
                 canvas.add_element(Element::Line(line));
             }
         }

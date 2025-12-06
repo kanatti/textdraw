@@ -94,4 +94,3 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
 
     Ok(())
 }
-
