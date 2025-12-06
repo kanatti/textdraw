@@ -251,11 +251,11 @@ impl EventHandler for HelpModal {
 
         match key_event.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                state.help.scroll_up();
+                state.scroll_help_up();
                 EventResult::Consumed
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                state.help.scroll_down(&state.layout);
+                state.scroll_help_down(HELP_LINES.len() as u16);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,
@@ -269,11 +269,11 @@ impl EventHandler for HelpModal {
 
         match mouse_event.kind {
             MouseEventKind::ScrollUp => {
-                state.help.scroll_up();
+                state.scroll_help_up();
                 EventResult::Consumed
             }
             MouseEventKind::ScrollDown => {
-                state.help.scroll_down(&state.layout);
+                state.scroll_help_down(HELP_LINES.len() as u16);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,

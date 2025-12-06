@@ -58,7 +58,7 @@ impl EventHandler for GlobalHandler {
             }
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
             KeyCode::Char('?') => {
-                state.help.toggle();
+                state.toggle_help();
                 EventResult::Consumed
             }
             // Panel shortcuts
@@ -77,7 +77,7 @@ impl EventHandler for GlobalHandler {
             KeyCode::Esc => {
                 // Close help modal if open, otherwise switch to Select tool
                 if state.help.show {
-                    state.help.toggle();
+                    state.toggle_help();
                 } else {
                     state.select_tool(Tool::Select);
                 }

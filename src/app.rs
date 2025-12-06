@@ -72,6 +72,21 @@ impl AppState {
     }
 
     // ============================================================================
+    // Help Modal
+    // ============================================================================
+    pub fn toggle_help(&mut self) {
+        self.help.toggle();
+    }
+
+    pub fn scroll_help_up(&mut self) {
+        self.help.scroll_up();
+    }
+
+    pub fn scroll_help_down(&mut self, total_lines: u16) {
+        self.help.scroll_down(&self.layout, total_lines);
+    }
+
+    // ============================================================================
     // Tool Management & Drawing
     // ============================================================================
 
