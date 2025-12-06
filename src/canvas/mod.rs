@@ -1,6 +1,6 @@
 use crate::drawing::algorithms;
 use crate::element::Element;
-use crate::types::DiagramFile;
+use crate::file::DiagramFile;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
@@ -147,29 +147,13 @@ impl Canvas {
 
     /// Save the canvas to a file
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let diagram = DiagramFile {
-            version: env!("CARGO_PKG_VERSION").to_string(),
-            elements: self.elements.clone(),
-            next_id: self.next_id,
-        };
-
-        let json = serde_json::to_string_pretty(&diagram).context("Failed to serialize diagram")?;
-
-        fs::write(path.as_ref(), json).context(format!(
-            "Failed to write to file: {}",
-            path.as_ref().display()
-        ))?;
-
-        Ok(())
+        let diagram = DiagramFile::new(self.elements.clone(), self.next_id);
+        diagram.save(path)
     }
 
     /// Load the canvas from a file
     pub fn load_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        let json = fs::read_to_string(path.as_ref())
-            .context(format!("Failed to read file: {}", path.as_ref().display()))?;
-
-        let mut diagram: DiagramFile =
-            serde_json::from_str(&json).context("Failed to parse diagram file")?;
+        let mut diagram = DiagramFile::load(path)?;
 
         // Rebuild points and bounds for all elements after deserialization
         for element in &mut diagram.elements {

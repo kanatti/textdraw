@@ -5,6 +5,7 @@ mod components;
 mod drawing;
 mod element;
 mod events;
+mod file;
 mod input;
 mod tools;
 mod types;
@@ -23,7 +24,7 @@ fn main() -> Result<()> {
     // Handle render mode
     if cli.render {
         if let Some(file_path) = cli.file {
-            return cli::render_file(&file_path);
+            return file::render_file(&file_path);
         } else {
             eprintln!("Error: --render requires a file argument");
             std::process::exit(1);
