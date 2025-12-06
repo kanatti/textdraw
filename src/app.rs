@@ -1,7 +1,8 @@
 use crate::canvas::Canvas;
 use crate::components::HelpModal;
 use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
-use crate::types::{AppLayout, Panel, SelectionMode};
+use crate::types::{Panel, SelectionMode};
+use crate::ui::UILayout;
 
 pub struct SelectionState {
     pub mode: SelectionMode,
@@ -52,7 +53,7 @@ pub struct App {
     pub selected_tool: Tool,
     pub tool_index: usize, // For arrow key navigation
     pub tool_locked: bool, // If true, tool stays active after drawing
-    pub layout: AppLayout,
+    pub layout: UILayout,
     pub show_help: bool,
     pub help_scroll: u16,
     // File state
@@ -76,7 +77,7 @@ impl App {
             selected_tool: Tool::Select,
             tool_index: 0,
             tool_locked: false,
-            layout: AppLayout::default(),
+            layout: UILayout::default(),
             show_help: false,
             help_scroll: 0,
             current_file: None,

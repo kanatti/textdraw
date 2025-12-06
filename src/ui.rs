@@ -2,10 +2,9 @@ use crate::app::App;
 use crate::components::{
     CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
-use crate::types::AppLayout;
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Rect},
 };
 
 /// Render the UI based on current App state.
@@ -25,8 +24,17 @@ pub fn render(frame: &mut Frame, app: &App) {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct UILayout {
+    pub canvas: Option<Rect>,
+    pub tools: Option<Rect>,
+    pub elements: Option<Rect>,
+    pub properties: Option<Rect>,
+    pub statusbar: Option<Rect>,
+}
+
 /// Calculate the layout of the UI.
-pub fn calculate_layout(frame: &Frame) -> AppLayout {
+pub fn calculate_layout(frame: &Frame) -> UILayout {
     let outer_layout = Layout::vertical([
         Constraint::Min(0),    // Main area
         Constraint::Length(1), // Status bar
@@ -48,7 +56,7 @@ pub fn calculate_layout(frame: &Frame) -> AppLayout {
     ])
     .split(main_layout[0]);
 
-    AppLayout {
+    UILayout {
         canvas: Some(main_layout[1]),
         tools: Some(panel_layout[0]),
         elements: Some(panel_layout[1]),
