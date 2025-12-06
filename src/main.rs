@@ -1,7 +1,6 @@
 mod app;
 mod cli;
 mod components;
-mod controllers;
 mod element;
 mod events;
 mod file;

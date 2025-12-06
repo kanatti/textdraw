@@ -1,6 +1,5 @@
 use crate::app::AppState;
 use crate::components::Component;
-use crate::controllers::canvas;
 use crate::events::{EventHandler, EventResult};
 use crate::tools::Tool;
 use crate::types::{Panel, SelectionMode};

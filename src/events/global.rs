@@ -1,5 +1,4 @@
 use crate::app::AppState;
-use crate::controllers::help;
 use crate::events::{ActionType, EventHandler, EventResult};
 use crate::input;
 use crate::tools::Tool;
@@ -59,7 +58,7 @@ impl EventHandler for GlobalHandler {
             }
             KeyCode::Char('q') => EventResult::Action(ActionType::Quit),
             KeyCode::Char('?') => {
-                help::toggle(&mut state.help);
+                state.help.toggle();
                 EventResult::Consumed
             }
             // Panel shortcuts
@@ -78,7 +77,7 @@ impl EventHandler for GlobalHandler {
             KeyCode::Esc => {
                 // Close help modal if open, otherwise switch to Select tool
                 if state.help.show {
-                    help::toggle(&mut state.help);
+                    state.help.toggle();
                 } else {
                     state.select_tool(Tool::Select);
                 }

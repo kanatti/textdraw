@@ -1,6 +1,6 @@
 use super::fixtures::*;
-use crate::events::{EventHandler, handle_event};
 use crate::AppState;
+use crate::events::{EventHandler, handle_event};
 use crossterm::event::Event;
 
 #[test]

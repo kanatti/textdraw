@@ -1,6 +1,5 @@
 use crate::app::AppState;
 use crate::components::Component;
-use crate::controllers::help;
 use crate::events::{EventHandler, EventResult};
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
@@ -252,11 +251,11 @@ impl EventHandler for HelpModal {
 
         match key_event.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                help::scroll_up(&mut state.help);
+                state.help.scroll_up();
                 EventResult::Consumed
             }
             KeyCode::Down | KeyCode::Char('j') => {
-                help::scroll_down(&mut state.help, &state.layout);
+                state.help.scroll_down(&state.layout);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,
@@ -270,11 +269,11 @@ impl EventHandler for HelpModal {
 
         match mouse_event.kind {
             MouseEventKind::ScrollUp => {
-                help::scroll_up(&mut state.help);
+                state.help.scroll_up();
                 EventResult::Consumed
             }
             MouseEventKind::ScrollDown => {
-                help::scroll_down(&mut state.help, &state.layout);
+                state.help.scroll_down(&state.layout);
                 EventResult::Consumed
             }
             _ => EventResult::Ignored,

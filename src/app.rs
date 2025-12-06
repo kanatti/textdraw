@@ -1,16 +1,9 @@
 use crate::state::{
-    CanvasState, CommandExecutor, CommandState, FileState, SelectionState, ToolState,
+    CanvasState, CommandExecutor, CommandState, FileState, HelpState, SelectionState, ToolState,
 };
 use crate::types::Panel;
 use crate::ui::UILayout;
 use std::path::Path;
-
-/// Help modal state
-#[derive(Debug, Default, Clone)]
-pub struct HelpState {
-    pub show: bool,
-    pub scroll: u16,
-}
 
 /// Main application state
 pub struct AppState {
@@ -35,7 +28,7 @@ impl AppState {
             cursor_y: 0,
             active_panel: Panel::Canvas,
             layout: UILayout::default(),
-            help: HelpState::default(),
+            help: HelpState::new(),
             command: CommandState::new(),
             tool: ToolState::new(),
             file: FileState::new(),
@@ -77,11 +70,6 @@ impl AppState {
         CommandExecutor::execute(action, self);
         self.command.finish();
     }
-
-    // ============================================================================
-    // Help Modal
-    // ============================================================================
-    // Help operations are now handled by controllers::help
 
     // ============================================================================
     // Tool Management & Drawing
@@ -243,29 +231,9 @@ impl AppState {
     // File I/O
     // ============================================================================
 
-    /// Save the diagram to a file
-    pub fn save_to_file(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
-        self.file.save_to_file(&self.canvas, path)
-    }
-
-    /// Load a diagram from a file
-    pub fn load_from_file(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
-        self.file.load_from_file(&mut self.canvas, path)
-    }
-
     /// Load a diagram from a file silently (for initial load)
     pub fn load_from_file_silent(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
         self.file.load_from_file_silent(&mut self.canvas, path)
-    }
-
-    /// Set a status message to display
-    pub fn set_status_message(&mut self, message: String) {
-        self.file.set_status_message(message);
-    }
-
-    /// Clear the status message
-    pub fn clear_status_message(&mut self) {
-        self.file.clear_status_message();
     }
 }
 
