@@ -101,10 +101,6 @@ impl DrawingTool for RectangleTool {
     fn is_drawing(&self) -> bool {
         self.start.is_some()
     }
-
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 }
 
 impl Default for RectangleTool {

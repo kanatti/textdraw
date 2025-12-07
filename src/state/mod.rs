@@ -8,8 +8,7 @@ mod tool;
 pub use canvas::CanvasState;
 pub use command::{CommandExecutor, CommandState};
 pub use elements::{
-    ArrowElement, Element, LineElement, RectangleElement, Segment, TextElement,
-    calculate_segment_bounds,
+    ArrowElement, Element, LineElement, RectangleElement, Segment, TextElement
 };
 pub use file::FileState;
 pub use selection::SelectionState;
@@ -132,24 +131,6 @@ impl AppState {
 
     pub fn get_preview_points(&self) -> Vec<(i32, i32, char)> {
         self.tool.get_preview_points()
-    }
-
-    pub fn is_text_input_mode(&self) -> bool {
-        self.tool.is_text_input_mode()
-    }
-
-    // Text tool operations
-
-    pub fn add_text_char(&mut self, c: char) {
-        self.tool.add_text_char(c);
-    }
-
-    pub fn text_backspace(&mut self) {
-        self.tool.text_backspace();
-    }
-
-    pub fn finish_text_input(&mut self) -> bool {
-        self.tool.finish_text_input(&mut self.canvas)
     }
 
     // ============================================================================

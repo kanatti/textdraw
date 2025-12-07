@@ -89,38 +89,4 @@ impl ToolState {
             vec![]
         }
     }
-
-    pub fn is_text_input_mode(&self) -> bool {
-        self.selected_tool == Tool::Text && self.is_drawing()
-    }
-
-    // Text tool operations
-
-    pub fn add_text_char(&mut self, c: char) {
-        if let Some(tool) = &mut self.active_tool {
-            if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {
-                text_tool.add_char(c);
-            }
-        }
-    }
-
-    pub fn text_backspace(&mut self) {
-        if let Some(tool) = &mut self.active_tool {
-            if let Some(text_tool) = tool.as_any_mut().downcast_mut::<TextTool>() {
-                text_tool.backspace();
-            }
-        }
-    }
-
-    pub fn finish_text_input(&mut self, canvas: &mut crate::state::CanvasState) -> bool {
-        if let Some(tool) = &mut self.active_tool {
-            let elements_before = canvas.elements().len();
-            tool.finish(canvas);
-            let elements_after = canvas.elements().len();
-            // Return true if an element was actually created
-            elements_after > elements_before
-        } else {
-            false
-        }
-    }
 }

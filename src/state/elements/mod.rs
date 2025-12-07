@@ -7,7 +7,7 @@ mod text;
 pub use arrow::ArrowElement;
 pub use line::LineElement;
 pub use rectangle::RectangleElement;
-pub use segment::{Segment, calculate_bounds as calculate_segment_bounds};
+pub use segment::Segment;
 pub use text::TextElement;
 
 use crate::types::Bounds;
@@ -70,16 +70,6 @@ impl Element {
     /// For now, just use bounds check - can be refined later
     pub fn contains_point(&self, x: i32, y: i32) -> bool {
         self.point_in_bounds(x, y)
-    }
-
-    /// Check if element intersects with rectangle
-    pub fn intersects_rect(&self, x1: i32, y1: i32, x2: i32, y2: i32) -> bool {
-        let bounds = self.bounds();
-        let ex1 = bounds.min.x as i32;
-        let ey1 = bounds.min.y as i32;
-        let ex2 = bounds.max.x as i32;
-        let ey2 = bounds.max.y as i32;
-        !(ex2 < x1 || ex1 > x2 || ey2 < y1 || ey1 > y2)
     }
 
     /// Check if element is fully inside rectangle

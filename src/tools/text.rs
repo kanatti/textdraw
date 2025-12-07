@@ -132,10 +132,6 @@ impl DrawingTool for TextTool {
     fn is_drawing(&self) -> bool {
         self.position.is_some()
     }
-
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 }
 
 impl Default for TextTool {

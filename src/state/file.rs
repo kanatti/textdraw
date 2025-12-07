@@ -14,12 +14,6 @@ impl FileState {
         }
     }
 
-    // Status message management
-
-    pub fn set_status_message(&mut self, message: String) {
-        self.status_message = Some(message);
-    }
-
     pub fn clear_status_message(&mut self) {
         self.status_message = None;
     }

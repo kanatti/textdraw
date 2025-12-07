@@ -77,7 +77,4 @@ pub trait DrawingTool: EventHandler<State = CanvasState> {
 
     /// Check if tool is currently in a drawing state
     fn is_drawing(&self) -> bool;
-
-    /// Downcast helper for accessing specific tool implementations
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
