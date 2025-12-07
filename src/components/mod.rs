@@ -9,11 +9,13 @@ pub use help::HelpModal;
 pub use panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
 pub use statusbar::StatusBar;
 
+use crate::events::EventHandler;
 use crate::state::AppState;
 use ratatui::Frame;
 
 /// UI component that handles rendering with direct AppState access.
-pub trait Component {
+/// All components must also implement EventHandler for event handling.
+pub trait Component: EventHandler {
     /// Draw the component. Component reads its area from state.
     /// Uses &mut self to allow components to maintain local state.
     fn draw(&mut self, state: &AppState, frame: &mut Frame);
