@@ -1,6 +1,7 @@
+use crate::elements::{ArrowElement, Element, Segment};
 use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
 use crate::geometry;
-use crate::state::{ArrowElement, CanvasState, Element, Segment};
+use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
 
@@ -77,7 +78,9 @@ impl EventHandler for ArrowTool {
 impl DrawingTool for ArrowTool {
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
         if let (Some(start), Some(current)) = (self.start, self.current) {
-            geometry::arrow_points(start.x as i32, start.y as i32, current.x as i32, current.y as i32)
+            let segment = Segment::from_coords(start, current);
+            let temp_arrow = ArrowElement::new(0, vec![segment]);
+            geometry::arrow_points(&temp_arrow)
         } else {
             vec![]
         }

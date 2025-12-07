@@ -1,6 +1,7 @@
+use crate::elements::{Element, RectangleElement};
 use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
 use crate::geometry;
-use crate::state::{CanvasState, Element, RectangleElement};
+use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
 
@@ -82,7 +83,13 @@ impl EventHandler for RectangleTool {
 impl DrawingTool for RectangleTool {
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
         if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            geometry::box_points(sx as i32, sy as i32, cx as i32, cy as i32)
+            let left = sx.min(cx);
+            let top = sy.min(cy);
+            let width = sx.abs_diff(cx);
+            let height = sy.abs_diff(cy);
+            let temp_rect =
+                RectangleElement::new(0, Coord { x: left, y: top }, width as u16, height as u16);
+            geometry::box_points(&temp_rect)
         } else {
             vec![]
         }

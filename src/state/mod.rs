@@ -1,15 +1,11 @@
 mod canvas;
 mod command;
-mod elements;
 mod file;
 mod selection;
 mod tool;
 
 pub use canvas::CanvasState;
 pub use command::{CommandExecutor, CommandState};
-pub use elements::{
-    ArrowElement, Element, LineElement, RectangleElement, Segment, TextElement
-};
 pub use file::FileState;
 pub use selection::SelectionState;
 pub use tool::ToolState;

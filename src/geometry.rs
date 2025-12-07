@@ -1,33 +1,48 @@
-use crate::types::RenderPoint;
+use crate::elements::{ArrowElement, LineElement, RectangleElement};
+use crate::types::{Direction, RenderPoint};
 
-/// Generate points for a line using Bresenham's algorithm
-pub fn line_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
-    let dx = (x2 - x1).abs();
-    let dy = (y2 - y1).abs();
-    let mut points = vec![];
+/// Generate points for a line element
+pub fn line_points(line: &LineElement) -> Vec<RenderPoint> {
+    let mut points = Vec::new();
 
-    if dx > dy {
-        // Horizontal line
-        let (start, end) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
-        for x in start..=end {
-            points.push((x, y1, '─'));
-        }
-    } else {
-        // Vertical line
-        let (start, end) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
-        for y in start..=end {
-            points.push((x1, y, '│'));
+    for segment in &line.segments {
+        let x = segment.start.x as i32;
+        let y = segment.start.y as i32;
+
+        match segment.direction {
+            Direction::Right => {
+                for i in 0..=segment.length as i32 {
+                    points.push((x + i, y, '─'));
+                }
+            }
+            Direction::Left => {
+                for i in 0..=segment.length as i32 {
+                    points.push((x - i, y, '─'));
+                }
+            }
+            Direction::Down => {
+                for i in 0..=segment.length as i32 {
+                    points.push((x, y + i, '│'));
+                }
+            }
+            Direction::Up => {
+                for i in 0..=segment.length as i32 {
+                    points.push((x, y - i, '│'));
+                }
+            }
         }
     }
 
     points
 }
 
-/// Generate points for a rectangle/box
-pub fn box_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
+/// Generate points for a rectangle element
+pub fn box_points(rect: &RectangleElement) -> Vec<RenderPoint> {
     let mut points = vec![];
-    let (left, right) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
-    let (top, bottom) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
+    let left = rect.start.x as i32;
+    let top = rect.start.y as i32;
+    let right = left + rect.width as i32;
+    let bottom = top + rect.height as i32;
 
     // Corners
     points.push((left, top, '┌'));
@@ -50,35 +65,55 @@ pub fn box_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
     points
 }
 
-/// Generate points for an arrow
-pub fn arrow_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
-    let dx = x2 - x1;
-    let dy = y2 - y1;
-    let mut points = vec![];
+/// Generate points for an arrow element
+pub fn arrow_points(arrow: &ArrowElement) -> Vec<RenderPoint> {
+    let mut points = Vec::new();
 
-    if dx.abs() > dy.abs() {
-        // Horizontal arrow - all points use y1
-        let (start, end) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
-        for x in start..=end {
-            let ch = if x == x2 {
-                // Arrowhead at x2
-                if dx > 0 { '>' } else { '<' }
-            } else {
-                '─'
-            };
-            points.push((x, y1, ch));
-        }
-    } else {
-        // Vertical arrow - all points use x1
-        let (start, end) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
-        for y in start..=end {
-            let ch = if y == y2 {
-                // Arrowhead at y2
-                if dy > 0 { 'v' } else { '^' }
-            } else {
-                '│'
-            };
-            points.push((x1, y, ch));
+    for segment in &arrow.segments {
+        let x = segment.start.x as i32;
+        let y = segment.start.y as i32;
+
+        match segment.direction {
+            Direction::Right => {
+                for i in 0..=segment.length as i32 {
+                    let ch = if i == segment.length as i32 {
+                        '>'
+                    } else {
+                        '─'
+                    };
+                    points.push((x + i, y, ch));
+                }
+            }
+            Direction::Left => {
+                for i in 0..=segment.length as i32 {
+                    let ch = if i == segment.length as i32 {
+                        '<'
+                    } else {
+                        '─'
+                    };
+                    points.push((x - i, y, ch));
+                }
+            }
+            Direction::Down => {
+                for i in 0..=segment.length as i32 {
+                    let ch = if i == segment.length as i32 {
+                        'v'
+                    } else {
+                        '│'
+                    };
+                    points.push((x, y + i, ch));
+                }
+            }
+            Direction::Up => {
+                for i in 0..=segment.length as i32 {
+                    let ch = if i == segment.length as i32 {
+                        '^'
+                    } else {
+                        '│'
+                    };
+                    points.push((x, y - i, ch));
+                }
+            }
         }
     }
 

@@ -85,41 +85,9 @@ impl Element {
     /// Generate renderable points for this element
     pub fn points(&self) -> Vec<(i32, i32, char)> {
         match self {
-            Element::Line(line) => {
-                let mut points = Vec::new();
-                for segment in &line.segments {
-                    let start_x = segment.start.x as i32;
-                    let start_y = segment.start.y as i32;
-                    let end = segment.end();
-                    let end_x = end.x as i32;
-                    let end_y = end.y as i32;
-                    let segment_points =
-                        crate::geometry::line_points(start_x, start_y, end_x, end_y);
-                    points.extend(segment_points);
-                }
-                points
-            }
-            Element::Rectangle(rect) => {
-                let x1 = rect.start.x as i32;
-                let y1 = rect.start.y as i32;
-                let x2 = (rect.start.x + rect.width) as i32;
-                let y2 = (rect.start.y + rect.height) as i32;
-                crate::geometry::box_points(x1, y1, x2, y2)
-            }
-            Element::Arrow(arrow) => {
-                let mut points = Vec::new();
-                for segment in &arrow.segments {
-                    let start_x = segment.start.x as i32;
-                    let start_y = segment.start.y as i32;
-                    let end = segment.end();
-                    let end_x = end.x as i32;
-                    let end_y = end.y as i32;
-                    let segment_points =
-                        crate::geometry::arrow_points(start_x, start_y, end_x, end_y);
-                    points.extend(segment_points);
-                }
-                points
-            }
+            Element::Line(line) => crate::geometry::line_points(line),
+            Element::Rectangle(rect) => crate::geometry::box_points(rect),
+            Element::Arrow(arrow) => crate::geometry::arrow_points(arrow),
             Element::Text(text) => {
                 let mut points = Vec::new();
                 for (i, ch) in text.text.chars().enumerate() {

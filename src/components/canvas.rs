@@ -2,7 +2,7 @@ use crate::components::Component;
 use crate::events::{ActionType, EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
-use crate::types::{Panel, SelectionMode};
+use crate::types::{Panel, RenderMap, SelectionMode};
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -312,14 +312,14 @@ impl Component for CanvasComponent {
 
         // Get preview points from the active tool
         let preview_points = state.get_preview_points();
-        let preview_map: std::collections::HashMap<(i32, i32), char> = preview_points
+        let preview_map: RenderMap = preview_points
             .into_iter()
             .map(|(x, y, ch)| ((x, y), ch))
             .collect();
 
         // Get selection box (grey) for drag-select
         let selection_box = state.get_selection_box_points();
-        let selection_box_map: std::collections::HashMap<(i32, i32), char> = selection_box
+        let selection_box_map: RenderMap = selection_box
             .into_iter()
             .map(|(x, y, ch)| ((x, y), ch))
             .collect();

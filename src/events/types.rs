@@ -40,7 +40,10 @@ impl MouseEvent {
     }
 
     pub fn get_coord(&self) -> Coord {
-        Coord { x: self.row, y: self.column }
+        Coord {
+            x: self.column,
+            y: self.row,
+        }
     }
 }
 

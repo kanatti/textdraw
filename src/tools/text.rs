@@ -1,5 +1,6 @@
+use crate::elements::{Element, TextElement};
 use crate::events::{ActionType, EventHandler, EventResult, KeyEvent, MouseEvent};
-use crate::state::{CanvasState, Element, TextElement};
+use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
 use crossterm::event::KeyCode;

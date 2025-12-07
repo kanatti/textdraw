@@ -1,5 +1,6 @@
+use crate::elements::Element;
 use crate::file::DiagramFile;
-use crate::state::Element;
+use crate::types::RenderMap;
 use anyhow::Result;
 use std::collections::HashMap;
 use std::path::Path;
@@ -27,7 +28,7 @@ impl CanvasState {
 
     /// Build a render map of all elements for efficient rendering
     /// Returns HashMap of (x, y) -> char
-    pub fn build_render_map(&self) -> HashMap<(i32, i32), char> {
+    pub fn build_render_map(&self) -> RenderMap {
         let mut render_map = HashMap::new();
         for element in &self.elements {
             let points = element.points();

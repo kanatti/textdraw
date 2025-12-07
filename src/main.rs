@@ -1,5 +1,6 @@
 mod cli;
 mod components;
+mod elements;
 mod events;
 mod file;
 mod geometry;

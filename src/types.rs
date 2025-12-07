@@ -1,9 +1,14 @@
 //! Core types and enums used throughout the application.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 /// A render point with position and character
 pub type RenderPoint = (i32, i32, char);
+
+/// A map of position and characters for rendering.
+pub type RenderMap = HashMap<(i32, i32), char>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Coord {

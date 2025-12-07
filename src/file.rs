@@ -1,4 +1,5 @@
-use crate::state::{CanvasState, Element};
+use crate::elements::Element;
+use crate::state::CanvasState;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;

@@ -1,6 +1,7 @@
 use crate::components::Component;
+use crate::elements::{ArrowElement, Element, LineElement, RectangleElement, TextElement};
 use crate::events::EventHandler;
-use crate::state::{AppState, Element};
+use crate::state::AppState;
 use crate::types::Panel;
 use ratatui::{
     Frame,
@@ -50,7 +51,7 @@ impl PropertiesPanel {
 
     // Element-specific property display methods
 
-    fn draw_line_properties(lines: &mut Vec<Line<'static>>, line: &crate::state::LineElement) {
+    fn draw_line_properties(lines: &mut Vec<Line<'static>>, line: &LineElement) {
         lines.push(Self::section_header("Segments"));
         lines.push(Self::property_line(
             "count",
@@ -76,10 +77,7 @@ impl PropertiesPanel {
         }
     }
 
-    fn draw_rectangle_properties(
-        lines: &mut Vec<Line<'static>>,
-        rect: &crate::state::RectangleElement,
-    ) {
+    fn draw_rectangle_properties(lines: &mut Vec<Line<'static>>, rect: &RectangleElement) {
         lines.push(Self::section_header("Position"));
         lines.push(Self::property_line("x", rect.start.x.to_string()));
         lines.push(Self::property_line("y", rect.start.y.to_string()));
@@ -91,7 +89,7 @@ impl PropertiesPanel {
         lines.push(Self::property_line("height", rect.height.to_string()));
     }
 
-    fn draw_arrow_properties(lines: &mut Vec<Line<'static>>, arrow: &crate::state::ArrowElement) {
+    fn draw_arrow_properties(lines: &mut Vec<Line<'static>>, arrow: &ArrowElement) {
         lines.push(Self::section_header("Segments"));
         lines.push(Self::property_line(
             "count",
@@ -117,7 +115,7 @@ impl PropertiesPanel {
         }
     }
 
-    fn draw_text_properties(lines: &mut Vec<Line<'static>>, text: &crate::state::TextElement) {
+    fn draw_text_properties(lines: &mut Vec<Line<'static>>, text: &TextElement) {
         lines.push(Self::section_header("Position"));
         lines.push(Self::property_line("x", text.position.x.to_string()));
         lines.push(Self::property_line("y", text.position.y.to_string()));
