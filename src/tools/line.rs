@@ -12,23 +12,26 @@ enum DrawingState {
 }
 
 pub struct LineTool {
-    start: Option<Coord>,
-    current: Option<Coord>,
+    segments: Vec<Segment>,      // Completed segments in current drawing
+    current_start: Option<Coord>, // Start of segment being drawn
+    current_end: Option<Coord>,   // Current cursor position
     state: DrawingState,
 }
 
 impl LineTool {
     pub fn new() -> Self {
         Self {
-            start: None,
-            current: None,
+            segments: Vec::new(),
+            current_start: None,
+            current_end: None,
             state: DrawingState::Idle,
         }
     }
 
     fn reset(&mut self) {
-        self.start = None;
-        self.current = None;
+        self.segments.clear();
+        self.current_start = None;
+        self.current_end = None;
         self.state = DrawingState::Idle;
     }
 }
@@ -44,30 +47,49 @@ impl EventHandler for LineTool {
         match self.state {
             DrawingState::Idle => {
                 // First click - anchor the start point
-                self.start = Some(mouse_event.get_coord());
-                self.current = Some(mouse_event.get_coord());
+                self.current_start = Some(mouse_event.get_coord());
+                self.current_end = Some(mouse_event.get_coord());
                 self.state = DrawingState::Anchored;
                 EventResult::Consumed
             }
             DrawingState::Anchored => {
-                // Second click - finalize the line (click-move-click mode)
-                let Some(start) = self.start else {
+                let Some(start) = self.current_start else {
                     self.reset();
                     return EventResult::Consumed;
                 };
 
-                let current = mouse_event.get_coord();
+                let end = mouse_event.get_coord();
 
-                // Don't create line if start and end are the same
-                if start == current {
-                    self.reset();
+                // Don't add segment if start and end are the same
+                if start == end {
                     return EventResult::Consumed;
                 }
 
-                let id = state.get_next_id();
-                let segment = Segment::from_coords(start, current);
-                let line = LineElement::new(id, vec![segment]);
-                state.add_element(Element::Line(line));
+                // Check if Shift is pressed - add segment and continue drawing
+                if mouse_event.is_shift() {
+                    let segment = Segment::from_coords(start, end);
+
+                    // Start next segment from the actual end of the created segment
+                    // (not the clicked point, since from_coords picks dominant axis)
+                    let actual_end = segment.end();
+                    self.segments.push(segment);
+
+                    self.current_start = Some(actual_end);
+                    self.current_end = Some(actual_end);
+
+                    return EventResult::Consumed;
+                }
+
+                // Regular click - finalize the line
+                let segment = Segment::from_coords(start, end);
+                self.segments.push(segment);
+
+                // Create line element with all segments
+                if !self.segments.is_empty() {
+                    let id = state.get_next_id();
+                    let line = LineElement::new(id, self.segments.clone());
+                    state.add_element(Element::Line(line));
+                }
 
                 self.reset();
                 EventResult::Action(ActionType::FinishedDrawing)
@@ -87,7 +109,7 @@ impl EventHandler for LineTool {
     ) -> EventResult {
         // Update preview when in click-move-click mode
         if self.state == DrawingState::Anchored {
-            self.current = Some(mouse_event.get_coord());
+            self.current_end = Some(mouse_event.get_coord());
             EventResult::Consumed
         } else {
             EventResult::Ignored
@@ -103,7 +125,7 @@ impl EventHandler for LineTool {
         if self.state == DrawingState::Anchored {
             self.state = DrawingState::Dragging;
         }
-        self.current = Some(mouse_event.get_coord());
+        self.current_end = Some(mouse_event.get_coord());
         EventResult::Consumed
     }
 
@@ -112,26 +134,27 @@ impl EventHandler for LineTool {
         state: &mut CanvasState,
         mouse_event: &MouseEvent,
     ) -> EventResult {
-        // Only finalize on mouse_up if we're in Dragging mode
+        // Only finalize on mouse_up if we're in Dragging mode (drag-and-drop)
         if self.state != DrawingState::Dragging {
             return EventResult::Consumed;
         }
 
-        let Some(start) = self.start else {
+        let Some(start) = self.current_start else {
             self.reset();
             return EventResult::Consumed;
         };
 
-        let current = mouse_event.get_coord();
+        let end = mouse_event.get_coord();
 
         // Don't create line if user didn't drag (start == end)
-        if start == current {
+        if start == end {
             self.reset();
             return EventResult::Consumed;
         }
 
+        // In drag mode, create a single-segment line
         let id = state.get_next_id();
-        let segment = Segment::from_coords(start, current);
+        let segment = Segment::from_coords(start, end);
         let line = LineElement::new(id, vec![segment]);
         state.add_element(Element::Line(line));
 
@@ -142,13 +165,22 @@ impl EventHandler for LineTool {
 
 impl DrawingTool for LineTool {
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
-        if let (Some(start), Some(current)) = (self.start, self.current) {
-            let segment = Segment::from_coords(start, current);
-            let temp_line = LineElement::new(0, vec![segment]);
-            temp_line.render_points()
-        } else {
-            vec![]
+        // Build preview with all completed segments plus current segment
+        let mut preview_segments = self.segments.clone();
+
+        // Add current segment being drawn
+        if let (Some(start), Some(end)) = (self.current_start, self.current_end) {
+            if start != end {
+                preview_segments.push(Segment::from_coords(start, end));
+            }
         }
+
+        if preview_segments.is_empty() {
+            return vec![];
+        }
+
+        let temp_line = LineElement::new(0, preview_segments);
+        temp_line.render_points()
     }
 
     fn finish(&mut self, _state: &mut CanvasState) {
@@ -162,7 +194,7 @@ impl DrawingTool for LineTool {
     }
 
     fn is_drawing(&self) -> bool {
-        self.start.is_some()
+        self.current_start.is_some()
     }
 }
 
