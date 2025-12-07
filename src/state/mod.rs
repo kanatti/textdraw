@@ -1,12 +1,16 @@
 mod canvas;
 mod command;
+mod elements;
 mod file;
 mod selection;
 mod tool;
-mod elements;
 
 pub use canvas::CanvasState;
 pub use command::{CommandExecutor, CommandState};
+pub use elements::{
+    ArrowElement, Element, LineElement, RectangleElement, Segment, TextElement,
+    calculate_segment_bounds,
+};
 pub use file::FileState;
 pub use selection::SelectionState;
 pub use tool::ToolState;
@@ -230,6 +234,15 @@ impl AppState {
     pub fn update_cursor(&mut self, x: u16, y: u16) {
         self.cursor_x = x;
         self.cursor_y = y;
+    }
+
+    /// Check if screen coordinates are inside the canvas bounds
+    pub fn is_inside_canvas(&self, column: u16, row: u16) -> bool {
+        let canvas_area = self.layout.canvas;
+        column >= canvas_area.x
+            && column < canvas_area.x + canvas_area.width
+            && row >= canvas_area.y
+            && row < canvas_area.y + canvas_area.height
     }
 
     // ============================================================================

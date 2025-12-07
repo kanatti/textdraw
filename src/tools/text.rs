@@ -1,9 +1,8 @@
-use crate::element::{Element, TextElement};
-use crate::events::{EventHandler, EventResult};
-use crate::state::CanvasState;
+use crate::events::{ActionType, EventHandler, EventResult, KeyEvent, MouseEvent};
+use crate::state::{CanvasState, Element, TextElement};
 use crate::tools::DrawingTool;
-use crossterm::event::MouseEvent;
-use std::collections::HashMap;
+use crate::types::Coord;
+use crossterm::event::KeyCode;
 
 pub struct TextTool {
     position: Option<(u16, u16)>,
@@ -25,42 +24,75 @@ impl TextTool {
     pub fn backspace(&mut self) {
         self.text.pop();
     }
-
-    pub fn get_text(&self) -> &str {
-        &self.text
-    }
 }
 
 impl EventHandler for TextTool {
     type State = CanvasState;
-    fn handle_mouse_down(&mut self, _state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
-        // Set text position and start text input mode
+
+    fn handle_key_event(&mut self, state: &mut CanvasState, key_event: &KeyEvent) -> EventResult {
+        // Only handle keys when we're in text input mode (position is set)
+        if self.position.is_none() {
+            return EventResult::Ignored;
+        }
+
+        match key_event.code {
+            KeyCode::Char(c) => {
+                self.add_char(c);
+                EventResult::Consumed
+            }
+            KeyCode::Backspace => {
+                self.backspace();
+                EventResult::Consumed
+            }
+            KeyCode::Enter => {
+                self.finish(state);
+                EventResult::Action(ActionType::FinishedDrawing)
+            }
+            KeyCode::Esc => {
+                // Cancel text input
+                self.cancel();
+                EventResult::Consumed
+            }
+            _ => EventResult::Ignored,
+        }
+    }
+
+    fn handle_mouse_down(
+        &mut self,
+        state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
+        // If already in text input mode, finish current text and start new one
+        if self.position.is_some() {
+            self.finish(state);
+            // Start new text at new position
+            self.position = Some((mouse_event.column, mouse_event.row));
+            self.text.clear();
+            return EventResult::Action(ActionType::FinishedDrawing);
+        }
+
+        // Start text input mode at clicked position
         self.position = Some((mouse_event.column, mouse_event.row));
         self.text.clear();
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&mut self, _state: &mut CanvasState, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(
+        &mut self,
+        _state: &mut CanvasState,
+        _mouse_event: &MouseEvent,
+    ) -> EventResult {
         // Text tool doesn't use drag
         EventResult::Ignored
     }
 
-    fn handle_mouse_up(&mut self, state: &mut CanvasState, _mouse_event: &MouseEvent) -> EventResult {
-        // Commit text to canvas as a TextElement
-        if let Some((px, py)) = self.position {
-            if !self.text.is_empty() {
-                let mut points = HashMap::new();
-                for (i, ch) in self.text.chars().enumerate() {
-                    points.insert((px as i32 + i as i32, py as i32), ch);
-                }
-                let id = state.get_next_id();
-                let text_elem =
-                    TextElement::new(id, (px as i32, py as i32), self.text.clone(), points);
-                state.add_element(Element::Text(text_elem));
-            }
-        }
-        self.position = None;
-        self.text.clear();
+    fn handle_mouse_up(
+        &mut self,
+        _state: &mut CanvasState,
+        _mouse_event: &MouseEvent,
+    ) -> EventResult {
+        // Text tool doesn't create element on mouse_up
+        // Element is created when user presses Enter (via finish())
         EventResult::Consumed
     }
 }
@@ -83,13 +115,8 @@ impl DrawingTool for TextTool {
     fn finish(&mut self, state: &mut CanvasState) {
         if let Some((px, py)) = self.position {
             if !self.text.is_empty() {
-                let mut points = HashMap::new();
-                for (i, ch) in self.text.chars().enumerate() {
-                    points.insert((px as i32 + i as i32, py as i32), ch);
-                }
                 let id = state.get_next_id();
-                let text_elem =
-                    TextElement::new(id, (px as i32, py as i32), self.text.clone(), points);
+                let text_elem = TextElement::new(id, Coord { x: px, y: py }, self.text.clone());
                 state.add_element(Element::Text(text_elem));
             }
         }

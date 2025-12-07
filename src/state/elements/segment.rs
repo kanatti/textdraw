@@ -9,6 +9,40 @@ pub struct Segment {
 }
 
 impl Segment {
+    /// Create a segment from start and end coordinates
+    /// Automatically determines direction and length
+    pub fn from_coords(start: Coord, end: Coord) -> Self {
+        let dx = (end.x as i32) - (start.x as i32);
+        let dy = (end.y as i32) - (start.y as i32);
+
+        let direction = if dx.abs() > dy.abs() {
+            // Horizontal line
+            if dx > 0 {
+                Direction::Right
+            } else {
+                Direction::Left
+            }
+        } else {
+            // Vertical line
+            if dy > 0 {
+                Direction::Down
+            } else {
+                Direction::Up
+            }
+        };
+
+        let length = match direction {
+            Direction::Right | Direction::Left => dx.abs() as u16,
+            Direction::Down | Direction::Up => dy.abs() as u16,
+        };
+
+        Self {
+            start,
+            length,
+            direction,
+        }
+    }
+
     pub fn translate(&mut self, dx: i16, dy: i16) {
         self.start.translate(dx, dy);
     }

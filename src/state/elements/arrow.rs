@@ -1,5 +1,5 @@
-use super::segment;
 use super::Segment;
+use super::segment;
 use crate::types::Bounds;
 use serde::{Deserialize, Serialize};
 

@@ -1,9 +1,9 @@
 use crate::components::Component;
-use crate::events::{EventHandler, EventResult};
+use crate::events::{ActionType, EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Panel, SelectionMode};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     style::{Color, Style},
@@ -19,39 +19,45 @@ impl CanvasComponent {
     }
 }
 
+/// Check if we should handle the event based on canvas bounds, drawing state, and active panel
+fn should_handle_event(state: &AppState, mouse_event: &MouseEvent) -> bool {
+    // Don't handle if canvas is not the active panel
+    if state.active_panel != Panel::Canvas {
+        return false;
+    }
+
+    // Handle if already drawing (even if outside canvas)
+    if state.is_drawing() {
+        return true;
+    }
+
+    // Otherwise only handle if inside canvas bounds
+    state.is_inside_canvas(mouse_event.column, mouse_event.row)
+}
+
 impl EventHandler for CanvasComponent {
     type State = AppState;
-    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
-        // Handle text input when text tool is active and in drawing mode
-        if state.is_text_input_mode() {
-            return match key_event.code {
-                KeyCode::Char(c) => {
-                    state.add_text_char(c);
-                    EventResult::Consumed
-                }
-                KeyCode::Backspace => {
-                    state.text_backspace();
-                    EventResult::Consumed
-                }
-                KeyCode::Enter | KeyCode::Esc => {
-                    // Commit or cancel text
-                    if key_event.code == KeyCode::Enter {
-                        let element_created = state.finish_text_input();
 
-                        // Switch to Select tool if not locked AND an element was actually created
-                        if !state.tool.tool_locked && element_created {
-                            state.select_tool(Tool::Select);
-                        }
-                    } else {
-                        state.cancel_drawing();
+    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+        // Forward to active tool first
+        if let Some(tool) = state.tool.active_tool_mut() {
+            let result = tool.handle_key_event(&mut state.canvas, key_event);
+            match result {
+                EventResult::Action(ActionType::FinishedDrawing) => {
+                    if !state.tool.tool_locked {
+                        state.select_tool(Tool::Select);
                     }
-                    EventResult::Consumed
+                    return EventResult::Consumed;
                 }
-                _ => EventResult::Ignored,
-            };
+                EventResult::Consumed => return EventResult::Consumed,
+                EventResult::Ignored => {
+                    // Continue to canvas-level handling
+                }
+                _ => return result,
+            }
         }
 
-        // Handle selection operations (move/delete)
+        // Handle canvas-level selection operations (move/delete)
         if state.is_select_tool() && state.is_in_selection_mode() {
             match key_event.code {
                 KeyCode::Up | KeyCode::Down | KeyCode::Left | KeyCode::Right => {
@@ -77,93 +83,87 @@ impl EventHandler for CanvasComponent {
     }
 
     fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
-        // If text tool is active and we're in text input mode, finish the text
-        if state.is_text_input_mode() {
-            let element_created = state.finish_text_input();
-
-            // Switch to Select tool if not locked AND an element was actually created
-            if !state.tool.tool_locked && element_created {
-                state.select_tool(Tool::Select);
-            }
-        }
-
-        // Only handle if canvas is active
-        if state.active_panel != Panel::Canvas {
+        if !should_handle_event(state, mouse_event) {
             return EventResult::Ignored;
         }
 
         // Convert to canvas coordinates
-        let canvas_coords = self.to_canvas_coords(state, mouse_event.column, mouse_event.row);
-        let Some((canvas_x, canvas_y)) = canvas_coords else {
+        let Some(canvas_event) = self.to_canvas_event(state, mouse_event) else {
+            // Outside canvas bounds - cancel drawing if active
+            if state.is_drawing() {
+                state.cancel_drawing();
+            }
             return EventResult::Ignored;
         };
 
-        // Handle based on tool
+        // Forward to select tool or active drawing tool
         if state.is_select_tool() {
-            let shift_pressed = mouse_event.modifiers.contains(KeyModifiers::SHIFT);
-            self.handle_selection_mouse_down(state, canvas_x, canvas_y, shift_pressed);
+            self.handle_selection_mouse_down(
+                state,
+                canvas_event.column,
+                canvas_event.row,
+                mouse_event.is_shift(),
+            );
             EventResult::Consumed
         } else if let Some(tool) = state.tool.active_tool_mut() {
-            // Create a new mouse event with canvas coordinates
-            let canvas_event = MouseEvent {
-                column: canvas_x,
-                row: canvas_y,
-                ..*mouse_event
-            };
-            tool.handle_mouse_down(&mut state.canvas, &canvas_event)
+            let result = tool.handle_mouse_down(&mut state.canvas, &canvas_event);
+            match result {
+                EventResult::Action(ActionType::FinishedDrawing) => {
+                    if !state.tool.tool_locked {
+                        state.select_tool(Tool::Select);
+                    }
+                    return EventResult::Consumed;
+                }
+                _ => result,
+            }
         } else {
             EventResult::Ignored
         }
     }
 
     fn handle_mouse_up(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
-        // Only handle if canvas is active
-        if state.active_panel != Panel::Canvas {
+        if !should_handle_event(state, mouse_event) {
             return EventResult::Ignored;
         }
 
-        let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
-        else {
+        // Convert to canvas coordinates
+        let Some(canvas_event) = self.to_canvas_event(state, mouse_event) else {
+            // Outside canvas bounds - cancel drawing if active
+            if state.is_drawing() {
+                state.cancel_drawing();
+            }
             return EventResult::Ignored;
         };
 
+        // Handle selection
         if state.is_select_tool() {
-            // Selection mode: finish selection or move
             match state.selection_state.mode {
                 SelectionMode::Selecting => {
-                    state.finish_selection(canvas_x, canvas_y);
+                    state.finish_selection(canvas_event.column, canvas_event.row);
                 }
                 SelectionMode::Moving => {
                     state.finish_move_selection();
                 }
                 _ => {}
             }
-            EventResult::Consumed
-        } else {
-            // Finish drawing on mouse up (except for text tool which finishes on Enter)
-            let is_text_input_mode = state.is_text_input_mode();
-            if !is_text_input_mode {
-                if let Some(tool) = state.tool.active_tool_mut() {
-                    let elements_before = state.canvas.elements().len();
-                    let canvas_event = MouseEvent {
-                        column: canvas_x,
-                        row: canvas_y,
-                        ..*mouse_event
-                    };
-                    tool.handle_mouse_up(&mut state.canvas, &canvas_event);
-                    let elements_after = state.canvas.elements().len();
-                    let element_created = elements_after > elements_before;
+            return EventResult::Consumed;
+        }
 
-                    // Switch to Select tool if not locked AND an element was actually created
-                    if !state.tool.tool_locked && element_created {
+        // Forward to active drawing tool
+        if let Some(tool) = state.tool.active_tool_mut() {
+            let result = tool.handle_mouse_up(&mut state.canvas, &canvas_event);
+            match result {
+                EventResult::Action(ActionType::FinishedDrawing) => {
+                    if !state.tool.tool_locked {
                         state.select_tool(Tool::Select);
                     }
                     return EventResult::Consumed;
                 }
+                _ => return result,
             }
-            EventResult::Ignored
         }
+
+        EventResult::Ignored
     }
 
     fn handle_mouse_moved(
@@ -177,50 +177,47 @@ impl EventHandler for CanvasComponent {
         }
 
         // Update cursor position
-        if let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
-        {
-            state.update_cursor(canvas_x, canvas_y);
+        if let Some(canvas_event) = self.to_canvas_event(state, mouse_event) {
+            state.update_cursor(canvas_event.column, canvas_event.row);
         }
 
         EventResult::Consumed
     }
 
     fn handle_mouse_drag(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
-        // Only handle if canvas is active
-        if state.active_panel != Panel::Canvas {
+        if !should_handle_event(state, mouse_event) {
             return EventResult::Ignored;
         }
 
-        let Some((canvas_x, canvas_y)) =
-            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)
-        else {
+        // Convert to canvas coordinates
+        let Some(canvas_event) = self.to_canvas_event(state, mouse_event) else {
+            // Outside canvas bounds - cancel drawing if active
+            if state.is_drawing() {
+                state.cancel_drawing();
+            }
             return EventResult::Ignored;
         };
 
-        state.update_cursor(canvas_x, canvas_y);
+        state.update_cursor(canvas_event.column, canvas_event.row);
 
+        // Handle selection
         if state.is_select_tool() {
-            // Selection mode: update selection or move
             if state.is_in_selection_mode() {
                 if state.selection_state.mode == SelectionMode::Selecting {
-                    state.update_selection(canvas_x, canvas_y);
+                    state.update_selection(canvas_event.column, canvas_event.row);
                 } else if state.selection_state.mode == SelectionMode::Moving {
-                    state.update_move_selection(canvas_x, canvas_y);
+                    state.update_move_selection(canvas_event.column, canvas_event.row);
                 }
             }
-            EventResult::Consumed
-        } else if let Some(tool) = state.tool.active_tool_mut() {
-            // Handle dragging for drawing preview
-            let canvas_event = MouseEvent {
-                column: canvas_x,
-                row: canvas_y,
-                ..*mouse_event
-            };
-            tool.handle_mouse_drag(&mut state.canvas, &canvas_event)
-        } else {
-            EventResult::Ignored
+            return EventResult::Consumed;
         }
+
+        // Forward to active drawing tool
+        if let Some(tool) = state.tool.active_tool_mut() {
+            return tool.handle_mouse_drag(&mut state.canvas, &canvas_event);
+        }
+
+        EventResult::Ignored
     }
 }
 
@@ -248,6 +245,14 @@ impl CanvasComponent {
         }
 
         None
+    }
+
+    /// Convert a screen-space mouse event to canvas-space
+    /// Returns None if the event is outside the canvas bounds
+    fn to_canvas_event(&self, state: &AppState, mouse_event: &MouseEvent) -> Option<MouseEvent> {
+        let (canvas_x, canvas_y) =
+            self.to_canvas_coords(state, mouse_event.column, mouse_event.row)?;
+        Some(mouse_event.with_coords(canvas_x, canvas_y))
     }
 
     /// Handle mouse down in selection mode
@@ -339,11 +344,12 @@ impl Component for CanvasComponent {
                 (0, 0)
             };
 
-            // Add all points from this element to render map (with offset if moving)
-            for ((x, y), ch) in element.points() {
+            // Generate points from element and add to render map (with offset if moving)
+            let points = element.points();
+            for ((x, y), ch) in points {
                 let render_x = x + offset_x;
                 let render_y = y + offset_y;
-                render_map.insert((render_x, render_y), (*ch, element_id));
+                render_map.insert((render_x, render_y), (ch, element_id));
             }
         }
 
@@ -428,7 +434,7 @@ impl Component for CanvasComponent {
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or(file);
-            format!("[0]-Canvas --- {} ---", filename)
+            format!("[0]-Canvas ─── {} ───", filename)
         } else {
             "[0]-Canvas".to_string()
         };

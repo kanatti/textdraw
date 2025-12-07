@@ -1,7 +1,6 @@
 use crate::components::Component;
-use crate::element::Element;
 use crate::events::EventHandler;
-use crate::state::AppState;
+use crate::state::{AppState, Element};
 use crate::types::Panel;
 use ratatui::{
     Frame,
@@ -51,84 +50,82 @@ impl PropertiesPanel {
 
     // Element-specific property display methods
 
-    fn draw_line_properties(lines: &mut Vec<Line<'static>>, line: &crate::element::LineElement) {
-        // Position (start and end points)
-        lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("start_x", line.start.0.to_string()));
-        lines.push(Self::property_line("start_y", line.start.1.to_string()));
-        lines.push(Self::property_line("end_x", line.end.0.to_string()));
-        lines.push(Self::property_line("end_y", line.end.1.to_string()));
+    fn draw_line_properties(lines: &mut Vec<Line<'static>>, line: &crate::state::LineElement) {
+        lines.push(Self::section_header("Segments"));
+        lines.push(Self::property_line(
+            "count",
+            line.segments.len().to_string(),
+        ));
 
-        lines.push(Self::blank_line());
-
-        // Size (calculated from bounds)
-        let (x1, y1, x2, y2) = line.bounds;
-        let width = (x2 - x1 + 1).abs();
-        let height = (y2 - y1 + 1).abs();
-        lines.push(Self::section_header("Size"));
-        lines.push(Self::property_line("width", width.to_string()));
-        lines.push(Self::property_line("height", height.to_string()));
+        if let Some(first_seg) = line.segments.first() {
+            lines.push(Self::blank_line());
+            lines.push(Self::section_header("First Segment"));
+            lines.push(Self::property_line(
+                "start_x",
+                first_seg.start.x.to_string(),
+            ));
+            lines.push(Self::property_line(
+                "start_y",
+                first_seg.start.y.to_string(),
+            ));
+            lines.push(Self::property_line("length", first_seg.length.to_string()));
+            lines.push(Self::property_line(
+                "direction",
+                format!("{:?}", first_seg.direction),
+            ));
+        }
     }
 
     fn draw_rectangle_properties(
         lines: &mut Vec<Line<'static>>,
-        rect: &crate::element::RectangleElement,
+        rect: &crate::state::RectangleElement,
     ) {
-        // Position (top-left corner)
         lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("x", rect.top_left.0.to_string()));
-        lines.push(Self::property_line("y", rect.top_left.1.to_string()));
+        lines.push(Self::property_line("x", rect.start.x.to_string()));
+        lines.push(Self::property_line("y", rect.start.y.to_string()));
 
         lines.push(Self::blank_line());
 
-        // Size (calculated from corners)
-        let width = (rect.bottom_right.0 - rect.top_left.0 + 1).abs();
-        let height = (rect.bottom_right.1 - rect.top_left.1 + 1).abs();
         lines.push(Self::section_header("Size"));
-        lines.push(Self::property_line("width", width.to_string()));
-        lines.push(Self::property_line("height", height.to_string()));
+        lines.push(Self::property_line("width", rect.width.to_string()));
+        lines.push(Self::property_line("height", rect.height.to_string()));
     }
 
-    fn draw_arrow_properties(lines: &mut Vec<Line<'static>>, arrow: &crate::element::ArrowElement) {
-        // Position (start and end points)
-        lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("start_x", arrow.start.0.to_string()));
-        lines.push(Self::property_line("start_y", arrow.start.1.to_string()));
-        lines.push(Self::property_line("end_x", arrow.end.0.to_string()));
-        lines.push(Self::property_line("end_y", arrow.end.1.to_string()));
+    fn draw_arrow_properties(lines: &mut Vec<Line<'static>>, arrow: &crate::state::ArrowElement) {
+        lines.push(Self::section_header("Segments"));
+        lines.push(Self::property_line(
+            "count",
+            arrow.segments.len().to_string(),
+        ));
 
-        lines.push(Self::blank_line());
-
-        // Size (calculated from bounds)
-        let (x1, y1, x2, y2) = arrow.bounds;
-        let width = (x2 - x1 + 1).abs();
-        let height = (y2 - y1 + 1).abs();
-        lines.push(Self::section_header("Size"));
-        lines.push(Self::property_line("width", width.to_string()));
-        lines.push(Self::property_line("height", height.to_string()));
+        if let Some(first_seg) = arrow.segments.first() {
+            lines.push(Self::blank_line());
+            lines.push(Self::section_header("First Segment"));
+            lines.push(Self::property_line(
+                "start_x",
+                first_seg.start.x.to_string(),
+            ));
+            lines.push(Self::property_line(
+                "start_y",
+                first_seg.start.y.to_string(),
+            ));
+            lines.push(Self::property_line("length", first_seg.length.to_string()));
+            lines.push(Self::property_line(
+                "direction",
+                format!("{:?}", first_seg.direction),
+            ));
+        }
     }
 
-    fn draw_text_properties(lines: &mut Vec<Line<'static>>, text: &crate::element::TextElement) {
-        // Position
+    fn draw_text_properties(lines: &mut Vec<Line<'static>>, text: &crate::state::TextElement) {
         lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("x", text.position.0.to_string()));
-        lines.push(Self::property_line("y", text.position.1.to_string()));
+        lines.push(Self::property_line("x", text.position.x.to_string()));
+        lines.push(Self::property_line("y", text.position.y.to_string()));
 
         lines.push(Self::blank_line());
 
-        // Text content
         lines.push(Self::section_header("Content"));
         lines.push(Self::property_line("text", text.text.clone()));
-
-        lines.push(Self::blank_line());
-
-        // Size (calculated from bounds)
-        let (x1, y1, x2, y2) = text.bounds;
-        let width = (x2 - x1 + 1).abs();
-        let height = (y2 - y1 + 1).abs();
-        lines.push(Self::section_header("Size"));
-        lines.push(Self::property_line("width", width.to_string()));
-        lines.push(Self::property_line("height", height.to_string()));
     }
 }
 

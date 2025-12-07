@@ -1,16 +1,20 @@
 mod global;
+mod types;
 
 pub use global::GlobalHandler;
+pub use types::{KeyEvent, MouseEvent, MouseEventKind};
 
 use crate::state::AppState;
 use anyhow::Result;
-use crossterm::event::{Event, KeyEvent, MouseEvent, MouseEventKind};
+use crossterm::event::Event;
 
 /// Actions that can be triggered by event handlers
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActionType {
     /// Quit the application
     Quit,
+    /// Tool finished drawing an element
+    FinishedDrawing,
 }
 
 /// Result of handling an event - consumed or ignored for event propagation control.
@@ -33,12 +37,20 @@ pub trait EventHandler {
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(
+        &mut self,
+        state: &mut Self::State,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_up(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(
+        &mut self,
+        state: &mut Self::State,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
@@ -52,7 +64,11 @@ pub trait EventHandler {
         EventResult::Ignored
     }
 
-    fn handle_mouse_drag(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(
+        &mut self,
+        state: &mut Self::State,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
@@ -76,6 +92,7 @@ macro_rules! dispatch_event {
             match handler.$method($state, $event) {
                 EventResult::Consumed => break,
                 EventResult::Action(ActionType::Quit) => return Ok(true),
+                EventResult::Action(_) => break, // Other actions are consumed by handlers
                 EventResult::Ignored => continue,
             }
         }
@@ -85,7 +102,9 @@ macro_rules! dispatch_event {
 pub fn handle_event(event: Event, handlers: EventHandlers, state: &mut AppState) -> Result<bool> {
     match event {
         Event::Key(key_event) => {
-            dispatch_event!(handlers, state, &key_event, handle_key_event);
+            // Convert crossterm KeyEvent to our KeyEvent
+            let our_event = KeyEvent::from(key_event);
+            dispatch_event!(handlers, state, &our_event, handle_key_event);
             Ok(false)
         }
         Event::Mouse(mouse_event) => handle_mouse_event(mouse_event, handlers, state),
@@ -98,20 +117,23 @@ fn handle_mouse_event(
     handlers: EventHandlers,
     state: &mut AppState,
 ) -> Result<bool> {
-    match mouse_event.kind {
+    // Convert crossterm MouseEvent to our MouseEvent
+    let our_event = MouseEvent::from(mouse_event);
+
+    match our_event.kind {
         MouseEventKind::Down(_) => {
-            dispatch_event!(handlers, state, &mouse_event, handle_mouse_down)
+            dispatch_event!(handlers, state, &our_event, handle_mouse_down)
         }
-        MouseEventKind::Up(_) => dispatch_event!(handlers, state, &mouse_event, handle_mouse_up),
-        MouseEventKind::Moved => dispatch_event!(handlers, state, &mouse_event, handle_mouse_moved),
+        MouseEventKind::Up(_) => dispatch_event!(handlers, state, &our_event, handle_mouse_up),
+        MouseEventKind::Moved => dispatch_event!(handlers, state, &our_event, handle_mouse_moved),
         MouseEventKind::Drag(_) => {
-            dispatch_event!(handlers, state, &mouse_event, handle_mouse_drag)
+            dispatch_event!(handlers, state, &our_event, handle_mouse_drag)
         }
         MouseEventKind::ScrollDown
         | MouseEventKind::ScrollUp
         | MouseEventKind::ScrollLeft
         | MouseEventKind::ScrollRight => {
-            dispatch_event!(handlers, state, &mouse_event, handle_mouse_scroll)
+            dispatch_event!(handlers, state, &our_event, handle_mouse_scroll)
         }
     }
     Ok(false)

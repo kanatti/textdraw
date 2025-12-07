@@ -1,9 +1,8 @@
-use crate::element::{ArrowElement, Element};
-use crate::events::{EventHandler, EventResult};
+use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
 use crate::geometry;
-use crate::state::CanvasState;
+use crate::state::{ArrowElement, CanvasState, Element, Segment};
 use crate::tools::DrawingTool;
-use crossterm::event::MouseEvent;
+use crate::types::Coord;
 
 pub struct ArrowTool {
     start: Option<(u16, u16)>,
@@ -17,38 +16,62 @@ impl ArrowTool {
             current: None,
         }
     }
+
+    fn reset(&mut self) {
+        self.start = None;
+        self.current = None;
+    }
 }
 
 impl EventHandler for ArrowTool {
     type State = CanvasState;
-    fn handle_mouse_down(&mut self, _state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(
+        &mut self,
+        _state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.start = Some((mouse_event.column, mouse_event.row));
         self.current = Some((mouse_event.column, mouse_event.row));
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&mut self, _state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(
+        &mut self,
+        _state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.current = Some((mouse_event.column, mouse_event.row));
         EventResult::Consumed
     }
 
-    fn handle_mouse_up(&mut self, state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
-        if let Some((sx, sy)) = self.start {
-            let x = mouse_event.column;
-            let y = mouse_event.row;
-            // Only create arrow if the user actually dragged (not a single click)
-            if sx != x || sy != y {
-                let points =
-                    geometry::generate_arrow_points(sx as i32, sy as i32, x as i32, y as i32);
-                let id = state.get_next_id();
-                let arrow =
-                    ArrowElement::new(id, (sx as i32, sy as i32), (x as i32, y as i32), points);
-                state.add_element(Element::Arrow(arrow));
-            }
+    fn handle_mouse_up(
+        &mut self,
+        state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
+        let Some((sx, sy)) = self.start else {
+            return EventResult::Consumed;
+        };
+
+        let x = mouse_event.column;
+        let y = mouse_event.row;
+
+        // Don't create arrow if user didn't drag (single click)
+        if sx == x && sy == y {
+            self.reset();
+            return EventResult::Consumed;
         }
-        self.start = None;
-        self.current = None;
-        EventResult::Consumed
+
+        let id = state.get_next_id();
+
+        // Create a single segment from start to end (arrows are like lines with arrowhead)
+        let segment = Segment::from_coords(Coord { x: sx, y: sy }, Coord { x, y });
+
+        let arrow = ArrowElement::new(id, vec![segment]);
+        state.add_element(Element::Arrow(arrow));
+
+        self.reset();
+        EventResult::Action(ActionType::FinishedDrawing)
     }
 }
 
@@ -61,24 +84,14 @@ impl DrawingTool for ArrowTool {
         }
     }
 
-    fn finish(&mut self, state: &mut CanvasState) {
-        if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            if sx != cx || sy != cy {
-                let points =
-                    geometry::generate_arrow_points(sx as i32, sy as i32, cx as i32, cy as i32);
-                let id = state.get_next_id();
-                let arrow =
-                    ArrowElement::new(id, (sx as i32, sy as i32), (cx as i32, cy as i32), points);
-                state.add_element(Element::Arrow(arrow));
-            }
-        }
-        self.start = None;
-        self.current = None;
+    fn finish(&mut self, _state: &mut CanvasState) {
+        // Just clear state without creating element
+        // Element creation only happens on mouse_up
+        self.reset();
     }
 
     fn cancel(&mut self) {
-        self.start = None;
-        self.current = None;
+        self.reset();
     }
 
     fn is_drawing(&self) -> bool {

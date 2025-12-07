@@ -1,10 +1,10 @@
 use crate::components::Component;
-use crate::events::{EventHandler, EventResult};
+use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Coord, Panel};
 use crate::ui::UILayout;
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     style::{Color, Modifier, Style},

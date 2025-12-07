@@ -200,8 +200,8 @@ impl SelectionState {
     }
 
     pub fn finish_move_selection(&mut self, canvas: &mut CanvasState) {
-        let dx = self.move_offset.0;
-        let dy = self.move_offset.1;
+        let dx = self.move_offset.0 as i16;
+        let dy = self.move_offset.1 as i16;
 
         // Move all selected elements by offset
         for element_id in &self.selected_ids {
@@ -223,7 +223,7 @@ impl SelectionState {
 
         for element_id in &self.selected_ids {
             if let Some(element) = canvas.get_element_mut(*element_id) {
-                element.translate(dx, dy);
+                element.translate(dx as i16, dy as i16);
             }
         }
     }

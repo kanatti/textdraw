@@ -1,6 +1,5 @@
-use crate::element::Element;
 use crate::file::DiagramFile;
-use crate::geometry;
+use crate::state::Element;
 use anyhow::Result;
 use std::path::Path;
 
@@ -46,15 +45,6 @@ impl CanvasState {
         None
     }
 
-    /// Find all elements that intersect with the given rectangle
-    pub fn find_elements_in_rect(&self, x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<usize> {
-        self.elements
-            .iter()
-            .filter(|e| e.intersects_rect(x1, y1, x2, y2))
-            .map(|e| e.id())
-            .collect()
-    }
-
     /// Find all elements that are fully contained within the given rectangle
     pub fn find_elements_fully_inside_rect(
         &self,
@@ -94,26 +84,11 @@ impl CanvasState {
         &self.elements
     }
 
-    /// Get next available ID
-    pub fn next_id(&self) -> usize {
-        self.next_id
-    }
-
     /// Increment and return next ID
     pub fn get_next_id(&mut self) -> usize {
         let id = self.next_id;
         self.next_id += 1;
         id
-    }
-
-    /// Clear all elements
-    pub fn clear(&mut self) {
-        self.elements.clear();
-    }
-
-    /// Check if canvas has any elements
-    pub fn has_elements(&self) -> bool {
-        !self.elements.is_empty()
     }
 
     /// Check if canvas is empty
@@ -135,10 +110,10 @@ impl CanvasState {
 
         for element in &self.elements {
             let bounds = element.bounds();
-            min_x = min_x.min(bounds.0);
-            min_y = min_y.min(bounds.1);
-            max_x = max_x.max(bounds.2);
-            max_y = max_y.max(bounds.3);
+            min_x = min_x.min(bounds.min.x as i32);
+            min_y = min_y.min(bounds.min.y as i32);
+            max_x = max_x.max(bounds.max.x as i32);
+            max_y = max_y.max(bounds.max.y as i32);
         }
 
         (min_x, min_y, max_x, max_y)
@@ -152,60 +127,12 @@ impl CanvasState {
 
     /// Load the canvas from a file
     pub fn load_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        let mut diagram = DiagramFile::load(path)?;
-
-        // Rebuild points and bounds for all elements after deserialization
-        for element in &mut diagram.elements {
-            Self::rebuild_element(element);
-        }
+        let diagram = DiagramFile::load(path)?;
 
         self.elements = diagram.elements;
         self.next_id = diagram.next_id;
 
         Ok(())
-    }
-
-    /// Rebuild points and bounds for an element (used after deserialization)
-    fn rebuild_element(element: &mut Element) {
-        match element {
-            Element::Line(line) => {
-                line.points = geometry::generate_line_points(
-                    line.start.0,
-                    line.start.1,
-                    line.end.0,
-                    line.end.1,
-                );
-                line.bounds = crate::element::calculate_bounds(&line.points);
-            }
-            Element::Rectangle(rect) => {
-                rect.points = geometry::generate_box_points(
-                    rect.top_left.0,
-                    rect.top_left.1,
-                    rect.bottom_right.0,
-                    rect.bottom_right.1,
-                );
-                rect.bounds = crate::element::calculate_bounds(&rect.points);
-            }
-            Element::Arrow(arrow) => {
-                arrow.points = geometry::generate_arrow_points(
-                    arrow.start.0,
-                    arrow.start.1,
-                    arrow.end.0,
-                    arrow.end.1,
-                );
-                arrow.bounds = crate::element::calculate_bounds(&arrow.points);
-            }
-            Element::Text(text) => {
-                // Rebuild text points: place each character horizontally
-                text.points = text
-                    .text
-                    .chars()
-                    .enumerate()
-                    .map(|(i, ch)| ((text.position.0 + i as i32, text.position.1), ch))
-                    .collect();
-                text.bounds = crate::element::calculate_bounds(&text.points);
-            }
-        }
     }
 }
 

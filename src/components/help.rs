@@ -1,8 +1,8 @@
 use crate::components::Component;
 use crate::components::help_line::HELP_LINES;
-use crate::events::{EventHandler, EventResult};
+use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent, MouseEventKind};
 use crate::state::AppState;
-use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},

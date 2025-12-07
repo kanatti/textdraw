@@ -1,9 +1,8 @@
-use crate::element::{Element, RectangleElement};
-use crate::events::{EventHandler, EventResult};
+use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
 use crate::geometry;
-use crate::state::CanvasState;
+use crate::state::{CanvasState, Element, RectangleElement};
 use crate::tools::DrawingTool;
-use crossterm::event::MouseEvent;
+use crate::types::Coord;
 
 pub struct RectangleTool {
     start: Option<(u16, u16)>,
@@ -17,44 +16,66 @@ impl RectangleTool {
             current: None,
         }
     }
+
+    fn reset(&mut self) {
+        self.start = None;
+        self.current = None;
+    }
 }
 
 impl EventHandler for RectangleTool {
     type State = CanvasState;
-    fn handle_mouse_down(&mut self, _state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(
+        &mut self,
+        _state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.start = Some((mouse_event.column, mouse_event.row));
         self.current = Some((mouse_event.column, mouse_event.row));
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&mut self, _state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(
+        &mut self,
+        _state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.current = Some((mouse_event.column, mouse_event.row));
         EventResult::Consumed
     }
 
-    fn handle_mouse_up(&mut self, state: &mut CanvasState, mouse_event: &MouseEvent) -> EventResult {
-        if let Some((sx, sy)) = self.start {
-            let x = mouse_event.column;
-            let y = mouse_event.row;
-            // Only create rectangle if the user actually dragged (not a single click)
-            if sx != x || sy != y {
-                let points =
-                    geometry::generate_box_points(sx as i32, sy as i32, x as i32, y as i32);
-                let id = state.get_next_id();
-                let (left, right) = if sx <= x { (sx, x) } else { (x, sx) };
-                let (top, bottom) = if sy <= y { (sy, y) } else { (y, sy) };
-                let rect = RectangleElement::new(
-                    id,
-                    (left as i32, top as i32),
-                    (right as i32, bottom as i32),
-                    points,
-                );
-                state.add_element(Element::Rectangle(rect));
-            }
+    fn handle_mouse_up(
+        &mut self,
+        state: &mut CanvasState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
+        let Some((sx, sy)) = self.start else {
+            return EventResult::Consumed;
+        };
+
+        let x = mouse_event.column;
+        let y = mouse_event.row;
+
+        // Don't create rectangle if user didn't drag (single click)
+        if sx == x && sy == y {
+            self.reset();
+            return EventResult::Consumed;
         }
-        self.start = None;
-        self.current = None;
-        EventResult::Consumed
+
+        let id = state.get_next_id();
+
+        // Calculate top-left corner and dimensions
+        let left = sx.min(x);
+        let top = sy.min(y);
+        let width = sx.abs_diff(x);
+        let height = sy.abs_diff(y);
+
+        let rect =
+            RectangleElement::new(id, Coord { x: left, y: top }, width as u16, height as u16);
+        state.add_element(Element::Rectangle(rect));
+
+        self.reset();
+        EventResult::Action(ActionType::FinishedDrawing)
     }
 }
 
@@ -67,30 +88,14 @@ impl DrawingTool for RectangleTool {
         }
     }
 
-    fn finish(&mut self, state: &mut CanvasState) {
-        if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            if sx != cx || sy != cy {
-                let points =
-                    geometry::generate_box_points(sx as i32, sy as i32, cx as i32, cy as i32);
-                let id = state.get_next_id();
-                let (left, right) = if sx <= cx { (sx, cx) } else { (cx, sx) };
-                let (top, bottom) = if sy <= cy { (sy, cy) } else { (cy, sy) };
-                let rect = RectangleElement::new(
-                    id,
-                    (left as i32, top as i32),
-                    (right as i32, bottom as i32),
-                    points,
-                );
-                state.add_element(Element::Rectangle(rect));
-            }
-        }
-        self.start = None;
-        self.current = None;
+    fn finish(&mut self, _state: &mut CanvasState) {
+        // Just clear state without creating element
+        // Element creation only happens on mouse_up
+        self.reset();
     }
 
     fn cancel(&mut self) {
-        self.start = None;
-        self.current = None;
+        self.reset();
     }
 
     fn is_drawing(&self) -> bool {
