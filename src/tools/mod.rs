@@ -9,6 +9,7 @@ pub use line::LineTool;
 pub use rectangle::RectangleTool;
 pub use text::TextTool;
 
+use crate::events::EventHandler;
 use crate::state::CanvasState;
 
 /// Macro to define the Tool enum with associated names and keyboard shortcuts.
@@ -61,21 +62,15 @@ define_tools_enum! {
     Text      => ("Text", 't'),
 }
 
-/// Trait for all drawing tools
-pub trait DrawingTool {
-    /// Called when mouse button is pressed down
-    fn on_mouse_down(&mut self, x: u16, y: u16);
-
-    /// Called during mouse drag
-    fn on_mouse_drag(&mut self, x: u16, y: u16);
-
-    /// Called when mouse button is released - commits drawing to canvas
-    fn on_mouse_up(&mut self, x: u16, y: u16, canvas: &mut CanvasState);
-
+/// Trait for all drawing tools - extends EventHandler for event routing
+pub trait DrawingTool: EventHandler<State = CanvasState> {
     /// Get preview points for rendering during drag (x, y, char)
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
         vec![]
     }
+
+    /// Finish current drawing operation programmatically (for tools like Text that finish on Enter)
+    fn finish(&mut self, state: &mut CanvasState);
 
     /// Cancel current drawing operation
     fn cancel(&mut self);

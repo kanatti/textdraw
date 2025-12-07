@@ -71,6 +71,7 @@ impl ToolsPanel {
 }
 
 impl EventHandler for ToolsPanel {
+    type State = AppState;
     fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Only handle when Tools panel is active
         if state.active_panel != Panel::Tools {

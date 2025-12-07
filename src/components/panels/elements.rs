@@ -12,7 +12,9 @@ impl ElementsPanel {
     }
 }
 
-impl EventHandler for ElementsPanel {}
+impl EventHandler for ElementsPanel {
+    type State = AppState;
+}
 
 impl Component for ElementsPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {

@@ -8,10 +8,24 @@ pub struct Coord {
     pub y: u16,
 }
 
+impl Coord {
+    pub fn translate(&mut self, dx: i16, dy: i16) {
+        self.x = self.x.saturating_add_signed(dx);
+        self.y = self.y.saturating_add_signed(dy);
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Bounds {
     pub min: Coord,
     pub max: Coord,
+}
+
+impl Bounds {
+    pub fn translate(&mut self, dx: i16, dy: i16) {
+        self.min.translate(dx, dy);
+        self.max.translate(dx, dy);
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

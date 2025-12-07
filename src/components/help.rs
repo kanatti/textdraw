@@ -56,6 +56,7 @@ impl HelpModal {
 }
 
 impl EventHandler for HelpModal {
+    type State = AppState;
     fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         if !state.show_help {
             return EventResult::Ignored;

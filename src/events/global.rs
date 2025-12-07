@@ -9,6 +9,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 pub struct GlobalHandler;
 
 impl EventHandler for GlobalHandler {
+    type State = AppState;
+
     fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle command mode if active
         if state.is_command_mode_active() {

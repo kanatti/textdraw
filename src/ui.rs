@@ -44,7 +44,7 @@ impl UI {
 
     /// Get event handlers in priority order for event dispatching.
     /// Returns mutable references to components for event handling.
-    pub fn component_event_handlers(&mut self) -> Vec<&mut dyn EventHandler> {
+    pub fn component_event_handlers(&mut self) -> Vec<&mut dyn EventHandler<State = AppState>> {
         vec![
             &mut self.help_modal,
             &mut self.tools_panel,

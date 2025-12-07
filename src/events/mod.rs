@@ -26,38 +26,40 @@ pub enum EventResult {
 
 /// Event handler trait for components
 pub trait EventHandler {
-    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+    type State;
+
+    fn handle_key_event(&mut self, state: &mut Self::State, key_event: &KeyEvent) -> EventResult {
         let _ = (state, key_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_up(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
     fn handle_mouse_moved(
         &mut self,
-        state: &mut AppState,
+        state: &mut Self::State,
         mouse_event: &MouseEvent,
     ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_drag(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(&mut self, state: &mut Self::State, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
     fn handle_mouse_scroll(
         &mut self,
-        state: &mut AppState,
+        state: &mut Self::State,
         mouse_event: &MouseEvent,
     ) -> EventResult {
         let _ = (state, mouse_event);
@@ -66,7 +68,7 @@ pub trait EventHandler {
 }
 
 /// Type alias for a slice of mutable event handlers
-type EventHandlers<'a> = &'a mut [&'a mut dyn EventHandler];
+type EventHandlers<'a> = &'a mut [&'a mut dyn EventHandler<State = AppState>];
 
 macro_rules! dispatch_event {
     ($handlers:expr, $state:expr, $event:expr, $method:ident) => {{

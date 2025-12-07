@@ -16,7 +16,9 @@ impl StatusBar {
     }
 }
 
-impl EventHandler for StatusBar {}
+impl EventHandler for StatusBar {
+    type State = AppState;
+}
 
 impl Component for StatusBar {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {

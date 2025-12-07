@@ -20,6 +20,7 @@ impl CanvasComponent {
 }
 
 impl EventHandler for CanvasComponent {
+    type State = AppState;
     fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle text input when text tool is active and in drawing mode
         if state.is_text_input_mode() {
@@ -101,11 +102,18 @@ impl EventHandler for CanvasComponent {
         if state.is_select_tool() {
             let shift_pressed = mouse_event.modifiers.contains(KeyModifiers::SHIFT);
             self.handle_selection_mouse_down(state, canvas_x, canvas_y, shift_pressed);
+            EventResult::Consumed
+        } else if let Some(tool) = state.tool.active_tool_mut() {
+            // Create a new mouse event with canvas coordinates
+            let canvas_event = MouseEvent {
+                column: canvas_x,
+                row: canvas_y,
+                ..*mouse_event
+            };
+            tool.handle_mouse_down(&mut state.canvas, &canvas_event)
         } else {
-            state.start_drawing(canvas_x, canvas_y);
+            EventResult::Ignored
         }
-
-        EventResult::Consumed
     }
 
     fn handle_mouse_up(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
@@ -131,19 +139,31 @@ impl EventHandler for CanvasComponent {
                 }
                 _ => {}
             }
+            EventResult::Consumed
         } else {
             // Finish drawing on mouse up (except for text tool which finishes on Enter)
-            if state.is_drawing() && !state.is_text_input_mode() {
-                let element_created = state.finish_drawing(canvas_x, canvas_y);
+            let is_text_input_mode = state.is_text_input_mode();
+            if !is_text_input_mode {
+                if let Some(tool) = state.tool.active_tool_mut() {
+                    let elements_before = state.canvas.elements().len();
+                    let canvas_event = MouseEvent {
+                        column: canvas_x,
+                        row: canvas_y,
+                        ..*mouse_event
+                    };
+                    tool.handle_mouse_up(&mut state.canvas, &canvas_event);
+                    let elements_after = state.canvas.elements().len();
+                    let element_created = elements_after > elements_before;
 
-                // Switch to Select tool if not locked AND an element was actually created
-                if !state.tool.tool_locked && element_created {
-                    state.select_tool(Tool::Select);
+                    // Switch to Select tool if not locked AND an element was actually created
+                    if !state.tool.tool_locked && element_created {
+                        state.select_tool(Tool::Select);
+                    }
+                    return EventResult::Consumed;
                 }
             }
+            EventResult::Ignored
         }
-
-        EventResult::Consumed
     }
 
     fn handle_mouse_moved(
@@ -189,14 +209,18 @@ impl EventHandler for CanvasComponent {
                     state.update_move_selection(canvas_x, canvas_y);
                 }
             }
-        } else {
+            EventResult::Consumed
+        } else if let Some(tool) = state.tool.active_tool_mut() {
             // Handle dragging for drawing preview
-            if state.is_drawing() {
-                state.update_drawing(canvas_x, canvas_y);
-            }
+            let canvas_event = MouseEvent {
+                column: canvas_x,
+                row: canvas_y,
+                ..*mouse_event
+            };
+            tool.handle_mouse_drag(&mut state.canvas, &canvas_event)
+        } else {
+            EventResult::Ignored
         }
-
-        EventResult::Consumed
     }
 }
 

@@ -1,4 +1,3 @@
-use crate::state::CanvasState;
 use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
 
 pub struct ToolState {
@@ -63,31 +62,11 @@ impl ToolState {
         self.tool_locked = !self.tool_locked;
     }
 
+    pub fn active_tool_mut(&mut self) -> Option<&mut Box<dyn DrawingTool>> {
+        self.active_tool.as_mut()
+    }
+
     // Drawing tool operations
-
-    pub fn start_drawing(&mut self, x: u16, y: u16) {
-        if let Some(tool) = &mut self.active_tool {
-            tool.on_mouse_down(x, y);
-        }
-    }
-
-    pub fn update_drawing(&mut self, x: u16, y: u16) {
-        if let Some(tool) = &mut self.active_tool {
-            tool.on_mouse_drag(x, y);
-        }
-    }
-
-    pub fn finish_drawing(&mut self, x: u16, y: u16, canvas: &mut CanvasState) -> bool {
-        if let Some(tool) = &mut self.active_tool {
-            let elements_before = canvas.elements().len();
-            tool.on_mouse_up(x, y, canvas);
-            let elements_after = canvas.elements().len();
-            // Return true if an element was actually created
-            elements_after > elements_before
-        } else {
-            false
-        }
-    }
 
     pub fn cancel_drawing(&mut self) {
         if let Some(tool) = &mut self.active_tool {
@@ -133,10 +112,10 @@ impl ToolState {
         }
     }
 
-    pub fn finish_text_input(&mut self, canvas: &mut CanvasState) -> bool {
+    pub fn finish_text_input(&mut self, canvas: &mut crate::state::CanvasState) -> bool {
         if let Some(tool) = &mut self.active_tool {
             let elements_before = canvas.elements().len();
-            tool.on_mouse_up(0, 0, canvas);
+            tool.finish(canvas);
             let elements_after = canvas.elements().len();
             // Return true if an element was actually created
             elements_after > elements_before

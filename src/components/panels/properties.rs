@@ -132,7 +132,9 @@ impl PropertiesPanel {
     }
 }
 
-impl EventHandler for PropertiesPanel {}
+impl EventHandler for PropertiesPanel {
+    type State = AppState;
+}
 
 impl Component for PropertiesPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {

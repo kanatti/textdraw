@@ -3,6 +3,7 @@ mod command;
 mod file;
 mod selection;
 mod tool;
+mod elements;
 
 pub use canvas::CanvasState;
 pub use command::{CommandExecutor, CommandState};
@@ -116,18 +117,6 @@ impl AppState {
     }
 
     // Drawing tool operations
-
-    pub fn start_drawing(&mut self, x: u16, y: u16) {
-        self.tool.start_drawing(x, y);
-    }
-
-    pub fn update_drawing(&mut self, x: u16, y: u16) {
-        self.tool.update_drawing(x, y);
-    }
-
-    pub fn finish_drawing(&mut self, x: u16, y: u16) -> bool {
-        self.tool.finish_drawing(x, y, &mut self.canvas)
-    }
 
     pub fn cancel_drawing(&mut self) {
         self.tool.cancel_drawing();

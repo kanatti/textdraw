@@ -4,16 +4,16 @@ use crate::types::Bounds;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LineElement {
+pub struct ArrowElement {
     pub id: usize,
     pub name: String,
     pub segments: Vec<Segment>,
     pub bounds: Bounds,
 }
 
-impl LineElement {
+impl ArrowElement {
     pub fn new(id: usize, segments: Vec<Segment>) -> Self {
-        let name = format!("Line {}", id + 1);
+        let name = format!("Arrow {}", id + 1);
         let bounds = segment::calculate_bounds(&segments);
         Self {
             id,
