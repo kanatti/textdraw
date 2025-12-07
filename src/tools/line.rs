@@ -152,11 +152,16 @@ impl EventHandler for LineTool {
             return EventResult::Consumed;
         }
 
-        // In drag mode, create a single-segment line
-        let id = state.get_next_id();
+        // Add the dragged segment to any existing segments
         let segment = Segment::from_coords(start, end);
-        let line = LineElement::new(id, vec![segment]);
-        state.add_element(Element::Line(line));
+        self.segments.push(segment);
+
+        // Create line with all segments (both previously added and this dragged one)
+        if !self.segments.is_empty() {
+            let id = state.get_next_id();
+            let line = LineElement::new(id, self.segments.clone());
+            state.add_element(Element::Line(line));
+        }
 
         self.reset();
         EventResult::Action(ActionType::FinishedDrawing)
