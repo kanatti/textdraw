@@ -179,6 +179,13 @@ impl EventHandler for CanvasComponent {
         // Update cursor position
         if let Some(canvas_event) = self.to_canvas_event(state, mouse_event) {
             state.update_cursor(canvas_event.column, canvas_event.row);
+
+            // Forward to active drawing tool if we're currently drawing
+            if state.is_drawing() {
+                if let Some(tool) = state.tool.active_tool_mut() {
+                    return tool.handle_mouse_moved(&mut state.canvas, &canvas_event);
+                }
+            }
         }
 
         EventResult::Consumed
