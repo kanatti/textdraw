@@ -70,8 +70,10 @@ fn test_render() {
       "Rectangle": {
         "id": 0,
         "name": "Rectangle 1",
-        "top_left": [0, 0],
-        "bottom_right": [5, 3]
+        "start": {"x": 0, "y": 0},
+        "width": 5,
+        "height": 3,
+        "bounds": {"min": {"x": 0, "y": 0}, "max": {"x": 5, "y": 3}}
       }
     }
   ],

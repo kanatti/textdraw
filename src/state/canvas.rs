@@ -1,6 +1,7 @@
 use crate::file::DiagramFile;
 use crate::state::Element;
 use anyhow::Result;
+use std::collections::HashMap;
 use std::path::Path;
 
 /// Represents the drawing canvas with element-based storage
@@ -24,15 +25,17 @@ impl CanvasState {
         id
     }
 
-    /// Get character at position (x, y) - returns topmost element's character
-    pub fn get(&self, x: i32, y: i32) -> Option<char> {
-        // Iterate in reverse (top to bottom - last drawn is on top)
-        for element in self.elements.iter().rev() {
-            if let Some(&ch) = element.points().get(&(x, y)) {
-                return Some(ch);
+    /// Build a render map of all elements for efficient rendering
+    /// Returns HashMap of (x, y) -> char
+    pub fn build_render_map(&self) -> HashMap<(i32, i32), char> {
+        let mut render_map = HashMap::new();
+        for element in &self.elements {
+            let points = element.points();
+            for (x, y, ch) in points {
+                render_map.insert((x, y), ch);
             }
         }
-        None
+        render_map
     }
 
     /// Find the topmost element at position (x, y)

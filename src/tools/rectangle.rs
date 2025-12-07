@@ -82,7 +82,7 @@ impl EventHandler for RectangleTool {
 impl DrawingTool for RectangleTool {
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
         if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            geometry::box_preview_points(sx as i32, sy as i32, cx as i32, cy as i32)
+            geometry::box_points(sx as i32, sy as i32, cx as i32, cy as i32)
         } else {
             vec![]
         }

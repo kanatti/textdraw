@@ -35,3 +35,7 @@ Components can optionally be stateful to keep local state that doesn't belong in
 ## Event Dispatching
 
 At any time, one component is active in the application (Canvas, Tools Panel, Properties Panel, Help Modal, etc.). Events are dispatched to components in priority order—each component can consume or ignore the event. Typically, inactive components ignore events while the active component consumes them. If all components ignore an event, it falls back to the `GlobalEventHandler` for application-wide actions like quit.
+
+## Tools and Drawing
+
+Drawing tools are `EventHandler` implementations that operate on `CanvasState`. The canvas component dispatches mouse and key events to the active tool. Each tool locally stores the state needed for drafting the element (e.g., start/end positions, text buffer).

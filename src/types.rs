@@ -2,6 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
+/// A render point with position and character
+pub type RenderPoint = (i32, i32, char);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Coord {
     pub x: u16,

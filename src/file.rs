@@ -60,11 +60,14 @@ pub fn render_file(file_path: &str) -> Result<()> {
     // Get bounding box of all elements
     let (min_x, min_y, max_x, max_y) = canvas.bounds();
 
+    // Build render map once for efficient lookups
+    let render_map = canvas.build_render_map();
+
     // Build entire output string
     let mut output = String::new();
     for y in min_y..=max_y {
         for x in min_x..=max_x {
-            let ch = canvas.get(x, y).unwrap_or(' ');
+            let ch = render_map.get(&(x, y)).copied().unwrap_or(' ');
             output.push(ch);
         }
         output.push('\n');

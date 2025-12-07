@@ -1,14 +1,7 @@
-use std::collections::HashMap;
+use crate::types::RenderPoint;
 
 /// Generate points for a line using Bresenham's algorithm
-/// Returns HashMap of (x, y) -> char
-pub fn generate_line_points(x1: i32, y1: i32, x2: i32, y2: i32) -> HashMap<(i32, i32), char> {
-    let points = line_preview_points(x1, y1, x2, y2);
-    points.into_iter().map(|(x, y, ch)| ((x, y), ch)).collect()
-}
-
-/// Generate preview points for a line
-pub fn line_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32, char)> {
+pub fn line_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
     let dx = (x2 - x1).abs();
     let dy = (y2 - y1).abs();
     let mut points = vec![];
@@ -31,14 +24,7 @@ pub fn line_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32,
 }
 
 /// Generate points for a rectangle/box
-/// Returns HashMap of (x, y) -> char
-pub fn generate_box_points(x1: i32, y1: i32, x2: i32, y2: i32) -> HashMap<(i32, i32), char> {
-    let points = box_preview_points(x1, y1, x2, y2);
-    points.into_iter().map(|(x, y, ch)| ((x, y), ch)).collect()
-}
-
-/// Generate preview points for a box
-pub fn box_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32, char)> {
+pub fn box_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
     let mut points = vec![];
     let (left, right) = if x1 <= x2 { (x1, x2) } else { (x2, x1) };
     let (top, bottom) = if y1 <= y2 { (y1, y2) } else { (y2, y1) };
@@ -65,14 +51,7 @@ pub fn box_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32, 
 }
 
 /// Generate points for an arrow
-/// Returns HashMap of (x, y) -> char
-pub fn generate_arrow_points(x1: i32, y1: i32, x2: i32, y2: i32) -> HashMap<(i32, i32), char> {
-    let points = arrow_preview_points(x1, y1, x2, y2);
-    points.into_iter().map(|(x, y, ch)| ((x, y), ch)).collect()
-}
-
-/// Generate preview points for an arrow
-pub fn arrow_preview_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<(i32, i32, char)> {
+pub fn arrow_points(x1: i32, y1: i32, x2: i32, y2: i32) -> Vec<RenderPoint> {
     let dx = x2 - x1;
     let dy = y2 - y1;
     let mut points = vec![];

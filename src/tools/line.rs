@@ -5,8 +5,8 @@ use crate::tools::DrawingTool;
 use crate::types::Coord;
 
 pub struct LineTool {
-    start: Option<(u16, u16)>,
-    current: Option<(u16, u16)>,
+    start: Option<Coord>,
+    current: Option<Coord>,
 }
 
 impl LineTool {
@@ -31,8 +31,8 @@ impl EventHandler for LineTool {
         _state: &mut CanvasState,
         mouse_event: &MouseEvent,
     ) -> EventResult {
-        self.start = Some((mouse_event.column, mouse_event.row));
-        self.current = Some((mouse_event.column, mouse_event.row));
+        self.start = Some(mouse_event.get_coord());
+        self.current = Some(mouse_event.get_coord());
         EventResult::Consumed
     }
 
@@ -41,7 +41,7 @@ impl EventHandler for LineTool {
         _state: &mut CanvasState,
         mouse_event: &MouseEvent,
     ) -> EventResult {
-        self.current = Some((mouse_event.column, mouse_event.row));
+        self.current = Some(mouse_event.get_coord());
         EventResult::Consumed
     }
 
@@ -50,15 +50,14 @@ impl EventHandler for LineTool {
         state: &mut CanvasState,
         mouse_event: &MouseEvent,
     ) -> EventResult {
-        let Some((sx, sy)) = self.start else {
+        let Some(start) = self.start else {
             return EventResult::Consumed;
         };
 
-        let x = mouse_event.column;
-        let y = mouse_event.row;
+        let current = mouse_event.get_coord();
 
         // Don't create line if user didn't drag (single click)
-        if sx == x && sy == y {
+        if start == current {
             self.reset();
             return EventResult::Consumed;
         }
@@ -66,7 +65,7 @@ impl EventHandler for LineTool {
         let id = state.get_next_id();
 
         // Create a single segment from start to end
-        let segment = Segment::from_coords(Coord { x: sx, y: sy }, Coord { x, y });
+        let segment = Segment::from_coords(start, current);
 
         let line = LineElement::new(id, vec![segment]);
         state.add_element(Element::Line(line));
@@ -78,8 +77,8 @@ impl EventHandler for LineTool {
 
 impl DrawingTool for LineTool {
     fn preview_points(&self) -> Vec<(i32, i32, char)> {
-        if let (Some((sx, sy)), Some((cx, cy))) = (self.start, self.current) {
-            geometry::line_preview_points(sx as i32, sy as i32, cx as i32, cy as i32)
+        if let (Some(start), Some(current)) = (self.start, self.current) {
+            geometry::line_points(start.x as i32, start.y as i32, current.x as i32, current.y as i32)
         } else {
             vec![]
         }

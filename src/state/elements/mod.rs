@@ -83,10 +83,10 @@ impl Element {
     }
 
     /// Generate renderable points for this element
-    pub fn points(&self) -> std::collections::HashMap<(i32, i32), char> {
+    pub fn points(&self) -> Vec<(i32, i32, char)> {
         match self {
             Element::Line(line) => {
-                let mut points = std::collections::HashMap::new();
+                let mut points = Vec::new();
                 for segment in &line.segments {
                     let start_x = segment.start.x as i32;
                     let start_y = segment.start.y as i32;
@@ -94,7 +94,7 @@ impl Element {
                     let end_x = end.x as i32;
                     let end_y = end.y as i32;
                     let segment_points =
-                        crate::geometry::generate_line_points(start_x, start_y, end_x, end_y);
+                        crate::geometry::line_points(start_x, start_y, end_x, end_y);
                     points.extend(segment_points);
                 }
                 points
@@ -104,10 +104,10 @@ impl Element {
                 let y1 = rect.start.y as i32;
                 let x2 = (rect.start.x + rect.width) as i32;
                 let y2 = (rect.start.y + rect.height) as i32;
-                crate::geometry::generate_box_points(x1, y1, x2, y2)
+                crate::geometry::box_points(x1, y1, x2, y2)
             }
             Element::Arrow(arrow) => {
-                let mut points = std::collections::HashMap::new();
+                let mut points = Vec::new();
                 for segment in &arrow.segments {
                     let start_x = segment.start.x as i32;
                     let start_y = segment.start.y as i32;
@@ -115,18 +115,19 @@ impl Element {
                     let end_x = end.x as i32;
                     let end_y = end.y as i32;
                     let segment_points =
-                        crate::geometry::generate_arrow_points(start_x, start_y, end_x, end_y);
+                        crate::geometry::arrow_points(start_x, start_y, end_x, end_y);
                     points.extend(segment_points);
                 }
                 points
             }
             Element::Text(text) => {
-                let mut points = std::collections::HashMap::new();
+                let mut points = Vec::new();
                 for (i, ch) in text.text.chars().enumerate() {
-                    points.insert(
-                        (text.position.x as i32 + i as i32, text.position.y as i32),
+                    points.push((
+                        text.position.x as i32 + i as i32,
+                        text.position.y as i32,
                         ch,
-                    );
+                    ));
                 }
                 points
             }

@@ -1,5 +1,7 @@
 use crossterm::event::{KeyCode, KeyModifiers, MouseButton};
 
+use crate::types::Coord;
+
 /// Mouse event kind - what type of mouse event occurred
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MouseEventKind {
@@ -35,6 +37,10 @@ impl MouseEvent {
     /// Check if Shift is pressed
     pub fn is_shift(&self) -> bool {
         self.modifiers.contains(KeyModifiers::SHIFT)
+    }
+
+    pub fn get_coord(&self) -> Coord {
+        Coord { x: self.row, y: self.column }
     }
 }
 
