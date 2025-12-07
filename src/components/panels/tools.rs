@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
+use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Coord, Panel};
 use crate::ui::UILayout;
@@ -29,7 +29,7 @@ impl ToolsPanel {
 
     /// Detect which tool was clicked based on mouse coordinates within the tools panel
     fn detect_tool_click(&self, coord: Coord, layout: &UILayout) -> Option<Tool> {
-        let area = layout.tools?;
+        let area = layout.tools;
 
         // Check if click is within the tools panel bounds
         if !self.is_within_panel(coord, area) {
@@ -52,9 +52,7 @@ impl ToolsPanel {
 
     /// Detect if lock line was clicked (anywhere on the line within the tools panel)
     fn detect_lock_click(&self, coord: Coord, layout: &UILayout) -> bool {
-        let Some(area) = layout.tools else {
-            return false;
-        };
+        let area = layout.tools;
 
         // Check if click is within the tools panel bounds
         if !self.is_within_panel(coord, area) {
@@ -121,9 +119,7 @@ impl EventHandler for ToolsPanel {
 
 impl Component for ToolsPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        let Some(area) = state.layout.tools else {
-            return;
-        };
+        let area = state.layout.tools;
 
         let mut lines = vec![Line::from("")];
 

@@ -1,8 +1,8 @@
-use crate::state::AppState;
 use crate::components::{
     CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
 use crate::events::EventHandler;
+use crate::state::AppState;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -44,7 +44,7 @@ impl UI {
 
     /// Get event handlers in priority order for event dispatching.
     /// Returns mutable references to components for event handling.
-    pub fn event_handlers(&mut self) -> Vec<&mut dyn EventHandler> {
+    pub fn component_event_handlers(&mut self) -> Vec<&mut dyn EventHandler> {
         vec![
             &mut self.help_modal,
             &mut self.tools_panel,
@@ -62,13 +62,25 @@ impl Default for UI {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct UILayout {
-    pub canvas: Option<Rect>,
-    pub tools: Option<Rect>,
-    pub elements: Option<Rect>,
-    pub properties: Option<Rect>,
-    pub statusbar: Option<Rect>,
+    pub canvas: Rect,
+    pub tools: Rect,
+    pub elements: Rect,
+    pub properties: Rect,
+    pub statusbar: Rect,
+}
+
+impl Default for UILayout {
+    fn default() -> Self {
+        Self {
+            canvas: Rect::default(),
+            tools: Rect::default(),
+            elements: Rect::default(),
+            properties: Rect::default(),
+            statusbar: Rect::default(),
+        }
+    }
 }
 
 /// Calculate the layout of the UI.
@@ -95,10 +107,10 @@ pub fn calculate_layout(frame: &Frame) -> UILayout {
     .split(main_layout[0]);
 
     UILayout {
-        canvas: Some(main_layout[1]),
-        tools: Some(panel_layout[0]),
-        elements: Some(panel_layout[1]),
-        properties: Some(panel_layout[2]),
-        statusbar: Some(outer_layout[1]),
+        canvas: main_layout[1],
+        tools: panel_layout[0],
+        elements: panel_layout[1],
+        properties: panel_layout[2],
+        statusbar: outer_layout[1],
     }
 }

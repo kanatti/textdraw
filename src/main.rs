@@ -11,13 +11,13 @@ mod types;
 mod ui;
 
 use anyhow::Result;
-use state::AppState;
-use ui::UI;
-use events::GlobalHandler;
 use clap::Parser;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
+use events::GlobalHandler;
 use ratatui::DefaultTerminal;
+use state::AppState;
+use ui::UI;
 
 fn main() -> Result<()> {
     let cli = cli::Cli::parse();
@@ -90,10 +90,10 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
         let event = crossterm::event::read()?;
 
         // Build handler list from UI components + global handler
-        let mut component_handlers = ui.event_handlers();
-        component_handlers.push(&mut global_handler);
+        let mut event_handlers = ui.component_event_handlers();
+        event_handlers.push(&mut global_handler);
 
-        let should_quit = events::handle_event(event, &mut component_handlers, &mut state)?;
+        let should_quit = events::handle_event(event, &mut event_handlers, &mut state)?;
 
         if should_quit {
             break;

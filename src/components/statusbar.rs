@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
+use crate::state::AppState;
 use ratatui::{
     Frame,
     style::{Color, Style},
@@ -20,9 +20,7 @@ impl EventHandler for StatusBar {}
 
 impl Component for StatusBar {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        let Some(area) = state.layout.statusbar else {
-            return;
-        };
+        let area = state.layout.statusbar;
 
         // If command mode is active, show it
         if state.is_command_mode_active() {

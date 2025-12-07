@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
+use crate::state::AppState;
 use crate::types::Panel;
 use ratatui::{Frame, text::Line, widgets::Paragraph};
 
@@ -16,9 +16,7 @@ impl EventHandler for ElementsPanel {}
 
 impl Component for ElementsPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        let Some(area) = state.layout.elements else {
-            return;
-        };
+        let area = state.layout.elements;
 
         let elements = vec![Line::from(""), Line::from("  (empty)")];
 

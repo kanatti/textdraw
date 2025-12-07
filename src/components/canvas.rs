@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
+use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Panel, SelectionMode};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
@@ -146,7 +146,11 @@ impl EventHandler for CanvasComponent {
         EventResult::Consumed
     }
 
-    fn handle_mouse_moved(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(
+        &mut self,
+        state: &mut AppState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         // Only handle if canvas is active
         if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
@@ -199,26 +203,26 @@ impl EventHandler for CanvasComponent {
 impl CanvasComponent {
     /// Convert screen coordinates to canvas coordinates
     fn to_canvas_coords(&self, state: &AppState, column: u16, row: u16) -> Option<(u16, u16)> {
-        if let Some(canvas_area) = state.layout.canvas {
-            // First check if click is within the canvas area at all
-            if column < canvas_area.x
-                || column >= canvas_area.x + canvas_area.width
-                || row < canvas_area.y
-                || row >= canvas_area.y + canvas_area.height
-            {
-                return None;
-            }
-
-            let canvas_x = column.saturating_sub(canvas_area.x + 1);
-            let canvas_y = row.saturating_sub(canvas_area.y + 1);
-
-            // Check if within canvas bounds (excluding borders)
-            if canvas_x < canvas_area.width.saturating_sub(2)
-                && canvas_y < canvas_area.height.saturating_sub(2)
-            {
-                return Some((canvas_x, canvas_y));
-            }
+        let canvas_area = state.layout.canvas;
+        // First check if click is within the canvas area at all
+        if column < canvas_area.x
+            || column >= canvas_area.x + canvas_area.width
+            || row < canvas_area.y
+            || row >= canvas_area.y + canvas_area.height
+        {
+            return None;
         }
+
+        let canvas_x = column.saturating_sub(canvas_area.x + 1);
+        let canvas_y = row.saturating_sub(canvas_area.y + 1);
+
+        // Check if within canvas bounds (excluding borders)
+        if canvas_x < canvas_area.width.saturating_sub(2)
+            && canvas_y < canvas_area.height.saturating_sub(2)
+        {
+            return Some((canvas_x, canvas_y));
+        }
+
         None
     }
 
@@ -274,9 +278,7 @@ impl CanvasComponent {
 
 impl Component for CanvasComponent {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        let Some(area) = state.layout.canvas else {
-            return;
-        };
+        let area = state.layout.canvas;
         let mut lines = vec![];
 
         // Get preview points from the active tool

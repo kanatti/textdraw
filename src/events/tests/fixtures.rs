@@ -1,5 +1,5 @@
-use crate::state::AppState;
 use crate::events::{ActionType, EventHandler, EventResult};
+use crate::state::AppState;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -46,7 +46,11 @@ impl EventHandler for ConsumeHandler {
         EventResult::Consumed
     }
 
-    fn handle_mouse_down(&mut self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(
+        &mut self,
+        _state: &mut AppState,
+        _mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
@@ -56,12 +60,20 @@ impl EventHandler for ConsumeHandler {
         EventResult::Consumed
     }
 
-    fn handle_mouse_moved(&mut self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(
+        &mut self,
+        _state: &mut AppState,
+        _mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&mut self, _state: &mut AppState, _mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(
+        &mut self,
+        _state: &mut AppState,
+        _mouse_event: &MouseEvent,
+    ) -> EventResult {
         self.called.mark_called();
         EventResult::Consumed
     }

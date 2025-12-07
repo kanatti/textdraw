@@ -1,6 +1,6 @@
-use crate::state::AppState;
 use crate::events::{ActionType, EventHandler, EventResult};
 use crate::input;
+use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Coord, Panel};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};

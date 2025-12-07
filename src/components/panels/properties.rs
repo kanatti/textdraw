@@ -1,7 +1,7 @@
-use crate::state::AppState;
 use crate::components::Component;
 use crate::element::Element;
 use crate::events::EventHandler;
+use crate::state::AppState;
 use crate::types::Panel;
 use ratatui::{
     Frame,
@@ -136,9 +136,7 @@ impl EventHandler for PropertiesPanel {}
 
 impl Component for PropertiesPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        let Some(area) = state.layout.properties else {
-            return;
-        };
+        let area = state.layout.properties;
 
         let mut lines = vec![Self::blank_line()];
 

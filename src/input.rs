@@ -13,7 +13,7 @@ fn is_inside(coord: Coord, rect: Rect) -> bool {
 }
 
 /// Static mapping of panel types to their layout accessor functions
-static PANELS: &[(Panel, fn(&UILayout) -> Option<Rect>)] = &[
+static PANELS: &[(Panel, fn(&UILayout) -> Rect)] = &[
     (Panel::Canvas, |l| l.canvas),
     (Panel::Tools, |l| l.tools),
     (Panel::Elements, |l| l.elements),
@@ -23,8 +23,11 @@ static PANELS: &[(Panel, fn(&UILayout) -> Option<Rect>)] = &[
 /// Detect which panel was clicked based on mouse coordinates
 pub fn detect_panel_click(coord: Coord, layout: &UILayout) -> Option<Panel> {
     PANELS.iter().find_map(|(panel, get_area)| {
-        get_area(layout)
-            .filter(|rect| is_inside(coord, *rect))
-            .map(|_| *panel)
+        let rect = get_area(layout);
+        if is_inside(coord, rect) {
+            Some(*panel)
+        } else {
+            None
+        }
     })
 }

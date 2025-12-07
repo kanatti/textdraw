@@ -41,7 +41,11 @@ pub trait EventHandler {
         EventResult::Ignored
     }
 
-    fn handle_mouse_moved(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(
+        &mut self,
+        state: &mut AppState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
@@ -51,7 +55,11 @@ pub trait EventHandler {
         EventResult::Ignored
     }
 
-    fn handle_mouse_scroll(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_scroll(
+        &mut self,
+        state: &mut AppState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }

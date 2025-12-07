@@ -4,6 +4,7 @@ use crate::events::{EventHandler, EventResult};
 use crate::state::AppState;
 use crossterm::event::{KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style},
     text::Line,
@@ -11,7 +12,6 @@ use ratatui::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
         ScrollbarState,
     },
-    Frame,
 };
 
 pub struct HelpModal {
@@ -69,7 +69,7 @@ impl EventHandler for HelpModal {
             KeyCode::Down | KeyCode::Char('j') => {
                 // We need to calculate viewport height for scroll bounds
                 // Use the modal height (60% of terminal)
-                let terminal_height = state.layout.canvas.map(|r| r.height).unwrap_or(40);
+                let terminal_height = state.layout.canvas.height;
                 let viewport_height = (terminal_height * 60) / 100;
                 self.scroll_down(viewport_height);
                 EventResult::Consumed
@@ -78,7 +78,11 @@ impl EventHandler for HelpModal {
         }
     }
 
-    fn handle_mouse_scroll(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_scroll(
+        &mut self,
+        state: &mut AppState,
+        mouse_event: &MouseEvent,
+    ) -> EventResult {
         if !state.show_help {
             return EventResult::Ignored;
         }
@@ -89,7 +93,7 @@ impl EventHandler for HelpModal {
                 EventResult::Consumed
             }
             MouseEventKind::ScrollDown => {
-                let terminal_height = state.layout.canvas.map(|r| r.height).unwrap_or(40);
+                let terminal_height = state.layout.canvas.height;
                 let viewport_height = (terminal_height * 60) / 100;
                 self.scroll_down(viewport_height);
                 EventResult::Consumed
