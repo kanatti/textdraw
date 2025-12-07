@@ -1,4 +1,4 @@
-use crate::types::{Bounds, Coord};
+use crate::types::{Bounds, Coord, RenderPoint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,5 +33,17 @@ impl TextElement {
     pub fn translate(&mut self, dx: i16, dy: i16) {
         self.position.translate(dx, dy);
         self.bounds.translate(dx, dy);
+    }
+
+    pub fn render_points(&self) -> Vec<RenderPoint> {
+        let mut points = Vec::new();
+        for (i, ch) in self.text.chars().enumerate() {
+            points.push((
+                self.position.x as i32 + i as i32,
+                self.position.y as i32,
+                ch,
+            ));
+        }
+        points
     }
 }

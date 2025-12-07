@@ -345,7 +345,7 @@ impl Component for CanvasComponent {
             };
 
             // Generate points from element and add to render map (with offset if moving)
-            let points = element.points();
+            let points = element.render_points();
             for (x, y, ch) in points {
                 let render_x = x + offset_x;
                 let render_y = y + offset_y;

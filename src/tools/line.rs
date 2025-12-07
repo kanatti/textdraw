@@ -1,6 +1,5 @@
 use crate::elements::{Element, LineElement, Segment};
 use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
-use crate::geometry;
 use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
@@ -81,7 +80,7 @@ impl DrawingTool for LineTool {
         if let (Some(start), Some(current)) = (self.start, self.current) {
             let segment = Segment::from_coords(start, current);
             let temp_line = LineElement::new(0, vec![segment]);
-            geometry::line_points(&temp_line)
+            temp_line.render_points()
         } else {
             vec![]
         }

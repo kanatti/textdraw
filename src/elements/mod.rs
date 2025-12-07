@@ -83,22 +83,7 @@ impl Element {
     }
 
     /// Generate renderable points for this element
-    pub fn points(&self) -> Vec<(i32, i32, char)> {
-        match self {
-            Element::Line(line) => crate::geometry::line_points(line),
-            Element::Rectangle(rect) => crate::geometry::box_points(rect),
-            Element::Arrow(arrow) => crate::geometry::arrow_points(arrow),
-            Element::Text(text) => {
-                let mut points = Vec::new();
-                for (i, ch) in text.text.chars().enumerate() {
-                    points.push((
-                        text.position.x as i32 + i as i32,
-                        text.position.y as i32,
-                        ch,
-                    ));
-                }
-                points
-            }
-        }
+    pub fn render_points(&self) -> Vec<(i32, i32, char)> {
+        delegate_element!(self, render_points())
     }
 }

@@ -31,7 +31,7 @@ impl CanvasState {
     pub fn build_render_map(&self) -> RenderMap {
         let mut render_map = HashMap::new();
         for element in &self.elements {
-            let points = element.points();
+            let points = element.render_points();
             for (x, y, ch) in points {
                 render_map.insert((x, y), ch);
             }

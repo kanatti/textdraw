@@ -1,6 +1,5 @@
 use crate::elements::{Element, RectangleElement};
 use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
-use crate::geometry;
 use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
@@ -89,7 +88,7 @@ impl DrawingTool for RectangleTool {
             let height = sy.abs_diff(cy);
             let temp_rect =
                 RectangleElement::new(0, Coord { x: left, y: top }, width as u16, height as u16);
-            geometry::box_points(&temp_rect)
+            temp_rect.render_points()
         } else {
             vec![]
         }

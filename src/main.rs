@@ -3,7 +3,6 @@ mod components;
 mod elements;
 mod events;
 mod file;
-mod geometry;
 mod input;
 mod state;
 mod tools;

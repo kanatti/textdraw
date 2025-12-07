@@ -1,6 +1,5 @@
 use crate::elements::{ArrowElement, Element, Segment};
 use crate::events::{ActionType, EventHandler, EventResult, MouseEvent};
-use crate::geometry;
 use crate::state::CanvasState;
 use crate::tools::DrawingTool;
 use crate::types::Coord;
@@ -80,7 +79,7 @@ impl DrawingTool for ArrowTool {
         if let (Some(start), Some(current)) = (self.start, self.current) {
             let segment = Segment::from_coords(start, current);
             let temp_arrow = ArrowElement::new(0, vec![segment]);
-            geometry::arrow_points(&temp_arrow)
+            temp_arrow.render_points()
         } else {
             vec![]
         }

@@ -1,6 +1,6 @@
 use super::Segment;
 use super::segment;
-use crate::types::Bounds;
+use crate::types::{Bounds, Direction, RenderPoint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,5 +28,59 @@ impl ArrowElement {
             segment.translate(dx, dy);
         }
         self.bounds.translate(dx, dy);
+    }
+
+    pub fn render_points(&self) -> Vec<RenderPoint> {
+        let mut points = Vec::new();
+
+        for segment in &self.segments {
+            let x = segment.start.x as i32;
+            let y = segment.start.y as i32;
+
+            match segment.direction {
+                Direction::Right => {
+                    for i in 0..=segment.length as i32 {
+                        let ch = if i == segment.length as i32 {
+                            '>'
+                        } else {
+                            '─'
+                        };
+                        points.push((x + i, y, ch));
+                    }
+                }
+                Direction::Left => {
+                    for i in 0..=segment.length as i32 {
+                        let ch = if i == segment.length as i32 {
+                            '<'
+                        } else {
+                            '─'
+                        };
+                        points.push((x - i, y, ch));
+                    }
+                }
+                Direction::Down => {
+                    for i in 0..=segment.length as i32 {
+                        let ch = if i == segment.length as i32 {
+                            'v'
+                        } else {
+                            '│'
+                        };
+                        points.push((x, y + i, ch));
+                    }
+                }
+                Direction::Up => {
+                    for i in 0..=segment.length as i32 {
+                        let ch = if i == segment.length as i32 {
+                            '^'
+                        } else {
+                            '│'
+                        };
+                        points.push((x, y - i, ch));
+                    }
+                }
+            }
+        }
+
+        points
     }
 }

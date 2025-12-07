@@ -1,6 +1,6 @@
 use super::Segment;
 use super::segment;
-use crate::types::Bounds;
+use crate::types::{Bounds, Direction, RenderPoint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,5 +28,39 @@ impl LineElement {
             segment.translate(dx, dy);
         }
         self.bounds.translate(dx, dy);
+    }
+
+    pub fn render_points(&self) -> Vec<RenderPoint> {
+        let mut points = Vec::new();
+
+        for segment in &self.segments {
+            let x = segment.start.x as i32;
+            let y = segment.start.y as i32;
+
+            match segment.direction {
+                Direction::Right => {
+                    for i in 0..=segment.length as i32 {
+                        points.push((x + i, y, '─'));
+                    }
+                }
+                Direction::Left => {
+                    for i in 0..=segment.length as i32 {
+                        points.push((x - i, y, '─'));
+                    }
+                }
+                Direction::Down => {
+                    for i in 0..=segment.length as i32 {
+                        points.push((x, y + i, '│'));
+                    }
+                }
+                Direction::Up => {
+                    for i in 0..=segment.length as i32 {
+                        points.push((x, y - i, '│'));
+                    }
+                }
+            }
+        }
+
+        points
     }
 }
