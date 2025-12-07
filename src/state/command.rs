@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 
 /// Actions that can be triggered by command execution
 #[derive(Debug, Clone, PartialEq)]

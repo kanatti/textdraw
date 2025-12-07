@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::events::{ActionType, EventHandler, EventResult};
 use crate::input;
 use crate::tools::Tool;
@@ -9,7 +9,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 pub struct GlobalHandler;
 
 impl EventHandler for GlobalHandler {
-    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle command mode if active
         if state.is_command_mode_active() {
             return match key_event.code {
@@ -76,7 +76,7 @@ impl EventHandler for GlobalHandler {
             // Tool shortcuts
             KeyCode::Esc => {
                 // Close help modal if open, otherwise switch to Select tool
-                if state.help.show {
+                if state.show_help {
                     state.toggle_help();
                 } else {
                     state.select_tool(Tool::Select);
@@ -96,7 +96,7 @@ impl EventHandler for GlobalHandler {
         }
     }
 
-    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Handle panel click - but if it's canvas, let it continue to canvas handling
         let coord = Coord {
             x: mouse_event.column,

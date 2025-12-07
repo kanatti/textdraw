@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
 use crate::types::Panel;
@@ -15,7 +15,7 @@ impl ElementsPanel {
 impl EventHandler for ElementsPanel {}
 
 impl Component for ElementsPanel {
-    fn draw(&self, state: &AppState, frame: &mut Frame) {
+    fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let Some(area) = state.layout.elements else {
             return;
         };

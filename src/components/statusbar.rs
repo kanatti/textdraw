@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::Component;
 use crate::events::EventHandler;
 use ratatui::{
@@ -19,7 +19,7 @@ impl StatusBar {
 impl EventHandler for StatusBar {}
 
 impl Component for StatusBar {
-    fn draw(&self, state: &AppState, frame: &mut Frame) {
+    fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let Some(area) = state.layout.statusbar else {
             return;
         };

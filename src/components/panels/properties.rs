@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::Component;
 use crate::element::Element;
 use crate::events::EventHandler;
@@ -135,7 +135,7 @@ impl PropertiesPanel {
 impl EventHandler for PropertiesPanel {}
 
 impl Component for PropertiesPanel {
-    fn draw(&self, state: &AppState, frame: &mut Frame) {
+    fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let Some(area) = state.layout.properties else {
             return;
         };

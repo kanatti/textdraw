@@ -1,26 +1,64 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::{
     CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
+use crate::events::EventHandler;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
 };
 
-/// Render the UI based on current App state.
-pub fn render(frame: &mut Frame, state: &AppState) {
-    // Draw components
-    let components: Vec<Box<dyn Component>> = vec![
-        Box::new(ToolsPanel::new()),
-        Box::new(ElementsPanel::new()),
-        Box::new(PropertiesPanel::new()),
-        Box::new(CanvasComponent::new()),
-        Box::new(StatusBar::new()),
-        Box::new(HelpModal::new()),
-    ];
+/// Container for all UI components.
+/// Components are created once and reused across renders, allowing them to maintain local state.
+pub struct UI {
+    tools_panel: ToolsPanel,
+    elements_panel: ElementsPanel,
+    properties_panel: PropertiesPanel,
+    canvas: CanvasComponent,
+    statusbar: StatusBar,
+    help_modal: HelpModal,
+}
 
-    for component in components {
-        component.draw(state, frame);
+impl UI {
+    /// Create a new UI with all components initialized.
+    pub fn new() -> Self {
+        Self {
+            tools_panel: ToolsPanel::new(),
+            elements_panel: ElementsPanel::new(),
+            properties_panel: PropertiesPanel::new(),
+            canvas: CanvasComponent::new(),
+            statusbar: StatusBar::new(),
+            help_modal: HelpModal::new(),
+        }
+    }
+
+    /// Render all components.
+    pub fn render(&mut self, frame: &mut Frame, state: &AppState) {
+        self.tools_panel.draw(state, frame);
+        self.elements_panel.draw(state, frame);
+        self.properties_panel.draw(state, frame);
+        self.canvas.draw(state, frame);
+        self.statusbar.draw(state, frame);
+        self.help_modal.draw(state, frame);
+    }
+
+    /// Get event handlers in priority order for event dispatching.
+    /// Returns mutable references to components for event handling.
+    pub fn event_handlers(&mut self) -> Vec<&mut dyn EventHandler> {
+        vec![
+            &mut self.help_modal,
+            &mut self.tools_panel,
+            &mut self.elements_panel,
+            &mut self.properties_panel,
+            &mut self.canvas,
+            &mut self.statusbar,
+        ]
+    }
+}
+
+impl Default for UI {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -6,9 +6,11 @@ use crossterm::event::Event;
 #[test]
 fn test_event_chain_all_ignore() {
     let mut state = AppState::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&IgnoreHandler, &IgnoreHandler];
+    let mut handler1 = IgnoreHandler;
+    let mut handler2 = IgnoreHandler;
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut handler1, &mut handler2];
 
-    let result = handle_event(Event::Key(key_event('a')), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Key(key_event('a')), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, false);
 }
@@ -16,11 +18,11 @@ fn test_event_chain_all_ignore() {
 #[test]
 fn test_event_chain_first_consumes() {
     let mut state = AppState::new();
-    let first = ConsumeHandler::new();
-    let second = ConsumeHandler::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&first, &second];
+    let mut first = ConsumeHandler::new();
+    let mut second = ConsumeHandler::new();
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut first, &mut second];
 
-    let result = handle_event(Event::Key(key_event('a')), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Key(key_event('a')), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, false);
     assert!(first.was_called(), "First handler should be called");
@@ -33,10 +35,11 @@ fn test_event_chain_first_consumes() {
 #[test]
 fn test_event_chain_second_consumes() {
     let mut state = AppState::new();
-    let second = ConsumeHandler::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&IgnoreHandler, &second];
+    let mut handler1 = IgnoreHandler;
+    let mut second = ConsumeHandler::new();
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut handler1, &mut second];
 
-    let result = handle_event(Event::Key(key_event('a')), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Key(key_event('a')), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, false);
     assert!(second.was_called(), "Second handler should be called");
@@ -45,9 +48,11 @@ fn test_event_chain_second_consumes() {
 #[test]
 fn test_event_chain_quit_action() {
     let mut state = AppState::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&IgnoreHandler, &QuitHandler];
+    let mut handler1 = IgnoreHandler;
+    let mut handler2 = QuitHandler;
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut handler1, &mut handler2];
 
-    let result = handle_event(Event::Key(key_event('q')), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Key(key_event('q')), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, true);
 }
@@ -55,10 +60,11 @@ fn test_event_chain_quit_action() {
 #[test]
 fn test_event_chain_quit_action_stops_propagation() {
     let mut state = AppState::new();
-    let second = ConsumeHandler::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&QuitHandler, &second];
+    let mut handler1 = QuitHandler;
+    let mut second = ConsumeHandler::new();
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut handler1, &mut second];
 
-    let result = handle_event(Event::Key(key_event('q')), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Key(key_event('q')), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, true);
     assert!(
@@ -70,11 +76,11 @@ fn test_event_chain_quit_action_stops_propagation() {
 #[test]
 fn test_mouse_event_chain_consumes() {
     let mut state = AppState::new();
-    let first = ConsumeHandler::new();
-    let second = ConsumeHandler::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&first, &second];
+    let mut first = ConsumeHandler::new();
+    let mut second = ConsumeHandler::new();
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut first, &mut second];
 
-    let result = handle_event(Event::Mouse(mouse_down()), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Mouse(mouse_down()), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, false);
     assert!(first.was_called(), "First handler should be called");
@@ -87,9 +93,11 @@ fn test_mouse_event_chain_consumes() {
 #[test]
 fn test_mouse_event_chain_all_ignore() {
     let mut state = AppState::new();
-    let handlers: Vec<&dyn EventHandler> = vec![&IgnoreHandler, &IgnoreHandler];
+    let mut handler1 = IgnoreHandler;
+    let mut handler2 = IgnoreHandler;
+    let mut handlers: Vec<&mut dyn EventHandler> = vec![&mut handler1, &mut handler2];
 
-    let result = handle_event(Event::Mouse(mouse_down()), &handlers, &mut state).unwrap();
+    let result = handle_event(Event::Mouse(mouse_down()), &mut handlers, &mut state).unwrap();
 
     assert_eq!(result, false);
 }

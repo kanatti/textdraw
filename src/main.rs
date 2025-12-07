@@ -1,4 +1,3 @@
-mod app;
 mod cli;
 mod components;
 mod element;
@@ -12,7 +11,9 @@ mod types;
 mod ui;
 
 use anyhow::Result;
-use app::AppState;
+use state::AppState;
+use ui::UI;
+use events::GlobalHandler;
 use clap::Parser;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
@@ -47,6 +48,8 @@ fn main() -> Result<()> {
 
 fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
     let mut state = AppState::new();
+    let mut ui = UI::new();
+    let mut global_handler = GlobalHandler;
 
     // Load file if provided (silently, no status message)
     if let Some(file_path) = file {
@@ -55,8 +58,6 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
             std::process::exit(1);
         }
     }
-
-    let event_handlers = events::default_handlers();
 
     // Main render and event loop.
     //
@@ -82,12 +83,17 @@ fn run(mut terminal: DefaultTerminal, file: Option<String>) -> Result<()> {
         terminal.draw(|frame| {
             // Layout has to be recalculated each frame to account for terminal resizes
             state.layout = ui::calculate_layout(frame);
-            ui::render(frame, &state);
+            ui.render(frame, &state);
         })?;
 
         // Event phase: Block until next event, then handle it (mutates state)
         let event = crossterm::event::read()?;
-        let should_quit = events::handle_event(event, &event_handlers, &mut state)?;
+
+        // Build handler list from UI components + global handler
+        let mut component_handlers = ui.event_handlers();
+        component_handlers.push(&mut global_handler);
+
+        let should_quit = events::handle_event(event, &mut component_handlers, &mut state)?;
 
         if should_quit {
             break;

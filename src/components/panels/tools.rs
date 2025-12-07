@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
 use crate::tools::Tool;
@@ -73,7 +73,7 @@ impl ToolsPanel {
 }
 
 impl EventHandler for ToolsPanel {
-    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Only handle when Tools panel is active
         if state.active_panel != Panel::Tools {
             return EventResult::Ignored;
@@ -92,7 +92,7 @@ impl EventHandler for ToolsPanel {
         }
     }
 
-    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle tool clicks when Tools panel is active
         if state.active_panel != Panel::Tools {
             return EventResult::Ignored;
@@ -120,7 +120,7 @@ impl EventHandler for ToolsPanel {
 }
 
 impl Component for ToolsPanel {
-    fn draw(&self, state: &AppState, frame: &mut Frame) {
+    fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let Some(area) = state.layout.tools else {
             return;
         };

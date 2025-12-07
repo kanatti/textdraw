@@ -1,4 +1,4 @@
-use crate::app::AppState;
+use crate::state::AppState;
 use crate::components::Component;
 use crate::events::{EventHandler, EventResult};
 use crate::tools::Tool;
@@ -20,7 +20,7 @@ impl CanvasComponent {
 }
 
 impl EventHandler for CanvasComponent {
-    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         // Handle text input when text tool is active and in drawing mode
         if state.is_text_input_mode() {
             return match key_event.code {
@@ -75,7 +75,7 @@ impl EventHandler for CanvasComponent {
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // If text tool is active and we're in text input mode, finish the text
         if state.is_text_input_mode() {
             let element_created = state.finish_text_input();
@@ -108,7 +108,7 @@ impl EventHandler for CanvasComponent {
         EventResult::Consumed
     }
 
-    fn handle_mouse_up(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
         if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
@@ -146,7 +146,7 @@ impl EventHandler for CanvasComponent {
         EventResult::Consumed
     }
 
-    fn handle_mouse_moved(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
         if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
@@ -162,7 +162,7 @@ impl EventHandler for CanvasComponent {
         EventResult::Consumed
     }
 
-    fn handle_mouse_drag(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         // Only handle if canvas is active
         if state.active_panel != Panel::Canvas {
             return EventResult::Ignored;
@@ -273,7 +273,7 @@ impl CanvasComponent {
 }
 
 impl Component for CanvasComponent {
-    fn draw(&self, state: &AppState, frame: &mut Frame) {
+    fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let Some(area) = state.layout.canvas else {
             return;
         };
@@ -389,7 +389,7 @@ impl Component for CanvasComponent {
             lines.push(Line::from(line_chars));
         }
 
-        let canvas_style = if !state.help.show && state.active_panel == Panel::Canvas {
+        let canvas_style = if !state.show_help && state.active_panel == Panel::Canvas {
             Style::default().fg(Color::Green)
         } else {
             Style::default()

@@ -1,13 +1,10 @@
 mod global;
 
-use crate::app::AppState;
-use crate::components::{
-    CanvasComponent, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
-};
+pub use global::GlobalHandler;
+
+use crate::state::AppState;
 use anyhow::Result;
 use crossterm::event::{Event, KeyEvent, MouseEvent, MouseEventKind};
-
-use global::GlobalHandler;
 
 /// Actions that can be triggered by event handlers
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,56 +25,44 @@ pub enum EventResult {
 }
 
 /// Event handler trait for components
-pub trait EventHandler: Sync {
-    fn handle_key_event(&self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
+pub trait EventHandler {
+    fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
         let _ = (state, key_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_down(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_up(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_up(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_moved(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_moved(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_drag(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_drag(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 
-    fn handle_mouse_scroll(&self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+    fn handle_mouse_scroll(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
         let _ = (state, mouse_event);
         EventResult::Ignored
     }
 }
 
-/// Type alias for a slice of event handlers
-type EventHandlers<'a> = &'a [&'a dyn EventHandler];
-
-pub fn default_handlers() -> Vec<&'static dyn EventHandler> {
-    vec![
-        &HelpModal,
-        &ToolsPanel,
-        &ElementsPanel,
-        &PropertiesPanel,
-        &CanvasComponent,
-        &StatusBar,
-        &GlobalHandler,
-    ]
-}
+/// Type alias for a slice of mutable event handlers
+type EventHandlers<'a> = &'a mut [&'a mut dyn EventHandler];
 
 macro_rules! dispatch_event {
     ($handlers:expr, $state:expr, $event:expr, $method:ident) => {{
-        for handler in $handlers {
+        for handler in $handlers.iter_mut() {
             match handler.$method($state, $event) {
                 EventResult::Consumed => break,
                 EventResult::Action(ActionType::Quit) => return Ok(true),
