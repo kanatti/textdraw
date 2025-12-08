@@ -96,6 +96,13 @@ impl Component for StatusBar {
                     selected_ids.len().to_string(),
                     Style::default().fg(Color::Yellow),
                 ));
+
+                // Show Properties hint only when exactly one element is selected
+                if selected_ids.len() == 1 {
+                    spans.push(Span::raw(" | Properties: "));
+                    spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
+                }
+
                 spans.push(Span::raw(" | Move: "));
                 spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
                 spans.push(Span::raw(" | Delete: "));

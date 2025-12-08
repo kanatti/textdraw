@@ -63,6 +63,10 @@ impl EventHandler for GlobalHandler {
                 state.toggle_help();
                 EventResult::Consumed
             }
+            KeyCode::Char('p') => {
+                state.toggle_properties();
+                EventResult::Consumed
+            }
             // Panel shortcuts
             KeyCode::Char(c @ '0'..='3') => {
                 let panel = match c {

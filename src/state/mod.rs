@@ -21,6 +21,7 @@ pub struct AppState {
     pub active_panel: Panel,
     pub layout: UILayout,
     pub show_help: bool,
+    pub show_properties: bool,
     pub command: CommandState,
     pub tool: ToolState,
     pub file: FileState,
@@ -38,6 +39,7 @@ impl AppState {
             active_panel: Panel::Canvas,
             layout: UILayout::default(),
             show_help: false,
+            show_properties: true, // Default to showing properties
             command: CommandState::new(),
             tool: ToolState::new(),
             file: FileState::new(),
@@ -81,10 +83,14 @@ impl AppState {
     }
 
     // ============================================================================
-    // Help Modal
+    // Help Modal & Properties Panel
     // ============================================================================
     pub fn toggle_help(&mut self) {
         self.show_help = !self.show_help;
+    }
+
+    pub fn toggle_properties(&mut self) {
+        self.show_properties = !self.show_properties;
     }
 
     // ============================================================================

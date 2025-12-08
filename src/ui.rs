@@ -1,3 +1,7 @@
+mod positioning;
+
+pub use positioning::calculate_smart_position;
+
 use crate::components::{
     CanvasComponent, Component, ElementsPanel, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };
@@ -36,9 +40,9 @@ impl UI {
     pub fn render(&mut self, frame: &mut Frame, state: &AppState) {
         self.tools_panel.draw(state, frame);
         self.elements_panel.draw(state, frame);
-        self.properties_panel.draw(state, frame);
         self.canvas.draw(state, frame);
         self.statusbar.draw(state, frame);
+        self.properties_panel.draw(state, frame); // Render after canvas as floating overlay
         self.help_modal.draw(state, frame);
     }
 
@@ -67,7 +71,6 @@ pub struct UILayout {
     pub canvas: Rect,
     pub tools: Rect,
     pub elements: Rect,
-    pub properties: Rect,
     pub statusbar: Rect,
 }
 
@@ -77,7 +80,6 @@ impl Default for UILayout {
             canvas: Rect::default(),
             tools: Rect::default(),
             elements: Rect::default(),
-            properties: Rect::default(),
             statusbar: Rect::default(),
         }
     }
@@ -98,11 +100,10 @@ pub fn calculate_layout(frame: &Frame) -> UILayout {
     ])
     .split(outer_layout[0]);
 
-    // Split side into panels
+    // Split side into panels (Tools and Elements only, Properties is now floating)
     let panel_layout = Layout::vertical([
         Constraint::Length(11), // Tools section (5 tools + empty + lock + borders)
-        Constraint::Length(9),  // Elements section
-        Constraint::Min(0),     // Properties section
+        Constraint::Min(0),     // Elements section (takes remaining space)
     ])
     .split(main_layout[0]);
 
@@ -110,7 +111,6 @@ pub fn calculate_layout(frame: &Frame) -> UILayout {
         canvas: main_layout[1],
         tools: panel_layout[0],
         elements: panel_layout[1],
-        properties: panel_layout[2],
         statusbar: outer_layout[1],
     }
 }
