@@ -16,6 +16,7 @@ pub struct ChoiceInput {
 
     // Options
     options: Vec<String>,
+    max_option_width: usize, // Width of longest option
 
     // Property identification
     property_name: String,
@@ -39,11 +40,15 @@ impl ChoiceInput {
             .position(|opt| opt == &initial_value)
             .unwrap_or(0);
 
+        // Calculate max width for fixed-width display
+        let max_option_width = options.iter().map(|s| s.len()).max().unwrap_or(0);
+
         Self {
             current_value: initial_value.clone(),
             original_value: initial_value,
             selected_index,
             options,
+            max_option_width,
             property_name: property_name.into(),
             label: label.into(),
             is_focused: false,
@@ -145,7 +150,8 @@ impl ChoiceInput {
         };
 
         let display_value = if self.is_editing {
-            format!("< {} >", self.current_value)
+            // Use fixed width based on longest option to prevent shifting
+            format!("< {:width$} >", self.current_value, width = self.max_option_width)
         } else {
             self.current_value.clone()
         };
