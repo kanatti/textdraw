@@ -10,12 +10,48 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
+use std::collections::HashMap;
 
 pub struct CanvasComponent;
 
 impl CanvasComponent {
     pub fn new() -> Self {
         Self
+    }
+
+    /// Generate a map of (x, y) -> (char, color) for welcome text
+    fn get_welcome_text_map(&self, area: &ratatui::layout::Rect) -> HashMap<(usize, usize), (char, Color)> {
+        let canvas_height = area.height.saturating_sub(2) as usize;
+        let canvas_width = area.width.saturating_sub(2) as usize;
+
+        let welcome_lines = vec![
+            ("TextDraw v0.1.0", Color::Green),
+            ("", Color::DarkGray),
+            ("Interactive terminal ASCII diagram editor built with Ratatui.", Color::White),
+            ("Create and edit diagrams using simple drawing tools and keyboard shortcuts.", Color::White),
+            ("", Color::DarkGray),
+            ("Press <space> for switching tools", Color::White),
+            ("Press ? for more help", Color::White),
+            ("", Color::DarkGray),
+            ("Start drawing...", Color::DarkGray),
+        ];
+
+        let mut map = std::collections::HashMap::new();
+        let total_lines = welcome_lines.len();
+        let start_y = canvas_height.saturating_sub(total_lines) / 2;
+
+        for (idx, (text, color)) in welcome_lines.iter().enumerate() {
+            let y = start_y + idx;
+            let text_len = text.len();
+            let start_x = canvas_width.saturating_sub(text_len) / 2;
+
+            for (char_idx, ch) in text.chars().enumerate() {
+                let x = start_x + char_idx;
+                map.insert((x, y), (ch, *color));
+            }
+        }
+
+        map
     }
 }
 
@@ -86,6 +122,9 @@ impl EventHandler for CanvasComponent {
         if !should_handle_event(state, mouse_event) {
             return EventResult::Ignored;
         }
+
+        // Mark user action (hides welcome screen)
+        state.mark_user_action();
 
         // Convert to canvas coordinates
         let Some(canvas_event) = self.to_canvas_event(state, mouse_event) else {
@@ -360,13 +399,20 @@ impl Component for CanvasComponent {
             }
         }
 
+        // Calculate welcome text positioning if needed
+        let welcome_text_map = if state.should_show_welcome() {
+            Some(self.get_welcome_text_map(&area))
+        } else {
+            None
+        };
+
         for y in 0..area.height.saturating_sub(2) {
             let mut line_chars = vec![];
             for x in 0..area.width.saturating_sub(2) {
                 let px = x as i32;
                 let py = y as i32;
 
-                // Priority: cursor > selection box > preview > elements
+                // Priority: cursor > welcome text > selection box > preview > elements
 
                 // Check if actively selecting or moving
                 let is_actively_selecting_or_moving = matches!(
@@ -398,6 +444,13 @@ impl Component for CanvasComponent {
                     // - Not actively selecting/moving
                     // - Not hovering over a selected element
                     line_chars.push(Span::styled("█", Style::default().fg(Color::Yellow)));
+                } else if let Some(ref map) = welcome_text_map {
+                    if let Some((ch, color)) = map.get(&(x as usize, y as usize)) {
+                        // Show welcome text
+                        line_chars.push(Span::styled(ch.to_string(), Style::default().fg(*color)));
+                    } else {
+                        line_chars.push(Span::raw(" "));
+                    }
                 } else if let Some(&ch) = selection_box_map.get(&(px, py)) {
                     // Show selection box in grey (during drag-select)
                     line_chars.push(Span::styled(

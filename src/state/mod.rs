@@ -30,6 +30,8 @@ pub struct AppState {
     pub canvas: CanvasState,
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
+    // Track if user has taken any action (for welcome screen)
+    pub has_user_action: bool,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             file: FileState::new(),
             canvas: CanvasState::default(),
             selection_state: SelectionState::new(),
+            has_user_action: false,
         }
     }
 
@@ -241,6 +244,20 @@ impl AppState {
     /// Load a diagram from a file silently (for initial load)
     pub fn load_from_file_silent(&mut self, path: impl AsRef<Path>) -> anyhow::Result<()> {
         self.file.load_from_file_silent(&mut self.canvas, path)
+    }
+
+    // ============================================================================
+    // Welcome Screen
+    // ============================================================================
+
+    /// Mark that the user has taken an action (hides welcome screen)
+    pub fn mark_user_action(&mut self) {
+        self.has_user_action = true;
+    }
+
+    /// Check if the welcome screen should be shown
+    pub fn should_show_welcome(&self) -> bool {
+        !self.has_user_action && self.canvas.is_empty()
     }
 }
 
