@@ -4,12 +4,12 @@
 
 An interactive terminal ASCII diagram editor.
 
-<img src="assets/welcome.jpg" alt="TextDraw Welcome Screen" style="width: 100%; max-width: 100%; margin: 20px 0;"/>
+<img src="assets/textdraw-intro.gif" alt="TextDraw Demo" style="width: 100%; max-width: 100%; margin: 20px 0;"/>
 
 
 ## Features
 
-Draw ASCII diagrams directly in your terminal with a Vim-inspired interface. Includes tools for lines, rectangles, arrows, and text. Select and manipulate elements with mouse or keyboard. Save and load diagrams in JSON format. Render diagrams to terminal without opening the editor.
+Draw ASCII diagrams directly in your terminal. Includes tools for lines, rectangles, arrows, and text. Select and manipulate elements with mouse or keyboard. Save and load diagrams in JSON format. Render diagrams to terminal without opening the editor.
 
 ## Installation
 
