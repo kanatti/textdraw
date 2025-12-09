@@ -1,4 +1,8 @@
+use crate::elements::properties::{
+    FieldType, HasProperties, PropertiesSpec, PropertyField, PropertySection, PropertyValue,
+};
 use crate::types::{Bounds, Coord, RenderPoint};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,5 +66,98 @@ impl RectangleElement {
         }
 
         points
+    }
+
+    /// Update bounds after modifying position or size
+    fn update_bounds(&mut self) {
+        self.bounds = Bounds {
+            min: self.start,
+            max: Coord {
+                x: self.start.x.saturating_add(self.width),
+                y: self.start.y.saturating_add(self.height),
+            },
+        };
+    }
+}
+
+impl HasProperties for RectangleElement {
+    fn properties_spec(&self) -> PropertiesSpec {
+        let mut spec = PropertiesSpec::new();
+
+        // Position section
+        let mut position = PropertySection::new("Position");
+        position.add_field(PropertyField::new(
+            "x",
+            "x",
+            FieldType::Numeric { min: 0, max: 1000 },
+        ));
+        position.add_field(PropertyField::new(
+            "y",
+            "y",
+            FieldType::Numeric { min: 0, max: 1000 },
+        ));
+        spec.add_section(position);
+
+        // Size section
+        let mut size = PropertySection::new("Size");
+        size.add_field(PropertyField::new(
+            "width",
+            "width",
+            FieldType::Numeric { min: 1, max: 200 },
+        ));
+        size.add_field(PropertyField::new(
+            "height",
+            "height",
+            FieldType::Numeric { min: 1, max: 200 },
+        ));
+        spec.add_section(size);
+
+        spec
+    }
+
+    fn get_property(&self, name: &str) -> Option<PropertyValue> {
+        match name {
+            "x" => Some(PropertyValue::Numeric(self.start.x)),
+            "y" => Some(PropertyValue::Numeric(self.start.y)),
+            "width" => Some(PropertyValue::Numeric(self.width)),
+            "height" => Some(PropertyValue::Numeric(self.height)),
+            _ => None,
+        }
+    }
+
+    fn set_property(&mut self, name: &str, value: PropertyValue) -> Result<()> {
+        match name {
+            "x" => {
+                let new_x = value.as_numeric()?;
+                self.start.x = new_x;
+                self.update_bounds();
+                Ok(())
+            }
+            "y" => {
+                let new_y = value.as_numeric()?;
+                self.start.y = new_y;
+                self.update_bounds();
+                Ok(())
+            }
+            "width" => {
+                let new_width = value.as_numeric()?;
+                if new_width == 0 {
+                    bail!("Width must be greater than 0");
+                }
+                self.width = new_width;
+                self.update_bounds();
+                Ok(())
+            }
+            "height" => {
+                let new_height = value.as_numeric()?;
+                if new_height == 0 {
+                    bail!("Height must be greater than 0");
+                }
+                self.height = new_height;
+                self.update_bounds();
+                Ok(())
+            }
+            _ => bail!("Unknown property: {}", name),
+        }
     }
 }

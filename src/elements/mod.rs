@@ -1,11 +1,15 @@
 mod arrow;
 mod line;
+mod properties;
 mod rectangle;
 mod segment;
 mod text;
 
 pub use arrow::ArrowElement;
 pub use line::LineElement;
+pub use properties::{
+    FieldType, HasProperties, PropertiesSpec, PropertyField, PropertySection, PropertyValue,
+};
 pub use rectangle::RectangleElement;
 pub use segment::Segment;
 pub use text::TextElement;
@@ -49,6 +53,15 @@ impl Element {
         delegate_element!(self, name)
     }
 
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            Element::Line(_) => "Line",
+            Element::Rectangle(_) => "Rectangle",
+            Element::Arrow(_) => "Arrow",
+            Element::Text(_) => "Text",
+        }
+    }
+
     pub fn bounds(&self) -> Bounds {
         *delegate_element!(self, bounds)
     }
@@ -85,5 +98,29 @@ impl Element {
     /// Generate renderable points for this element
     pub fn render_points(&self) -> Vec<(i32, i32, char)> {
         delegate_element!(self, render_points())
+    }
+
+    /// Get properties spec (returns empty spec for elements without properties)
+    pub fn properties_spec(&self) -> PropertiesSpec {
+        match self {
+            Element::Rectangle(rect) => rect.properties_spec(),
+            _ => PropertiesSpec::default(),
+        }
+    }
+
+    /// Get property value by name
+    pub fn get_property(&self, name: &str) -> Option<PropertyValue> {
+        match self {
+            Element::Rectangle(rect) => rect.get_property(name),
+            _ => None,
+        }
+    }
+
+    /// Set property value by name
+    pub fn set_property(&mut self, name: &str, value: PropertyValue) -> anyhow::Result<()> {
+        match self {
+            Element::Rectangle(rect) => rect.set_property(name, value),
+            _ => Ok(()), // No-op for elements without properties
+        }
     }
 }

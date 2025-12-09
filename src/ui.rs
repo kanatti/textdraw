@@ -1,7 +1,3 @@
-mod positioning;
-
-pub use positioning::calculate_smart_position;
-
 use crate::components::{
     CanvasComponent, Component, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };

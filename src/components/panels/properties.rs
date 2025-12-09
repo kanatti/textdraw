@@ -1,10 +1,11 @@
-use crate::components::Component;
-use crate::elements::{ArrowElement, Element, LineElement, RectangleElement, TextElement};
-use crate::events::EventHandler;
+use crate::components::{Component, NumericInput, PropertyInput};
+use crate::elements::{Element, FieldType, PropertyValue};
+use crate::events::{EventHandler, EventResult, KeyEvent};
 use crate::state::AppState;
-use crate::ui::calculate_smart_position;
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
+    layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
@@ -14,33 +15,112 @@ use ratatui::{
 const PROPERTIES_PANEL_WIDTH: u16 = 35;
 const PROPERTIES_PANEL_HEIGHT: u16 = 15;
 
-pub struct PropertiesPanel;
+pub struct PropertiesPanel {
+    // Input components for each property field
+    inputs: Vec<Box<dyn PropertyInput>>,
+    // Currently focused input index
+    focused_index: Option<usize>,
+    // Element ID we're currently editing
+    current_element_id: Option<usize>,
+}
 
 impl PropertiesPanel {
     pub fn new() -> Self {
-        Self
-    }
-
-    fn get_element_type_name(element: &Element) -> &'static str {
-        match element {
-            Element::Line(_) => "Line",
-            Element::Rectangle(_) => "Rectangle",
-            Element::Arrow(_) => "Arrow",
-            Element::Text(_) => "Text",
+        Self {
+            inputs: Vec::new(),
+            focused_index: None,
+            current_element_id: None,
         }
     }
 
-    // Semantic helper functions for consistent styling
+    /// Initialize inputs for the given element
+    fn init_inputs_for_element(&mut self, element: &Element) {
+        // Only reinitialize if element changed
+        if self.current_element_id == Some(element.id()) {
+            // Just update values
+            self.update_input_values(element);
+            return;
+        }
 
-    /// Creates a property line with label and value
-    fn property_line(label: &str, value: String) -> Line<'static> {
-        Line::from(vec![
-            Span::styled(format!("  {}: ", label), Style::default().fg(Color::Yellow)),
-            Span::raw(value),
-        ])
+        // Clear existing inputs
+        self.inputs.clear();
+        self.focused_index = None;
+        self.current_element_id = Some(element.id());
+
+        // Get the properties spec from element
+        let spec = element.properties_spec();
+
+        // Create input for each field
+        for field in spec.all_fields() {
+            if let FieldType::Numeric { min, max } = field.field_type {
+                if let Some(PropertyValue::Numeric(value)) = element.get_property(&field.name) {
+                    let input = NumericInput::new(&field.name, &field.label, value, min, max);
+                    self.inputs.push(Box::new(input));
+                }
+            }
+        }
+
+        // Focus first input by default
+        if !self.inputs.is_empty() {
+            self.focused_index = Some(0);
+            self.inputs[0].set_focused(true);
+        }
     }
 
-    /// Creates a section header line (bold, no color)
+    /// Update input values from element without recreating inputs
+    fn update_input_values(&mut self, element: &Element) {
+        for input in &mut self.inputs {
+            let prop_name = input.property_name();
+            if let Some(value) = element.get_property(prop_name) {
+                input.set_value(value);
+            }
+        }
+    }
+
+    /// Move focus to next input
+    fn focus_next(&mut self) {
+        if self.inputs.is_empty() {
+            return;
+        }
+
+        // Clear current focus
+        if let Some(idx) = self.focused_index {
+            self.inputs[idx].set_focused(false);
+        }
+
+        // Move to next
+        let next = match self.focused_index {
+            Some(idx) => (idx + 1) % self.inputs.len(),
+            None => 0,
+        };
+
+        self.focused_index = Some(next);
+        self.inputs[next].set_focused(true);
+    }
+
+    /// Move focus to previous input
+    fn focus_prev(&mut self) {
+        if self.inputs.is_empty() {
+            return;
+        }
+
+        // Clear current focus
+        if let Some(idx) = self.focused_index {
+            self.inputs[idx].set_focused(false);
+        }
+
+        // Move to previous
+        let prev = match self.focused_index {
+            Some(idx) if idx == 0 => self.inputs.len() - 1,
+            Some(idx) => idx - 1,
+            None => 0,
+        };
+
+        self.focused_index = Some(prev);
+        self.inputs[prev].set_focused(true);
+    }
+
+    /// Create a section header line
     fn section_header(text: &str) -> Line<'static> {
         Line::from(vec![Span::styled(
             format!("  {}:", text),
@@ -48,162 +128,158 @@ impl PropertiesPanel {
         )])
     }
 
-    /// Creates a blank line for spacing
+    /// Create a blank line
     fn blank_line() -> Line<'static> {
         Line::from("")
     }
 
-    // Element-specific property display methods
-
-    fn draw_line_properties(lines: &mut Vec<Line<'static>>, line: &LineElement) {
-        lines.push(Self::section_header("Segments"));
-        lines.push(Self::property_line(
-            "count",
-            line.segments.len().to_string(),
-        ));
-
-        if let Some(first_seg) = line.segments.first() {
-            lines.push(Self::blank_line());
-            lines.push(Self::section_header("First Segment"));
-            lines.push(Self::property_line(
-                "start_x",
-                first_seg.start.x.to_string(),
-            ));
-            lines.push(Self::property_line(
-                "start_y",
-                first_seg.start.y.to_string(),
-            ));
-            lines.push(Self::property_line("length", first_seg.length.to_string()));
-            lines.push(Self::property_line(
-                "direction",
-                format!("{:?}", first_seg.direction),
-            ));
+    /// Calculate modal position at bottom-left corner
+    fn calculate_modal_area(canvas_area: Rect) -> Rect {
+        Rect {
+            x: canvas_area.x + 2,
+            y: canvas_area.y + canvas_area.height - PROPERTIES_PANEL_HEIGHT - 1,
+            width: PROPERTIES_PANEL_WIDTH,
+            height: PROPERTIES_PANEL_HEIGHT,
         }
-    }
-
-    fn draw_rectangle_properties(lines: &mut Vec<Line<'static>>, rect: &RectangleElement) {
-        lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("x", rect.start.x.to_string()));
-        lines.push(Self::property_line("y", rect.start.y.to_string()));
-
-        lines.push(Self::blank_line());
-
-        lines.push(Self::section_header("Size"));
-        lines.push(Self::property_line("width", rect.width.to_string()));
-        lines.push(Self::property_line("height", rect.height.to_string()));
-    }
-
-    fn draw_arrow_properties(lines: &mut Vec<Line<'static>>, arrow: &ArrowElement) {
-        lines.push(Self::section_header("Segments"));
-        lines.push(Self::property_line(
-            "count",
-            arrow.segments.len().to_string(),
-        ));
-
-        if let Some(first_seg) = arrow.segments.first() {
-            lines.push(Self::blank_line());
-            lines.push(Self::section_header("First Segment"));
-            lines.push(Self::property_line(
-                "start_x",
-                first_seg.start.x.to_string(),
-            ));
-            lines.push(Self::property_line(
-                "start_y",
-                first_seg.start.y.to_string(),
-            ));
-            lines.push(Self::property_line("length", first_seg.length.to_string()));
-            lines.push(Self::property_line(
-                "direction",
-                format!("{:?}", first_seg.direction),
-            ));
-        }
-    }
-
-    fn draw_text_properties(lines: &mut Vec<Line<'static>>, text: &TextElement) {
-        lines.push(Self::section_header("Position"));
-        lines.push(Self::property_line("x", text.position.x.to_string()));
-        lines.push(Self::property_line("y", text.position.y.to_string()));
-
-        lines.push(Self::blank_line());
-
-        lines.push(Self::section_header("Content"));
-        lines.push(Self::property_line("text", text.text.clone()));
     }
 }
 
 impl EventHandler for PropertiesPanel {
     type State = AppState;
+
+    fn handle_key_event(&mut self, state: &mut AppState, key: &KeyEvent) -> EventResult {
+        // Only handle if properties visible and exactly 1 element selected
+        if !state.show_properties || state.selection_state.selected_ids.len() != 1 {
+            return EventResult::Ignored;
+        }
+
+        // Get the selected element
+        let element_id = state.selection_state.selected_ids[0];
+        let Some(element) = state.canvas.elements().iter().find(|e| e.id() == element_id) else {
+            return EventResult::Ignored;
+        };
+
+        // Initialize inputs if needed
+        self.init_inputs_for_element(element);
+
+        if self.inputs.is_empty() {
+            return EventResult::Ignored;
+        }
+
+        // Check if any input is editing
+        let is_editing = self.focused_index
+            .map(|idx| self.inputs[idx].is_editing())
+            .unwrap_or(false);
+
+        // If editing, forward to focused input with callback
+        if is_editing {
+            if let Some(idx) = self.focused_index {
+                let result = self.inputs[idx].handle_key_event(key, &mut |prop_name, value| {
+                    // Callback: update the element when value changes
+                    if let Some(element) = state.canvas.get_element_mut(element_id) {
+                        let _ = element.set_property(prop_name, value);
+                    }
+                });
+
+                return result;
+            }
+        }
+
+        // Handle navigation between inputs
+        match key.code {
+            KeyCode::Tab | KeyCode::Down | KeyCode::Char('j') => {
+                self.focus_next();
+                EventResult::Consumed
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                self.focus_prev();
+                EventResult::Consumed
+            }
+            KeyCode::Enter => {
+                // Forward to focused input to start editing
+                if let Some(idx) = self.focused_index {
+                    return self.inputs[idx].handle_key_event(key, &mut |prop_name, value| {
+                        // Callback: update the element when value changes
+                        if let Some(element) = state.canvas.get_element_mut(element_id) {
+                            let _ = element.set_property(prop_name, value);
+                        }
+                    });
+                }
+                EventResult::Ignored
+            }
+            _ => EventResult::Ignored,
+        }
+    }
 }
 
 impl Component for PropertiesPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        // Only show when exactly one element is selected and properties are not toggled off
-        if state.selection_state.selected_ids.len() != 1 || !state.show_properties {
+        if !state.show_properties {
             return;
         }
 
-        let element_id = state.selection_state.selected_ids[0];
+        // Only show when exactly one element is selected
+        if state.selection_state.selected_ids.len() != 1 {
+            return;
+        }
 
-        let Some(element) = state
-            .canvas
-            .elements()
-            .iter()
-            .find(|e| e.id() == element_id)
-        else {
-            return; // Element not found
+        // Get the selected element
+        let element_id = state.selection_state.selected_ids[0];
+        let Some(element) = state.canvas.elements().iter().find(|e| e.id() == element_id) else {
+            return;
         };
 
-        // Get element bounds (canvas coordinates)
-        let bounds = element.bounds();
-        let elem_canvas_x = bounds.min.x;
-        let elem_canvas_y = bounds.min.y;
-        let elem_width = bounds.max.x.saturating_sub(bounds.min.x);
-        let elem_height = bounds.max.y.saturating_sub(bounds.min.y);
+        // Initialize inputs if needed
+        self.init_inputs_for_element(element);
 
-        // Convert to screen coordinates
+        // Calculate fixed position at bottom-left corner
         let canvas_area = state.layout.canvas;
-        let elem_screen_x = canvas_area.x + 1 + elem_canvas_x; // +1 for border
-        let elem_screen_y = canvas_area.y + 1 + elem_canvas_y; // +1 for border
+        let area = Self::calculate_modal_area(canvas_area);
 
-        // Calculate smart position for the floating panel
-        let area = calculate_smart_position(
-            elem_screen_x,
-            elem_screen_y,
-            elem_width,
-            elem_height,
-            canvas_area,
-            PROPERTIES_PANEL_WIDTH,
-            PROPERTIES_PANEL_HEIGHT,
-        );
+        // Clear the area
+        frame.render_widget(Clear, area);
 
-        // Build the property lines
+        // Build content lines
         let mut lines = vec![Self::blank_line()];
 
-        // Common properties
-        let element_type = Self::get_element_type_name(element);
-        lines.push(Self::property_line("Type", element_type.to_string()));
-        lines.push(Self::property_line("Name", element.name().to_string()));
+        // Element type and name
+        lines.push(Line::from(vec![
+            Span::styled("  Type: ", Style::default().fg(Color::Yellow)),
+            Span::raw(element.type_name()),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("  Name: ", Style::default().fg(Color::Yellow)),
+            Span::raw(element.name().to_string()),
+        ]));
 
         lines.push(Self::blank_line());
 
-        // Element-specific properties
-        match element {
-            Element::Line(line) => Self::draw_line_properties(&mut lines, line),
-            Element::Rectangle(rect) => Self::draw_rectangle_properties(&mut lines, rect),
-            Element::Arrow(arrow) => Self::draw_arrow_properties(&mut lines, arrow),
-            Element::Text(text) => Self::draw_text_properties(&mut lines, text),
+        // Render editable properties (if any)
+        let spec = element.properties_spec();
+        let mut field_index = 0;
+        for section in &spec.sections {
+            lines.push(Self::section_header(&section.title));
+
+            // Render inputs for this section
+            for _field in &section.fields {
+                if field_index < self.inputs.len() {
+                    lines.push(self.inputs[field_index].render_line());
+                    field_index += 1;
+                }
+            }
+
+            lines.push(Self::blank_line());
         }
 
-        // Clear the background and render as floating overlay
-        frame.render_widget(Clear, area);
+        // Create the paragraph widget
+        let properties = Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .title(" Properties ")
+                .border_style(Style::default().fg(Color::Cyan)),
+        );
 
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .title("Properties (toggle: p)")
-            .border_style(Style::default().fg(Color::Yellow));
-
-        let widget = Paragraph::new(lines).block(block);
-        frame.render_widget(widget, area);
+        frame.render_widget(properties, area);
     }
 }
