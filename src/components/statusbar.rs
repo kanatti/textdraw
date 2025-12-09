@@ -82,11 +82,19 @@ impl Component for StatusBar {
 
         // Left side: Tool indicator and hints (fixed width for consistent layout)
         let tool_name = format!(" {:^width$} ", state.tool.selected_tool.name(), width = Tool::max_name_len());
+
+        // Use yellow for Select tool, blue for drawing tools
+        let tool_bg_color = if state.tool.selected_tool == Tool::Select {
+            Color::Yellow
+        } else {
+            Color::Blue
+        };
+
         let mut left_spans = vec![
             Span::raw(" "),
             Span::styled(
                 tool_name,
-                Style::default().fg(Color::Black).bg(Color::Yellow),
+                Style::default().fg(Color::Black).bg(tool_bg_color),
             ),
         ];
 
