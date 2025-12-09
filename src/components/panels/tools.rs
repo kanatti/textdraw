@@ -158,21 +158,27 @@ impl Component for ToolsPanel {
             let key = tool.key().to_string();
             let name = tool.name().to_string();
 
-            let (prefix, style) = if is_selected {
+            let (key_style, name_style, bg_style) = if is_selected {
+                // Selected: grey background with bright colors
                 (
-                    "→ ",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
+                    Style::default().fg(Color::Cyan).bg(Color::DarkGray),
+                    Style::default().fg(Color::Yellow).bg(Color::DarkGray),
+                    Style::default().bg(Color::DarkGray),
                 )
             } else {
-                ("  ", Style::default())
+                // Not selected: default colors, no background
+                (
+                    Style::default().fg(Color::Cyan),
+                    Style::default(),
+                    Style::default(),
+                )
             };
 
             let line = Line::from(vec![
-                Span::styled(prefix, style),
-                Span::styled(format!("{} ", key), Style::default().fg(Color::Cyan)),
-                Span::styled(name, style),
+                Span::styled(format!("  {} ", key), key_style),
+                Span::styled(name, name_style),
+                // Add padding to fill the rest of the line with background
+                Span::styled(" ".repeat(15), bg_style),
             ]);
 
             lines.push(line);
