@@ -1,5 +1,5 @@
-use crate::components::{Component, NumericInput, PropertyInput};
-use crate::elements::{Element, FieldType, PropertyValue};
+use crate::components::{ChoiceInput, Component, NumericInput, PropertyInput};
+use crate::elements::{Element, FieldType, PropertiesSpec, PropertyValue};
 use crate::events::{EventHandler, EventResult, KeyEvent};
 use crate::state::AppState;
 use crossterm::event::KeyCode;
@@ -13,7 +13,13 @@ use ratatui::{
 
 /// Panel dimensions for properties panel
 const PROPERTIES_PANEL_WIDTH: u16 = 35;
-const PROPERTIES_PANEL_HEIGHT: u16 = 15;
+
+/// Fixed content lines in properties panel:
+/// - 1 blank line at top
+/// - 2 lines for element type and name
+/// - 1 blank line after header
+/// - 1 line for shortcut helper at bottom
+const PROPERTIES_FIXED_LINES: u16 = 5;
 
 pub struct PropertiesPanel {
     // Input components for each property field
@@ -52,10 +58,31 @@ impl PropertiesPanel {
 
         // Create input for each field
         for field in spec.all_fields() {
-            if let FieldType::Numeric { min, max } = field.field_type {
-                if let Some(PropertyValue::Numeric(value)) = element.get_property(&field.name) {
-                    let input = NumericInput::new(&field.name, &field.label, value, min, max);
+            let current_value = element.get_property(&field.name);
+
+            match &field.field_type {
+                FieldType::Numeric { min, max } => {
+                    if let Some(PropertyValue::Numeric(value)) = current_value {
+                        let input = NumericInput::new(&field.name, &field.label, value, *min, *max);
+                        self.inputs.push(Box::new(input));
+                    }
+                }
+                FieldType::Choice { options } => {
+                    let value_str = if let Some(PropertyValue::Choice(s)) = current_value {
+                        s
+                    } else {
+                        options.first().unwrap_or(&String::new()).clone()
+                    };
+                    let input = ChoiceInput::new(
+                        &field.name,
+                        &field.label,
+                        value_str,
+                        options.clone(),
+                    );
                     self.inputs.push(Box::new(input));
+                }
+                _ => {
+                    // Other field types not yet supported
                 }
             }
         }
@@ -134,13 +161,30 @@ impl PropertiesPanel {
     }
 
     /// Calculate modal position at bottom-left corner
-    fn calculate_modal_area(canvas_area: Rect) -> Rect {
+    fn calculate_modal_area(canvas_area: Rect, content_height: u16) -> Rect {
+        // Add 2 for top and bottom borders
+        let total_height = content_height + 2;
+
         Rect {
             x: canvas_area.x + 2,
-            y: canvas_area.y + canvas_area.height - PROPERTIES_PANEL_HEIGHT - 1,
+            y: canvas_area.y + canvas_area.height.saturating_sub(total_height + 1),
             width: PROPERTIES_PANEL_WIDTH,
-            height: PROPERTIES_PANEL_HEIGHT,
+            height: total_height,
         }
+    }
+
+    /// Calculate the height needed for the content
+    fn calculate_content_height(&self, spec: &PropertiesSpec) -> u16 {
+        let mut height = PROPERTIES_FIXED_LINES;
+
+        // For each section: header + fields + blank line
+        for section in &spec.sections {
+            height += 1; // section header
+            height += section.fields.len() as u16; // one line per field
+            height += 1; // blank line after section
+        }
+
+        height
     }
 }
 
@@ -232,9 +276,13 @@ impl Component for PropertiesPanel {
         // Initialize inputs if needed
         self.init_inputs_for_element(element);
 
-        // Calculate fixed position at bottom-left corner
+        // Get properties spec to calculate height
+        let spec = element.properties_spec();
+        let content_height = self.calculate_content_height(&spec);
+
+        // Calculate dynamic position at bottom-left corner
         let canvas_area = state.layout.canvas;
-        let area = Self::calculate_modal_area(canvas_area);
+        let area = Self::calculate_modal_area(canvas_area, content_height);
 
         // Clear the area
         frame.render_widget(Clear, area);
@@ -270,6 +318,12 @@ impl Component for PropertiesPanel {
 
             lines.push(Self::blank_line());
         }
+
+        // Add shortcut helper at the bottom
+        lines.push(Line::from(vec![
+            Span::styled("  Toggle: ", Style::default().fg(Color::DarkGray)),
+            Span::styled("p", Style::default().fg(Color::DarkGray)),
+        ]));
 
         // Create the paragraph widget
         let properties = Paragraph::new(lines).block(

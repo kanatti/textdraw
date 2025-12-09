@@ -1,5 +1,7 @@
+mod choice;
 mod numeric;
 
+pub use choice::ChoiceInput;
 pub use numeric::NumericInput;
 
 use crate::elements::PropertyValue;

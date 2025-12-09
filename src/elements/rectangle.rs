@@ -5,6 +5,88 @@ use crate::types::{Bounds, Coord, RenderPoint};
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
+/// Character set for drawing rectangle borders
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BoxChars {
+    pub top_left: char,
+    pub top: char,
+    pub top_right: char,
+    pub side: char,
+    pub bottom_left: char,
+    pub bottom_right: char,
+}
+
+/// Border type for rectangles
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum BorderType {
+    #[default]
+    Normal,
+    Double,
+    Thick,
+    Rounded,
+}
+
+impl BorderType {
+    /// Get the box drawing characters for this border type
+    pub fn chars(&self) -> BoxChars {
+        match self {
+            BorderType::Normal => BoxChars {
+                top_left: '┌',
+                top: '─',
+                top_right: '┐',
+                side: '│',
+                bottom_left: '└',
+                bottom_right: '┘',
+            },
+            BorderType::Double => BoxChars {
+                top_left: '╔',
+                top: '═',
+                top_right: '╗',
+                side: '║',
+                bottom_left: '╚',
+                bottom_right: '╝',
+            },
+            BorderType::Thick => BoxChars {
+                top_left: '┏',
+                top: '━',
+                top_right: '┓',
+                side: '┃',
+                bottom_left: '┗',
+                bottom_right: '┛',
+            },
+            BorderType::Rounded => BoxChars {
+                top_left: '╭',
+                top: '─',
+                top_right: '╮',
+                side: '│',
+                bottom_left: '╰',
+                bottom_right: '╯',
+            },
+        }
+    }
+
+    /// Convert border type to string for property value
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BorderType::Normal => "Normal",
+            BorderType::Double => "Double",
+            BorderType::Thick => "Thick",
+            BorderType::Rounded => "Rounded",
+        }
+    }
+
+    /// Parse border type from string
+    pub fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "Normal" => Ok(BorderType::Normal),
+            "Double" => Ok(BorderType::Double),
+            "Thick" => Ok(BorderType::Thick),
+            "Rounded" => Ok(BorderType::Rounded),
+            _ => bail!("Invalid border type: {}", s),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RectangleElement {
     pub id: usize,
@@ -13,6 +95,8 @@ pub struct RectangleElement {
     pub width: u16,
     pub height: u16,
     pub bounds: Bounds,
+    #[serde(default)]
+    pub border_type: BorderType,
 }
 
 impl RectangleElement {
@@ -32,6 +116,7 @@ impl RectangleElement {
             width,
             height,
             bounds,
+            border_type: BorderType::Normal,
         }
     }
 
@@ -47,22 +132,25 @@ impl RectangleElement {
         let right = left + self.width as i32;
         let bottom = top + self.height as i32;
 
+        // Get characters for current border type
+        let chars = self.border_type.chars();
+
         // Corners
-        points.push((left, top, '┌'));
-        points.push((right, top, '┐'));
-        points.push((left, bottom, '└'));
-        points.push((right, bottom, '┘'));
+        points.push((left, top, chars.top_left));
+        points.push((right, top, chars.top_right));
+        points.push((left, bottom, chars.bottom_left));
+        points.push((right, bottom, chars.bottom_right));
 
         // Top and bottom edges
         for x in (left + 1)..right {
-            points.push((x, top, '─'));
-            points.push((x, bottom, '─'));
+            points.push((x, top, chars.top));
+            points.push((x, bottom, chars.top));
         }
 
         // Left and right edges
         for y in (top + 1)..bottom {
-            points.push((left, y, '│'));
-            points.push((right, y, '│'));
+            points.push((left, y, chars.side));
+            points.push((right, y, chars.side));
         }
 
         points
@@ -112,6 +200,22 @@ impl HasProperties for RectangleElement {
         ));
         spec.add_section(size);
 
+        // Style section
+        let mut style = PropertySection::new("Style");
+        style.add_field(PropertyField::new(
+            "border_type",
+            "border-type",
+            FieldType::Choice {
+                options: vec![
+                    "Normal".to_string(),
+                    "Double".to_string(),
+                    "Thick".to_string(),
+                    "Rounded".to_string(),
+                ],
+            },
+        ));
+        spec.add_section(style);
+
         spec
     }
 
@@ -121,6 +225,7 @@ impl HasProperties for RectangleElement {
             "y" => Some(PropertyValue::Numeric(self.start.y)),
             "width" => Some(PropertyValue::Numeric(self.width)),
             "height" => Some(PropertyValue::Numeric(self.height)),
+            "border_type" => Some(PropertyValue::Choice(self.border_type.as_str().to_string())),
             _ => None,
         }
     }
@@ -155,6 +260,11 @@ impl HasProperties for RectangleElement {
                 }
                 self.height = new_height;
                 self.update_bounds();
+                Ok(())
+            }
+            "border_type" => {
+                let type_str = value.as_choice()?;
+                self.border_type = BorderType::from_str(type_str)?;
                 Ok(())
             }
             _ => bail!("Unknown property: {}", name),

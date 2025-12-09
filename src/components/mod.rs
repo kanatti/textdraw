@@ -7,7 +7,7 @@ pub mod statusbar;
 
 pub use canvas::CanvasComponent;
 pub use help::HelpModal;
-pub use inputs::NumericInput;
+pub use inputs::{ChoiceInput, NumericInput};
 pub use panels::{PropertiesPanel, ToolsPanel};
 pub use statusbar::StatusBar;
 
