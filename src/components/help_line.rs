@@ -185,7 +185,7 @@ pub const HELP_LINES: &[HelpLine] = &[
     keybinding(":", "Enter command mode"),
     keybinding("Ctrl+S", "Quick save command"),
     keybinding("Ctrl+O", "Quick open command"),
-    keybinding("Esc", "Select tool / Cancel"),
+    keybinding("Esc", "Cancel"),
     keybinding("?", "Toggle help"),
     keybinding("q", "Quit"),
     blank(),

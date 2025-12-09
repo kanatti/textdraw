@@ -1,10 +1,11 @@
 # TextDraw
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 An interactive terminal ASCII diagram editor.
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<img src="assets/welcome.jpg" alt="TextDraw Welcome Screen" style="width: 100%; max-width: 100%; margin: 20px 0;"/>
 
-_Screen recordings coming soon_
 
 ## Features
 
@@ -51,10 +52,6 @@ TextDraw is in active development. Current features are stable, but the API and 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
-
-## License
-
-MIT - see [LICENSE](LICENSE) for details.
 
 ## Author
 
