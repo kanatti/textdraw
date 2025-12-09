@@ -1,8 +1,10 @@
 use crate::components::Component;
 use crate::events::EventHandler;
 use crate::state::AppState;
+use crate::tools::Tool;
 use ratatui::{
     Frame,
+    layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
     text::{Line, Span},
     widgets::Paragraph,
@@ -74,16 +76,17 @@ impl Component for StatusBar {
             return;
         }
 
-        // Normal statusbar
-        let mut spans = vec![
-            Span::raw(" Cursor: ("),
-            Span::raw(state.cursor_x.to_string()),
-            Span::raw(", "),
-            Span::raw(state.cursor_y.to_string()),
-            Span::raw(") | Tool: "),
+        // Split statusbar into left (tool & hints) and right (cursor)
+        let chunks = Layout::horizontal([Constraint::Min(0), Constraint::Length(20)])
+            .split(area);
+
+        // Left side: Tool indicator and hints (fixed width for consistent layout)
+        let tool_name = format!(" {:^width$} ", state.tool.selected_tool.name(), width = Tool::max_name_len());
+        let mut left_spans = vec![
+            Span::raw(" "),
             Span::styled(
-                state.tool.selected_tool.name(),
-                Style::default().fg(Color::Yellow),
+                tool_name,
+                Style::default().fg(Color::Black).bg(Color::Yellow),
             ),
         ];
 
@@ -91,32 +94,47 @@ impl Component for StatusBar {
         if state.is_select_tool() {
             let selected_ids = state.get_selected_element_ids();
             if !selected_ids.is_empty() {
-                spans.push(Span::raw(" | Selected: "));
-                spans.push(Span::styled(
+                left_spans.push(Span::raw(" | Selected: "));
+                left_spans.push(Span::styled(
                     selected_ids.len().to_string(),
                     Style::default().fg(Color::Yellow),
                 ));
 
                 // Show Properties hint only when exactly one element is selected
                 if selected_ids.len() == 1 {
-                    spans.push(Span::raw(" | Properties: "));
-                    spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
+                    left_spans.push(Span::raw(" | Properties: "));
+                    left_spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
                 }
 
-                spans.push(Span::raw(" | Move: "));
-                spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
-                spans.push(Span::raw(" | Delete: "));
-                spans.push(Span::styled("⌫", Style::default().fg(Color::Cyan)));
+                left_spans.push(Span::raw(" | Move: "));
+                left_spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
+                left_spans.push(Span::raw(" | Delete: "));
+                left_spans.push(Span::styled("⌫", Style::default().fg(Color::Cyan)));
             }
         }
 
-        spans.push(Span::raw(" | Help: "));
-        spans.push(Span::styled("?", Style::default().fg(Color::Cyan)));
-        spans.push(Span::raw(" | Quit: "));
-        spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
+        left_spans.push(Span::raw(" | Tools: "));
+        left_spans.push(Span::styled("Space", Style::default().fg(Color::Cyan)));
+        left_spans.push(Span::raw(" | Help: "));
+        left_spans.push(Span::styled("?", Style::default().fg(Color::Cyan)));
+        left_spans.push(Span::raw(" | Quit: "));
+        left_spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
 
-        let status = Paragraph::new(Line::from(spans)).style(Style::default().fg(Color::White));
+        let left_status = Paragraph::new(Line::from(left_spans))
+            .style(Style::default().fg(Color::White));
+        frame.render_widget(left_status, chunks[0]);
 
-        frame.render_widget(status, area);
+        // Right side: Cursor position (right-aligned)
+        let right_spans = vec![
+            Span::raw("Cursor: ("),
+            Span::raw(state.cursor_x.to_string()),
+            Span::raw(", "),
+            Span::raw(state.cursor_y.to_string()),
+            Span::raw(") "),
+        ];
+        let right_status = Paragraph::new(Line::from(right_spans))
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Right);
+        frame.render_widget(right_status, chunks[1]);
     }
 }

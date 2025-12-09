@@ -14,11 +14,8 @@ fn is_inside(coord: Coord, rect: Rect) -> bool {
 
 /// Static mapping of panel types to their layout accessor functions
 /// Note: Properties panel is not included as it's now a floating overlay
-static PANELS: &[(Panel, fn(&UILayout) -> Rect)] = &[
-    (Panel::Canvas, |l| l.canvas),
-    (Panel::Tools, |l| l.tools),
-    (Panel::Elements, |l| l.elements),
-];
+/// Note: Tools is now a modal overlay, not a fixed panel
+static PANELS: &[(Panel, fn(&UILayout) -> Rect)] = &[(Panel::Canvas, |l| l.canvas)];
 
 /// Detect which panel was clicked based on mouse coordinates
 pub fn detect_panel_click(coord: Coord, layout: &UILayout) -> Option<Panel> {

@@ -441,9 +441,9 @@ impl Component for CanvasComponent {
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or(file);
-            format!("[0]-Canvas ─── {} ───", filename)
+            format!("Canvas ─── {} ───", filename)
         } else {
-            "[0]-Canvas".to_string()
+            "Canvas".to_string()
         };
 
         let canvas = Paragraph::new(lines).block(

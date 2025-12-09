@@ -67,22 +67,16 @@ impl EventHandler for GlobalHandler {
                 state.toggle_properties();
                 EventResult::Consumed
             }
-            // Panel shortcuts
-            KeyCode::Char(c @ '0'..='3') => {
-                let panel = match c {
-                    '0' => Panel::Canvas,
-                    '1' => Panel::Tools,
-                    '2' => Panel::Elements,
-                    '3' => Panel::Properties,
-                    _ => unreachable!("Unhandled panel switch"),
-                };
-                state.switch_panel(panel);
+            KeyCode::Char(' ') => {
+                state.toggle_tools_modal();
                 EventResult::Consumed
             }
             // Tool shortcuts
             KeyCode::Esc => {
-                // Close help modal if open, otherwise switch to Select tool
-                if state.show_help {
+                // Close tools modal first, then help modal, then switch to Select tool
+                if state.show_tools_modal {
+                    state.toggle_tools_modal();
+                } else if state.show_help {
                     state.toggle_help();
                 } else {
                     state.select_tool(Tool::Select);

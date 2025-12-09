@@ -22,6 +22,7 @@ pub struct AppState {
     pub layout: UILayout,
     pub show_help: bool,
     pub show_properties: bool,
+    pub show_tools_modal: bool,
     pub command: CommandState,
     pub tool: ToolState,
     pub file: FileState,
@@ -40,6 +41,7 @@ impl AppState {
             layout: UILayout::default(),
             show_help: false,
             show_properties: true, // Default to showing properties
+            show_tools_modal: false,
             command: CommandState::new(),
             tool: ToolState::new(),
             file: FileState::new(),
@@ -91,6 +93,10 @@ impl AppState {
 
     pub fn toggle_properties(&mut self) {
         self.show_properties = !self.show_properties;
+    }
+
+    pub fn toggle_tools_modal(&mut self) {
+        self.show_tools_modal = !self.show_tools_modal;
     }
 
     // ============================================================================

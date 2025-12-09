@@ -6,7 +6,7 @@ pub mod statusbar;
 
 pub use canvas::CanvasComponent;
 pub use help::HelpModal;
-pub use panels::{ElementsPanel, PropertiesPanel, ToolsPanel};
+pub use panels::{PropertiesPanel, ToolsPanel};
 pub use statusbar::StatusBar;
 
 use crate::events::EventHandler;

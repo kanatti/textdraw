@@ -49,6 +49,18 @@ macro_rules! define_tools_enum {
                     _ => None,
                 }
             }
+
+            /// Get the maximum length of all tool names (for UI alignment)
+            pub const fn max_name_len() -> usize {
+                let mut max = 0;
+                $(
+                    let len = $name.len();
+                    if len > max {
+                        max = len;
+                    }
+                )*
+                max
+            }
         }
     };
 }

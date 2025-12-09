@@ -7,7 +7,7 @@ const POSITIONING_GAP: u16 = 2;
 ///
 /// Priority: Right of element > Left of element > Below > Above > Center (fallback)
 ///
-/// # Arguments
+/// **Arguments**:
 ///
 /// * `elem_x` - Element's screen X coordinate (absolute)
 /// * `elem_y` - Element's screen Y coordinate (absolute)
@@ -17,7 +17,7 @@ const POSITIONING_GAP: u16 = 2;
 /// * `panel_width` - Panel width
 /// * `panel_height` - Panel height
 ///
-/// # Returns
+/// **Returns**:
 ///
 /// A `Rect` representing the panel position in screen coordinates
 pub fn calculate_smart_position(
