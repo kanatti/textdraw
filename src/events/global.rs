@@ -64,11 +64,33 @@ impl EventHandler for GlobalHandler {
                 EventResult::Consumed
             }
             KeyCode::Char('p') => {
-                state.toggle_properties();
+                if !state.show_properties {
+                    // Properties hidden -> show and make active
+                    state.toggle_properties();
+                    state.switch_panel(Panel::Properties);
+                } else if state.active_panel != Panel::Properties {
+                    // Properties visible but inactive -> make active
+                    state.switch_panel(Panel::Properties);
+                } else {
+                    // Properties visible and active -> hide
+                    state.toggle_properties();
+                    state.switch_panel(Panel::Canvas);
+                }
                 EventResult::Consumed
             }
             KeyCode::Char(' ') => {
-                state.toggle_tools_modal();
+                if !state.show_tools_modal {
+                    // Tools hidden -> show and make active
+                    state.toggle_tools_modal();
+                    state.switch_panel(Panel::Tools);
+                } else if state.active_panel != Panel::Tools {
+                    // Tools visible but inactive -> make active
+                    state.switch_panel(Panel::Tools);
+                } else {
+                    // Tools visible and active -> hide
+                    state.toggle_tools_modal();
+                    state.switch_panel(Panel::Canvas);
+                }
                 EventResult::Consumed
             }
             // Tool shortcuts
@@ -76,6 +98,7 @@ impl EventHandler for GlobalHandler {
                 // Close tools modal first, then help modal, then switch to Select tool
                 if state.show_tools_modal {
                     state.toggle_tools_modal();
+                    state.switch_panel(Panel::Canvas);
                 } else if state.show_help {
                     state.toggle_help();
                 } else {

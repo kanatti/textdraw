@@ -1,12 +1,14 @@
 mod arrow;
 mod line;
 mod rectangle;
+mod table;
 mod text;
 
 // Re-export tool implementations
 pub use arrow::ArrowTool;
 pub use line::LineTool;
 pub use rectangle::RectangleTool;
+pub use table::TableTool;
 pub use text::TextTool;
 
 use crate::events::EventHandler;
@@ -72,6 +74,7 @@ define_tools_enum! {
     Rectangle => ("Rectangle", 'r'),
     Arrow     => ("Arrow", 'a'),
     Text      => ("Text", 't'),
+    Table     => ("Table", '\0'),
 }
 
 /// Trait for all drawing tools - extends EventHandler for event routing

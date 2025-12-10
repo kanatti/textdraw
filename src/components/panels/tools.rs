@@ -2,6 +2,7 @@ use crate::components::Component;
 use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
+use crate::types::Panel;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -21,7 +22,7 @@ impl ToolsPanel {
     /// Calculate modal position at bottom-left corner
     fn calculate_modal_area(canvas_area: Rect) -> Rect {
         const MODAL_WIDTH: u16 = 25;
-        const MODAL_HEIGHT: u16 = 12;
+        const MODAL_HEIGHT: u16 = 13; // Increased for 6 tools
 
         Rect {
             x: canvas_area.x + 2,
@@ -74,9 +75,18 @@ impl EventHandler for ToolsPanel {
             return EventResult::Ignored;
         }
 
+        // Only handle when tools panel is active
+        if state.active_panel != Panel::Tools {
+            return EventResult::Ignored;
+        }
+
         match key_event.code {
             KeyCode::Esc | KeyCode::Char(' ') => {
                 state.toggle_tools_modal();
+                // Switch back to canvas when closing
+                if !state.show_tools_modal {
+                    state.switch_panel(Panel::Canvas);
+                }
                 EventResult::Consumed
             }
             KeyCode::Up | KeyCode::Char('k') => {
@@ -88,7 +98,8 @@ impl EventHandler for ToolsPanel {
                 EventResult::Consumed
             }
             KeyCode::Enter => {
-                // Select tool (tool is already selected through navigation, no need to close)
+                // Close modal after selecting tool with Enter
+                state.toggle_tools_modal();
                 EventResult::Consumed
             }
             KeyCode::Tab | KeyCode::Char('x') => {
@@ -121,6 +132,9 @@ impl EventHandler for ToolsPanel {
         if !Self::is_inside_modal(mouse_event.column, mouse_event.row, modal_area) {
             return EventResult::Ignored;
         }
+
+        // Make tools panel active when clicked
+        state.switch_panel(Panel::Tools);
 
         // Check for lock toggle click
         if Self::is_lock_click(mouse_event.row, modal_area) {
@@ -155,8 +169,15 @@ impl Component for ToolsPanel {
 
         for tool in Tool::all() {
             let is_selected = state.tool.selected_tool == tool;
-            let key = tool.key().to_string();
+            let key_char = tool.key();
             let name = tool.name().to_string();
+
+            // Handle tools without keyboard shortcuts (key = '\0')
+            let key_display = if key_char == '\0' {
+                "    ".to_string() // Four spaces to match "  X " format
+            } else {
+                format!("  {} ", key_char)
+            };
 
             let (key_style, name_style, bg_style) = if is_selected {
                 // Selected: grey background with bright colors
@@ -175,7 +196,7 @@ impl Component for ToolsPanel {
             };
 
             let line = Line::from(vec![
-                Span::styled(format!("  {} ", key), key_style),
+                Span::styled(key_display, key_style),
                 Span::styled(name, name_style),
                 // Add padding to fill the rest of the line with background
                 Span::styled(" ".repeat(15), bg_style),
@@ -201,11 +222,17 @@ impl Component for ToolsPanel {
             Span::raw(" Lock tool"),
         ]));
 
+        let border_color = if state.active_panel == Panel::Tools {
+            Color::Green
+        } else {
+            Color::DarkGray
+        };
+
         let block = Block::default()
             .title("Tools")
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
-            .border_style(Style::default().fg(Color::Cyan));
+            .border_style(Style::default().fg(border_color));
 
         let widget = Paragraph::new(lines).block(block);
 

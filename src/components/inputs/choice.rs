@@ -80,8 +80,8 @@ impl ChoiceInput {
     }
 
     /// Render this input as a Line
-    fn render_line_internal(&self, current_value: &str) -> Line<'static> {
-        let styles = styles::input_styles(self.is_editing, self.is_focused);
+    fn render_line_internal(&self, current_value: &str, panel_active: bool) -> Line<'static> {
+        let styles = styles::input_styles(self.is_editing, self.is_focused, panel_active);
 
         let display_value = if self.is_editing {
             // Show currently selected option while editing
@@ -110,12 +110,12 @@ impl ChoiceInput {
 }
 
 impl PropertyInput for ChoiceInput {
-    fn render_line(&self, current_value: &PropertyValue) -> Line<'static> {
+    fn render_line(&self, current_value: &PropertyValue, panel_active: bool) -> Line<'static> {
         let value = match current_value {
             PropertyValue::Choice(s) => s.as_str(),
             _ => "", // Fallback, shouldn't happen
         };
-        self.render_line_internal(value)
+        self.render_line_internal(value, panel_active)
     }
 
     fn set_focused(&mut self, focused: bool) {

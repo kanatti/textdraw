@@ -45,15 +45,16 @@ pub struct InputStyles {
 }
 
 /// Get styles for property inputs based on state
-pub fn input_styles(is_editing: bool, is_focused: bool) -> InputStyles {
-    if is_editing {
+pub fn input_styles(is_editing: bool, is_focused: bool, panel_active: bool) -> InputStyles {
+    // Only apply background highlight when panel is active
+    if panel_active && is_editing {
         // Editing: dark gray background with cyan text
         InputStyles {
             label: Style::default().fg(COLOR_LABEL).bg(COLOR_SELECTED_BG),
             value: Style::default().fg(COLOR_PRIMARY).bg(COLOR_SELECTED_BG),
             background: Style::default().bg(COLOR_SELECTED_BG),
         }
-    } else if is_focused {
+    } else if panel_active && is_focused {
         // Focused: dark gray background
         InputStyles {
             label: Style::default().fg(COLOR_LABEL).bg(COLOR_SELECTED_BG),

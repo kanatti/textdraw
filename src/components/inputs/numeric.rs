@@ -83,8 +83,8 @@ impl NumericInput {
     }
 
     /// Render this input as a Line
-    fn render_line_internal(&self, current_value: u16) -> Line<'static> {
-        let styles = styles::input_styles(self.is_editing, self.is_focused);
+    fn render_line_internal(&self, current_value: u16, panel_active: bool) -> Line<'static> {
+        let styles = styles::input_styles(self.is_editing, self.is_focused, panel_active);
 
         let display_value = if self.is_editing {
             format!("{}▎", self.edit_buffer) // Cursor at end
@@ -102,12 +102,12 @@ impl NumericInput {
 }
 
 impl PropertyInput for NumericInput {
-    fn render_line(&self, current_value: &PropertyValue) -> Line<'static> {
+    fn render_line(&self, current_value: &PropertyValue, panel_active: bool) -> Line<'static> {
         let value = match current_value {
             PropertyValue::Numeric(n) => *n,
             _ => 0, // Fallback, shouldn't happen
         };
-        self.render_line_internal(value)
+        self.render_line_internal(value, panel_active)
     }
 
     fn set_focused(&mut self, focused: bool) {

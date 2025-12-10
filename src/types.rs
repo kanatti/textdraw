@@ -48,6 +48,7 @@ pub enum Direction {
 pub enum Panel {
     Canvas,
     Properties,
+    Tools,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

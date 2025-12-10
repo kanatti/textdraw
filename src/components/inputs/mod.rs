@@ -11,7 +11,7 @@ use ratatui::text::Line;
 /// Trait for property input components
 pub trait PropertyInput {
     /// Render this input as a line with the current value
-    fn render_line(&self, current_value: &PropertyValue) -> Line<'static>;
+    fn render_line(&self, current_value: &PropertyValue, panel_active: bool) -> Line<'static>;
 
     /// Set focus state
     fn set_focused(&mut self, focused: bool);

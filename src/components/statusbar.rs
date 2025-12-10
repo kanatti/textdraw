@@ -79,30 +79,38 @@ impl Component for StatusBar {
         // Split statusbar into left (tool & hints) and right (cursor)
         let chunks = Layout::horizontal([Constraint::Min(0), Constraint::Length(20)]).split(area);
 
-        // Left side: Tool indicator and hints (fixed width for consistent layout)
-        let tool_name = format!(
-            " {:^width$} ",
-            state.tool.selected_tool.name(),
-            width = Tool::max_name_len()
-        );
-
-        // Use yellow for Select tool, blue for drawing tools
-        let tool_bg_color = if state.tool.selected_tool == Tool::Select {
-            Color::Yellow
+        // Left side: Mode/Tool indicator and hints (fixed width for consistent layout)
+        let (mode_name, mode_bg_color) = if state.is_editing_table() {
+            // Show EDIT TABLE mode
+            (
+                format!(" {:^width$} ", "EDIT TABLE", width = Tool::max_name_len()),
+                Color::Magenta,
+            )
         } else {
-            Color::Blue
+            // Show tool name
+            let tool_name = format!(
+                " {:^width$} ",
+                state.tool.selected_tool.name(),
+                width = Tool::max_name_len()
+            );
+            let tool_bg_color = if state.tool.selected_tool == Tool::Select {
+                Color::Yellow
+            } else {
+                Color::Blue
+            };
+            (tool_name, tool_bg_color)
         };
 
         let mut left_spans = vec![
             Span::raw(" "),
             Span::styled(
-                tool_name,
-                Style::default().fg(Color::Black).bg(tool_bg_color),
+                mode_name,
+                Style::default().fg(Color::Black).bg(mode_bg_color),
             ),
         ];
 
-        // Add contextual help based on selection state
-        if state.is_select_tool() {
+        // Add contextual help based on mode and selection state
+        if !state.is_editing_table() && state.is_select_tool() {
             let selected_ids = state.get_selected_element_ids();
             if !selected_ids.is_empty() {
                 left_spans.push(Span::raw(" | Selected: "));

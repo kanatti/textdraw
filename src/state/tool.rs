@@ -1,4 +1,4 @@
-use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TextTool, Tool};
+use crate::tools::{ArrowTool, DrawingTool, LineTool, RectangleTool, TableTool, TextTool, Tool};
 
 pub struct ToolState {
     pub selected_tool: Tool,
@@ -30,6 +30,7 @@ impl ToolState {
             Tool::Rectangle => Some(Box::new(RectangleTool::new())),
             Tool::Arrow => Some(Box::new(ArrowTool::new())),
             Tool::Text => Some(Box::new(TextTool::new())),
+            Tool::Table => Some(Box::new(TableTool::new())),
         };
 
         // Return true if we switched away from Select tool (caller should deselect)

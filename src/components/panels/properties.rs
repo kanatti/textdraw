@@ -1,8 +1,9 @@
 use crate::components::{ChoiceInput, Component, NumericInput, PropertyInput};
 use crate::elements::{Element, FieldType, PropertiesSpec, PropertyValue};
-use crate::events::{EventHandler, EventResult, KeyEvent};
+use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::styles;
+use crate::types::Panel;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -160,6 +161,11 @@ impl PropertiesPanel {
 
     /// Get the selected element if properties panel should be visible
     fn get_selected_element(state: &AppState) -> Option<(usize, &Element)> {
+        // Don't show properties when in edit table mode
+        if state.is_editing_table() {
+            return None;
+        }
+
         // Only show when properties visible and exactly one element selected
         if !state.show_properties || state.selection_state.selected_ids.len() != 1 {
             return None;
@@ -202,6 +208,11 @@ impl EventHandler for PropertiesPanel {
     type State = AppState;
 
     fn handle_key_event(&mut self, state: &mut AppState, key: &KeyEvent) -> EventResult {
+        // Only handle when properties panel is active
+        if state.active_panel != Panel::Properties {
+            return EventResult::Ignored;
+        }
+
         // Get selected element
         let Some((element_id, element)) = Self::get_selected_element(state) else {
             return EventResult::Ignored;
@@ -249,6 +260,36 @@ impl EventHandler for PropertiesPanel {
             _ => EventResult::Ignored,
         }
     }
+
+    fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
+        // Get selected element to check if properties should be visible
+        let Some((element_id, element)) = Self::get_selected_element(state) else {
+            return EventResult::Ignored;
+        };
+
+        // Initialize inputs if needed
+        self.initialize(element);
+
+        // Calculate properties area
+        let spec = element.properties_spec();
+        let content_height = self.calculate_content_height(&spec);
+        let canvas_area = state.layout.canvas;
+        let area = Self::calculate_modal_area(canvas_area, content_height);
+
+        // Check if click is inside properties panel
+        let inside = mouse_event.column >= area.x
+            && mouse_event.column < area.x + area.width
+            && mouse_event.row >= area.y
+            && mouse_event.row < area.y + area.height;
+
+        if inside {
+            // Activate properties panel when clicked
+            state.switch_panel(Panel::Properties);
+            EventResult::Consumed
+        } else {
+            EventResult::Ignored
+        }
+    }
 }
 
 impl Component for PropertiesPanel {
@@ -283,6 +324,7 @@ impl Component for PropertiesPanel {
 
         // Render editable properties (if any)
         let mut field_index = 0;
+        let panel_active = state.active_panel == Panel::Properties;
         for section in &spec.sections {
             lines.push(styles::section_header(&section.title));
 
@@ -293,7 +335,7 @@ impl Component for PropertiesPanel {
                     let current_value = element
                         .get_property(prop_name)
                         .unwrap_or(PropertyValue::Numeric(0));
-                    lines.push(self.inputs[field_index].render_line(&current_value));
+                    lines.push(self.inputs[field_index].render_line(&current_value, panel_active));
                     field_index += 1;
                 }
             }
@@ -309,8 +351,25 @@ impl Component for PropertiesPanel {
             Span::styled("Enter", styles::muted_style()),
         ]));
 
-        // Create the paragraph widget
-        let properties = Paragraph::new(lines).block(styles::modal_block("Properties"));
+        // Create the paragraph widget with dynamic border color
+        use ratatui::{
+            style::{Color, Style},
+            widgets::{Block, BorderType, Borders},
+        };
+
+        let border_color = if state.active_panel == Panel::Properties {
+            Color::Green
+        } else {
+            Color::DarkGray
+        };
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .title(" Properties ")
+            .border_style(Style::default().fg(border_color));
+
+        let properties = Paragraph::new(lines).block(block);
 
         frame.render_widget(properties, area);
     }

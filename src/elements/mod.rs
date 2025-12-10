@@ -1,17 +1,21 @@
 mod arrow;
+mod borders;
 mod line;
 mod properties;
 mod rectangle;
 mod segment;
+mod table;
 mod text;
 
 pub use arrow::ArrowElement;
+pub use borders::{BorderChars, BorderStyle};
 pub use line::LineElement;
 pub use properties::{
     FieldType, HasProperties, PropertiesSpec, PropertyField, PropertySection, PropertyValue,
 };
 pub use rectangle::RectangleElement;
 pub use segment::Segment;
+pub use table::TableElement;
 pub use text::TextElement;
 
 use crate::types::Bounds;
@@ -24,6 +28,7 @@ macro_rules! delegate_element {
             Element::Rectangle(e) => &e.$field,
             Element::Arrow(e) => &e.$field,
             Element::Text(e) => &e.$field,
+            Element::Table(e) => &e.$field,
         }
     };
     ($self:expr, $method:ident($($arg:expr),*)) => {
@@ -32,6 +37,7 @@ macro_rules! delegate_element {
             Element::Rectangle(e) => e.$method($($arg),*),
             Element::Arrow(e) => e.$method($($arg),*),
             Element::Text(e) => e.$method($($arg),*),
+            Element::Table(e) => e.$method($($arg),*),
         }
     };
 }
@@ -42,6 +48,7 @@ pub enum Element {
     Rectangle(RectangleElement),
     Arrow(ArrowElement),
     Text(TextElement),
+    Table(TableElement),
 }
 
 impl Element {
@@ -59,6 +66,7 @@ impl Element {
             Element::Rectangle(_) => "Rectangle",
             Element::Arrow(_) => "Arrow",
             Element::Text(_) => "Text",
+            Element::Table(_) => "Table",
         }
     }
 
@@ -104,6 +112,7 @@ impl Element {
     pub fn properties_spec(&self) -> PropertiesSpec {
         match self {
             Element::Rectangle(rect) => rect.properties_spec(),
+            Element::Table(table) => table.properties_spec(),
             _ => PropertiesSpec::default(),
         }
     }
@@ -112,6 +121,7 @@ impl Element {
     pub fn get_property(&self, name: &str) -> Option<PropertyValue> {
         match self {
             Element::Rectangle(rect) => rect.get_property(name),
+            Element::Table(table) => table.get_property(name),
             _ => None,
         }
     }
@@ -120,6 +130,7 @@ impl Element {
     pub fn set_property(&mut self, name: &str, value: PropertyValue) -> anyhow::Result<()> {
         match self {
             Element::Rectangle(rect) => rect.set_property(name, value),
+            Element::Table(table) => table.set_property(name, value),
             _ => Ok(()), // No-op for elements without properties
         }
     }

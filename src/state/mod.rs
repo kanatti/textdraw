@@ -14,6 +14,18 @@ use crate::types::Panel;
 use crate::ui::UILayout;
 use std::path::Path;
 
+/// Edit Table mode state
+#[derive(Debug, Clone)]
+pub struct EditTableState {
+    pub table_id: usize,
+    pub selected_row: usize,
+    pub selected_col: usize,
+    pub editing_cell: bool,
+    pub edit_buffer: String,
+    pub cursor_pos: usize,
+    pub original_content: String, // Store original content for cancel (Esc)
+}
+
 /// Main application state
 pub struct AppState {
     pub cursor_x: u16,
@@ -30,6 +42,8 @@ pub struct AppState {
     pub canvas: CanvasState,
     // Selection state (for Select tool)
     pub selection_state: SelectionState,
+    // Edit Table mode state
+    pub editing_table: Option<EditTableState>,
     // Track if user has taken any action (for welcome screen)
     pub has_user_action: bool,
 }
@@ -49,6 +63,7 @@ impl AppState {
             file: FileState::new(),
             canvas: CanvasState::default(),
             selection_state: SelectionState::new(),
+            editing_table: None,
             has_user_action: false,
         }
     }
@@ -179,6 +194,8 @@ impl AppState {
 
     pub fn finish_selection(&mut self, x: u16, y: u16) {
         self.selection_state.finish_selection(x, y, &self.canvas);
+        // Exit edit mode if table is no longer selected
+        self.check_edit_table_selection();
     }
 
     /// Toggle selection of element at position (for Shift+Click additive selection)
@@ -201,6 +218,10 @@ impl AppState {
 
     pub fn deselect(&mut self) {
         self.selection_state.deselect();
+        // Exit edit table mode when deselecting
+        if self.is_editing_table() {
+            self.exit_edit_table_mode();
+        }
     }
 
     /// Move selected elements by offset (used for arrow key movement)
@@ -258,6 +279,49 @@ impl AppState {
     /// Check if the welcome screen should be shown
     pub fn should_show_welcome(&self) -> bool {
         !self.has_user_action && self.canvas.is_empty()
+    }
+
+    // ============================================================================
+    // Edit Table Mode
+    // ============================================================================
+
+    /// Enter Edit Table mode for the given table
+    pub fn enter_edit_table_mode(&mut self, table_id: usize) {
+        self.editing_table = Some(EditTableState {
+            table_id,
+            selected_row: 0,
+            selected_col: 0,
+            editing_cell: false,
+            edit_buffer: String::new(),
+            cursor_pos: 0,
+            original_content: String::new(),
+        });
+    }
+
+    /// Exit Edit Table mode
+    pub fn exit_edit_table_mode(&mut self) {
+        self.editing_table = None;
+    }
+
+    /// Check if currently in Edit Table mode
+    pub fn is_editing_table(&self) -> bool {
+        self.editing_table.is_some()
+    }
+
+    /// Get mutable reference to Edit Table state if active
+    pub fn editing_table_mut(&mut self) -> Option<&mut EditTableState> {
+        self.editing_table.as_mut()
+    }
+
+    /// Check if the table being edited is still selected, exit edit mode if not
+    pub fn check_edit_table_selection(&mut self) {
+        if let Some(edit_state) = &self.editing_table {
+            let table_id = edit_state.table_id;
+            // Check if the table is still selected
+            if !self.selection_state.selected_ids.contains(&table_id) {
+                self.exit_edit_table_mode();
+            }
+        }
     }
 }
 
