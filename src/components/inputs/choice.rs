@@ -10,6 +10,8 @@ pub struct ChoiceInput {
     // Edit state
     selected_index: usize,
     original_index: usize, // For reverting on Esc
+    is_focused: bool,
+    is_editing: bool,
 
     // Options
     options: Vec<String>,
@@ -18,10 +20,6 @@ pub struct ChoiceInput {
     // Property identification
     property_name: String,
     label: String,
-
-    // Edit state
-    is_focused: bool,
-    is_editing: bool,
 }
 
 impl ChoiceInput {
