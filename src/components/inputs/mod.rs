@@ -10,11 +10,8 @@ use ratatui::text::Line;
 
 /// Trait for property input components
 pub trait PropertyInput {
-    /// Render this input as a line
-    fn render_line(&self) -> Line<'static>;
-
-    /// Check if this input is focused
-    fn is_focused(&self) -> bool;
+    /// Render this input as a line with the current value
+    fn render_line(&self, current_value: &PropertyValue) -> Line<'static>;
 
     /// Set focus state
     fn set_focused(&mut self, focused: bool);
@@ -25,17 +22,12 @@ pub trait PropertyInput {
     /// Get the property name this input is editing
     fn property_name(&self) -> &str;
 
-    /// Get the current value as a PropertyValue
-    fn get_value(&self) -> PropertyValue;
-
-    /// Set the value from a PropertyValue
-    fn set_value(&mut self, value: PropertyValue);
-
-    /// Handle key event with callback for value changes
+    /// Handle key event with current value and callback for value changes
     /// The callback is called with (property_name, new_value) when the value changes
     fn handle_key_event(
         &mut self,
         key: &KeyEvent,
+        current_value: &PropertyValue,
         on_change: &mut dyn FnMut(&str, PropertyValue),
     ) -> EventResult;
 }

@@ -14,20 +14,6 @@ use crate::types::Panel;
 use crate::ui::UILayout;
 use std::path::Path;
 
-/// Property editing focus state
-#[derive(Debug, Clone)]
-pub struct PropertyFocus {
-    pub field_index: usize, // Which property is focused
-}
-
-/// Property editing state
-#[derive(Debug, Clone)]
-pub struct PropertyEdit {
-    pub field_index: usize,
-    pub buffer: String,
-    pub cursor_pos: usize,
-}
-
 /// Main application state
 pub struct AppState {
     pub cursor_x: u16,
@@ -46,9 +32,6 @@ pub struct AppState {
     pub selection_state: SelectionState,
     // Track if user has taken any action (for welcome screen)
     pub has_user_action: bool,
-    // Property editing state
-    pub property_focus: Option<PropertyFocus>,
-    pub property_edit: Option<PropertyEdit>,
 }
 
 impl AppState {
@@ -67,8 +50,6 @@ impl AppState {
             canvas: CanvasState::default(),
             selection_state: SelectionState::new(),
             has_user_action: false,
-            property_focus: None,
-            property_edit: None,
         }
     }
 

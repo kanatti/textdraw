@@ -43,8 +43,7 @@ impl PropertiesPanel {
     fn init_inputs_for_element(&mut self, element: &Element) {
         // Only reinitialize if element changed
         if self.current_element_id == Some(element.id()) {
-            // Just update values
-            self.update_input_values(element);
+            // Same element, no need to recreate inputs
             return;
         }
 
@@ -58,23 +57,13 @@ impl PropertiesPanel {
 
         // Create input for each field
         for field in spec.all_fields() {
-            let current_value = element.get_property(&field.name);
-
             match &field.field_type {
                 FieldType::Numeric { min, max } => {
-                    if let Some(PropertyValue::Numeric(value)) = current_value {
-                        let input = NumericInput::new(&field.name, &field.label, value, *min, *max);
-                        self.inputs.push(Box::new(input));
-                    }
+                    let input = NumericInput::new(&field.name, &field.label, *min, *max);
+                    self.inputs.push(Box::new(input));
                 }
                 FieldType::Choice { options } => {
-                    let value_str = if let Some(PropertyValue::Choice(s)) = current_value {
-                        s
-                    } else {
-                        options.first().unwrap_or(&String::new()).clone()
-                    };
-                    let input =
-                        ChoiceInput::new(&field.name, &field.label, value_str, options.clone());
+                    let input = ChoiceInput::new(&field.name, &field.label, options.clone());
                     self.inputs.push(Box::new(input));
                 }
                 _ => {
@@ -87,16 +76,6 @@ impl PropertiesPanel {
         if !self.inputs.is_empty() {
             self.focused_index = Some(0);
             self.inputs[0].set_focused(true);
-        }
-    }
-
-    /// Update input values from element without recreating inputs
-    fn update_input_values(&mut self, element: &Element) {
-        for input in &mut self.inputs {
-            let prop_name = input.property_name();
-            if let Some(value) = element.get_property(prop_name) {
-                input.set_value(value);
-            }
         }
     }
 
@@ -220,12 +199,19 @@ impl EventHandler for PropertiesPanel {
         // If editing, forward to focused input with callback
         if is_editing {
             if let Some(idx) = self.focused_index {
-                let result = self.inputs[idx].handle_key_event(key, &mut |prop_name, value| {
-                    // Callback: update the element when value changes
-                    if let Some(element) = state.canvas.get_element_mut(element_id) {
-                        let _ = element.set_property(prop_name, value);
-                    }
-                });
+                let prop_name = self.inputs[idx].property_name();
+                let current_value = element.get_property(prop_name).unwrap_or(PropertyValue::Numeric(0));
+
+                let result = self.inputs[idx].handle_key_event(
+                    key,
+                    &current_value,
+                    &mut |prop_name, value| {
+                        // Callback: update the element when value changes
+                        if let Some(element) = state.canvas.get_element_mut(element_id) {
+                            let _ = element.set_property(prop_name, value);
+                        }
+                    },
+                );
 
                 return result;
             }
@@ -244,12 +230,19 @@ impl EventHandler for PropertiesPanel {
             KeyCode::Enter => {
                 // Forward to focused input to start editing
                 if let Some(idx) = self.focused_index {
-                    return self.inputs[idx].handle_key_event(key, &mut |prop_name, value| {
-                        // Callback: update the element when value changes
-                        if let Some(element) = state.canvas.get_element_mut(element_id) {
-                            let _ = element.set_property(prop_name, value);
-                        }
-                    });
+                    let prop_name = self.inputs[idx].property_name();
+                    let current_value = element.get_property(prop_name).unwrap_or(PropertyValue::Numeric(0));
+
+                    return self.inputs[idx].handle_key_event(
+                        key,
+                        &current_value,
+                        &mut |prop_name, value| {
+                            // Callback: update the element when value changes
+                            if let Some(element) = state.canvas.get_element_mut(element_id) {
+                                let _ = element.set_property(prop_name, value);
+                            }
+                        },
+                    );
                 }
                 EventResult::Ignored
             }
@@ -318,7 +311,9 @@ impl Component for PropertiesPanel {
             // Render inputs for this section
             for _field in &section.fields {
                 if field_index < self.inputs.len() {
-                    lines.push(self.inputs[field_index].render_line());
+                    let prop_name = self.inputs[field_index].property_name();
+                    let current_value = element.get_property(prop_name).unwrap_or(PropertyValue::Numeric(0));
+                    lines.push(self.inputs[field_index].render_line(&current_value));
                     field_index += 1;
                 }
             }
@@ -330,6 +325,8 @@ impl Component for PropertiesPanel {
         lines.push(Line::from(vec![
             Span::styled("  Toggle: ", Style::default().fg(Color::DarkGray)),
             Span::styled("p", Style::default().fg(Color::DarkGray)),
+            Span::styled("  Edit: ", Style::default().fg(Color::DarkGray)),
+            Span::styled("Enter", Style::default().fg(Color::DarkGray)),
         ]));
 
         // Create the paragraph widget

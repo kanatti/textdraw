@@ -1,18 +1,15 @@
 use crate::components::inputs::PropertyInput;
 use crate::elements::PropertyValue;
 use crate::events::{EventResult, KeyEvent};
+use crate::styles;
 use crossterm::event::KeyCode;
-use ratatui::{
-    style::{Color, Style},
-    text::{Line, Span},
-};
+use ratatui::text::{Line, Span};
 
 /// A choice input component for selecting from a list of options
 pub struct ChoiceInput {
-    // Current state
-    current_value: String,
-    original_value: String, // For reverting on Esc
+    // Edit state
     selected_index: usize,
+    original_index: usize, // For reverting on Esc
 
     // Options
     options: Vec<String>,
@@ -31,22 +28,14 @@ impl ChoiceInput {
     pub fn new(
         property_name: impl Into<String>,
         label: impl Into<String>,
-        initial_value: impl Into<String>,
         options: Vec<String>,
     ) -> Self {
-        let initial_value = initial_value.into();
-        let selected_index = options
-            .iter()
-            .position(|opt| opt == &initial_value)
-            .unwrap_or(0);
-
         // Calculate max width for fixed-width display
         let max_option_width = options.iter().map(|s| s.len()).max().unwrap_or(0);
 
         Self {
-            current_value: initial_value.clone(),
-            original_value: initial_value,
-            selected_index,
+            selected_index: 0,
+            original_index: 0,
             options,
             max_option_width,
             property_name: property_name.into(),
@@ -64,173 +53,67 @@ impl ChoiceInput {
         }
     }
 
-    /// Start editing mode
-    fn start_editing(&mut self) {
-        if !self.is_focused {
-            return;
-        }
-        self.is_editing = true;
-        self.original_value = self.current_value.clone();
-    }
-
-    /// Cancel editing and revert to original value
+    /// Cancel editing and revert to original selection
     fn cancel_editing(&mut self) {
         self.is_editing = false;
-        self.current_value = self.original_value.clone();
-        // Restore selected_index to match original value
-        self.selected_index = self
-            .options
-            .iter()
-            .position(|opt| opt == &self.current_value)
-            .unwrap_or(0);
+        self.selected_index = self.original_index;
     }
 
-    /// Apply the selected value
-    fn apply_edit(&mut self) {
-        self.is_editing = false;
-        // Update current_value from selected_index
-        if let Some(value) = self.options.get(self.selected_index) {
-            self.current_value = value.clone();
-        }
-    }
-
-    /// Move to next option (with wraparound), returns true if changed
-    fn cycle_next(&mut self) -> bool {
+    /// Move to next option (with wraparound), returns the new value
+    fn cycle_next(&mut self) -> Option<String> {
         if self.options.is_empty() {
-            return false;
+            return None;
         }
-        let old_index = self.selected_index;
         self.selected_index = (self.selected_index + 1) % self.options.len();
-        if let Some(value) = self.options.get(self.selected_index) {
-            self.current_value = value.clone();
-        }
-        old_index != self.selected_index
+        self.options.get(self.selected_index).cloned()
     }
 
-    /// Move to previous option (with wraparound), returns true if changed
-    fn cycle_prev(&mut self) -> bool {
+    /// Move to previous option (with wraparound), returns the new value
+    fn cycle_prev(&mut self) -> Option<String> {
         if self.options.is_empty() {
-            return false;
+            return None;
         }
-        let old_index = self.selected_index;
         self.selected_index = if self.selected_index == 0 {
             self.options.len() - 1
         } else {
             self.selected_index - 1
         };
-        if let Some(value) = self.options.get(self.selected_index) {
-            self.current_value = value.clone();
-        }
-        old_index != self.selected_index
+        self.options.get(self.selected_index).cloned()
     }
 
     /// Render this input as a Line
-    pub fn render_line(&self) -> Line<'static> {
-        let (label_style, value_style, bg_style) = if self.is_editing {
-            // Editing: dark gray background with cyan text
-            (
-                Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-                Style::default().fg(Color::Cyan).bg(Color::DarkGray),
-                Style::default().bg(Color::DarkGray),
-            )
-        } else if self.is_focused {
-            // Focused: dark gray background
-            (
-                Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-                Style::default().fg(Color::White).bg(Color::DarkGray),
-                Style::default().bg(Color::DarkGray),
-            )
-        } else {
-            // Normal: yellow label, default value
-            (
-                Style::default().fg(Color::Yellow),
-                Style::default(),
-                Style::default(),
-            )
-        };
+    fn render_line_internal(&self, current_value: &str) -> Line<'static> {
+        let styles = styles::input_styles(self.is_editing, self.is_focused);
 
         let display_value = if self.is_editing {
+            // Show currently selected option while editing
+            let selected_value = self.options.get(self.selected_index).map(|s| s.as_str()).unwrap_or("");
             // Use fixed width based on longest option to prevent shifting
             format!(
-                "< {:width$} >",
-                self.current_value,
+                "< {:^width$} >",
+                selected_value,
                 width = self.max_option_width
             )
         } else {
-            self.current_value.clone()
+            current_value.to_string()
         };
 
         Line::from(vec![
-            Span::styled(format!("  {}: ", self.label), label_style),
-            Span::styled(display_value, value_style),
+            Span::styled(format!("  {}: ", self.label), styles.label),
+            Span::styled(display_value, styles.value),
             // Add padding to fill the rest of the line
-            Span::styled(" ".repeat(20), bg_style),
+            Span::styled(" ".repeat(20), styles.background),
         ])
     }
 }
 
 impl PropertyInput for ChoiceInput {
-    fn handle_key_event(
-        &mut self,
-        key: &KeyEvent,
-        on_change: &mut dyn FnMut(&str, PropertyValue),
-    ) -> EventResult {
-        if !self.is_focused {
-            return EventResult::Ignored;
-        }
-
-        if self.is_editing {
-            // Handle editing mode
-            match key.code {
-                KeyCode::Esc => {
-                    self.cancel_editing();
-                    EventResult::Consumed
-                }
-                KeyCode::Enter => {
-                    self.apply_edit();
-                    EventResult::Consumed
-                }
-                KeyCode::Left => {
-                    if self.cycle_prev() {
-                        // Value changed, notify via callback immediately
-                        on_change(
-                            &self.property_name,
-                            PropertyValue::Choice(self.current_value.clone()),
-                        );
-                    }
-                    EventResult::Consumed
-                }
-                KeyCode::Right => {
-                    if self.cycle_next() {
-                        // Value changed, notify via callback immediately
-                        on_change(
-                            &self.property_name,
-                            PropertyValue::Choice(self.current_value.clone()),
-                        );
-                    }
-                    EventResult::Consumed
-                }
-                _ => EventResult::Ignored,
-            }
-        } else {
-            // When focused but not editing, only handle Enter to start editing
-            // All other keys (Up/Down/etc) are ignored so PropertiesPanel can handle navigation
-            match key.code {
-                KeyCode::Enter => {
-                    self.start_editing();
-                    EventResult::Consumed
-                }
-                _ => EventResult::Ignored,
-            }
-        }
-    }
-
-    fn render_line(&self) -> Line<'static> {
-        self.render_line()
-    }
-
-    fn is_focused(&self) -> bool {
-        self.is_focused
+    fn render_line(&self, current_value: &PropertyValue) -> Line<'static> {
+        let value = match current_value {
+            PropertyValue::Choice(s) => s.as_str(),
+            _ => "", // Fallback, shouldn't happen
+        };
+        self.render_line_internal(value)
     }
 
     fn set_focused(&mut self, focused: bool) {
@@ -245,14 +128,72 @@ impl PropertyInput for ChoiceInput {
         &self.property_name
     }
 
-    fn get_value(&self) -> PropertyValue {
-        PropertyValue::Choice(self.current_value.clone())
-    }
+    fn handle_key_event(
+        &mut self,
+        key: &KeyEvent,
+        current_value: &PropertyValue,
+        on_change: &mut dyn FnMut(&str, PropertyValue),
+    ) -> EventResult {
+        if !self.is_focused {
+            return EventResult::Ignored;
+        }
 
-    fn set_value(&mut self, value: PropertyValue) {
-        if let PropertyValue::Choice(s) = value {
-            self.current_value = s.clone();
-            self.selected_index = self.options.iter().position(|opt| opt == &s).unwrap_or(0);
+        let value = match current_value {
+            PropertyValue::Choice(s) => s.as_str(),
+            _ => return EventResult::Ignored,
+        };
+
+        if self.is_editing {
+            // Handle editing mode
+            match key.code {
+                KeyCode::Esc => {
+                    self.cancel_editing();
+                    EventResult::Consumed
+                }
+                KeyCode::Enter => {
+                    // Get selected value and call callback
+                    if let Some(new_value) = self.options.get(self.selected_index) {
+                        on_change(&self.property_name, PropertyValue::Choice(new_value.clone()));
+                    }
+                    self.is_editing = false;
+                    EventResult::Consumed
+                }
+                KeyCode::Left => {
+                    if let Some(new_value) = self.cycle_prev() {
+                        // Value changed, notify via callback immediately
+                        on_change(&self.property_name, PropertyValue::Choice(new_value));
+                    }
+                    EventResult::Consumed
+                }
+                KeyCode::Right => {
+                    if let Some(new_value) = self.cycle_next() {
+                        // Value changed, notify via callback immediately
+                        on_change(&self.property_name, PropertyValue::Choice(new_value));
+                    }
+                    EventResult::Consumed
+                }
+                _ => {
+                    // Consume all other keys while editing to prevent leaking to parent handlers
+                    EventResult::Consumed
+                }
+            }
+        } else {
+            // When focused but not editing, only handle Enter to start editing
+            // All other keys (Up/Down/etc) are ignored so PropertiesPanel can handle navigation
+            match key.code {
+                KeyCode::Enter => {
+                    self.is_editing = true;
+                    // Set selected_index to match current value
+                    self.selected_index = self
+                        .options
+                        .iter()
+                        .position(|opt| opt == value)
+                        .unwrap_or(0);
+                    self.original_index = self.selected_index;
+                    EventResult::Consumed
+                }
+                _ => EventResult::Ignored,
+            }
         }
     }
 }

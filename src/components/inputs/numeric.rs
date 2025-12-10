@@ -1,16 +1,13 @@
 use crate::components::inputs::PropertyInput;
 use crate::elements::PropertyValue;
 use crate::events::{EventResult, KeyEvent};
+use crate::styles;
 use crossterm::event::KeyCode;
-use ratatui::{
-    style::{Color, Style},
-    text::{Line, Span},
-};
+use ratatui::text::{Line, Span};
 
 /// A numeric input component with editing capabilities
 pub struct NumericInput {
-    // Value and constraints
-    value: u16,
+    // Constraints
     min: u16,
     max: u16,
 
@@ -28,12 +25,10 @@ impl NumericInput {
     pub fn new(
         property_name: impl Into<String>,
         label: impl Into<String>,
-        value: u16,
         min: u16,
         max: u16,
     ) -> Self {
         Self {
-            value,
             min,
             max,
             property_name: property_name.into(),
@@ -44,92 +39,30 @@ impl NumericInput {
         }
     }
 
-    /// Set the value (clamped to min/max)
-    pub fn set_value(&mut self, value: u16) {
-        self.value = value.clamp(self.min, self.max);
-    }
+    /// Adjust value while editing with given operation, returns the new value if changed
+    fn adjust_value(&mut self, op: impl Fn(u16) -> u16) -> Option<u16> {
+        // Parse buffer, fallback to min if empty
+        let base_value = self.edit_buffer.parse::<u16>().unwrap_or(self.min);
+        let new_value = op(base_value);
 
-    /// Set focus state
-    pub fn set_focused(&mut self, focused: bool) {
-        self.is_focused = focused;
-        if !focused {
-            self.is_editing = false;
-        }
-    }
-
-    /// Start editing mode
-    fn start_editing(&mut self) {
-        if !self.is_focused {
-            return;
-        }
-        self.is_editing = true;
-        self.edit_buffer = self.value.to_string();
-    }
-
-    /// Cancel editing and revert to original value
-    fn cancel_editing(&mut self) {
-        self.is_editing = false;
-        self.edit_buffer.clear();
-    }
-
-    /// Apply the edited value
-    fn apply_edit(&mut self) -> bool {
-        if let Ok(new_value) = self.edit_buffer.parse::<u16>() {
-            let clamped = new_value.clamp(self.min, self.max);
-            if clamped != self.value {
-                self.value = clamped;
-                self.is_editing = false;
-                self.edit_buffer.clear();
-                return true; // Value changed
-            }
-        }
-        self.is_editing = false;
-        self.edit_buffer.clear();
-        false // No change
-    }
-
-    /// Increment value by 1, returns true if value changed
-    fn increment(&mut self) -> bool {
-        if self.is_editing {
-            // Increment the buffer value and apply immediately
-            if let Ok(val) = self.edit_buffer.parse::<u16>() {
-                let new_val = val.saturating_add(1).min(self.max);
-                if new_val != val {
-                    self.edit_buffer = new_val.to_string();
-                    self.value = new_val;
-                    return true;
-                }
-            }
+        if new_value != base_value {
+            self.edit_buffer = new_value.to_string();
+            Some(new_value)
         } else {
-            let new_value = self.value.saturating_add(1).min(self.max);
-            if new_value != self.value {
-                self.value = new_value;
-                return true;
-            }
+            None
         }
-        false
     }
 
-    /// Decrement value by 1, returns true if value changed
-    fn decrement(&mut self) -> bool {
-        if self.is_editing {
-            // Decrement the buffer value and apply immediately
-            if let Ok(val) = self.edit_buffer.parse::<u16>() {
-                let new_val = val.saturating_sub(1).max(self.min);
-                if new_val != val {
-                    self.edit_buffer = new_val.to_string();
-                    self.value = new_val;
-                    return true;
-                }
-            }
-        } else {
-            let new_value = self.value.saturating_sub(1).max(self.min);
-            if new_value != self.value {
-                self.value = new_value;
-                return true;
-            }
-        }
-        false
+    /// Increment value by 1 while editing, returns the new value if changed
+    fn increment(&mut self) -> Option<u16> {
+        let max = self.max;
+        self.adjust_value(|v| v.saturating_add(1).min(max))
+    }
+
+    /// Decrement value by 1 while editing, returns the new value if changed
+    fn decrement(&mut self) -> Option<u16> {
+        let min = self.min;
+        self.adjust_value(|v| v.saturating_sub(1).max(min))
     }
 
     /// Append a digit character to the buffer
@@ -144,68 +77,83 @@ impl NumericInput {
         self.edit_buffer.pop();
     }
 
+    fn exit_editing(&mut self) {
+        self.is_editing = false;
+        self.edit_buffer.clear();
+    }
+
     /// Render this input as a Line
-    pub fn render_line(&self) -> Line<'static> {
-        let (label_style, value_style, bg_style) = if self.is_editing {
-            // Editing: dark gray background with cyan text
-            (
-                Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-                Style::default().fg(Color::Cyan).bg(Color::DarkGray),
-                Style::default().bg(Color::DarkGray),
-            )
-        } else if self.is_focused {
-            // Focused: dark gray background
-            (
-                Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-                Style::default().fg(Color::White).bg(Color::DarkGray),
-                Style::default().bg(Color::DarkGray),
-            )
-        } else {
-            // Normal: yellow label, default value
-            (
-                Style::default().fg(Color::Yellow),
-                Style::default(),
-                Style::default(),
-            )
-        };
+    fn render_line_internal(&self, current_value: u16) -> Line<'static> {
+        let styles = styles::input_styles(self.is_editing, self.is_focused);
 
         let display_value = if self.is_editing {
             format!("{}▎", self.edit_buffer) // Cursor at end
         } else {
-            self.value.to_string()
+            current_value.to_string()
         };
 
         Line::from(vec![
-            Span::styled(format!("  {}: ", self.label), label_style),
-            Span::styled(display_value, value_style),
+            Span::styled(format!("  {}: ", self.label), styles.label),
+            Span::styled(display_value, styles.value),
             // Add padding to fill the rest of the line
-            Span::styled(" ".repeat(20), bg_style),
+            Span::styled(" ".repeat(20), styles.background),
         ])
     }
 }
 
 impl PropertyInput for NumericInput {
+    fn render_line(&self, current_value: &PropertyValue) -> Line<'static> {
+        let value = match current_value {
+            PropertyValue::Numeric(n) => *n,
+            _ => 0, // Fallback, shouldn't happen
+        };
+        self.render_line_internal(value)
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.is_focused = focused;
+        if !focused {
+            self.exit_editing();
+        }
+    }
+
+    fn is_editing(&self) -> bool {
+        self.is_editing
+    }
+
+    fn property_name(&self) -> &str {
+        &self.property_name
+    }
+
     fn handle_key_event(
         &mut self,
         key: &KeyEvent,
+        current_value: &PropertyValue,
         on_change: &mut dyn FnMut(&str, PropertyValue),
     ) -> EventResult {
         if !self.is_focused {
             return EventResult::Ignored;
         }
 
+        let value = match current_value {
+            PropertyValue::Numeric(n) => *n,
+            _ => return EventResult::Ignored,
+        };
+
         if self.is_editing {
             // Handle editing mode
             match key.code {
                 KeyCode::Esc => {
-                    self.cancel_editing();
+                    self.exit_editing();
                     EventResult::Consumed
                 }
                 KeyCode::Enter => {
-                    if self.apply_edit() {
-                        // Value changed, notify via callback
-                        on_change(&self.property_name, PropertyValue::Numeric(self.value));
+                    // Parse, clamp, and call callback
+                    if let Ok(new_value) = self.edit_buffer.parse::<u16>() {
+                        let clamped = new_value.clamp(self.min, self.max);
+                        on_change(&self.property_name, PropertyValue::Numeric(clamped));
                     }
+                    self.exit_editing();
                     EventResult::Consumed
                 }
                 KeyCode::Char(c) if c.is_ascii_digit() => {
@@ -217,61 +165,35 @@ impl PropertyInput for NumericInput {
                     EventResult::Consumed
                 }
                 KeyCode::Up => {
-                    if self.increment() {
+                    if let Some(new_value) = self.increment() {
                         // Value changed, notify via callback
-                        on_change(&self.property_name, PropertyValue::Numeric(self.value));
+                        on_change(&self.property_name, PropertyValue::Numeric(new_value));
                     }
                     EventResult::Consumed
                 }
                 KeyCode::Down => {
-                    if self.decrement() {
+                    if let Some(new_value) = self.decrement() {
                         // Value changed, notify via callback
-                        on_change(&self.property_name, PropertyValue::Numeric(self.value));
+                        on_change(&self.property_name, PropertyValue::Numeric(new_value));
                     }
                     EventResult::Consumed
                 }
-                _ => EventResult::Ignored,
+                _ => {
+                    // Consume all other keys while editing to prevent leaking to parent handlers
+                    EventResult::Consumed
+                }
             }
         } else {
             // When focused but not editing, only handle Enter to start editing
             // All other keys (Up/Down/etc) are ignored so PropertiesPanel can handle navigation
             match key.code {
                 KeyCode::Enter => {
-                    self.start_editing();
+                    self.is_editing = true;
+                    self.edit_buffer = value.to_string();
                     EventResult::Consumed
                 }
                 _ => EventResult::Ignored,
             }
-        }
-    }
-
-    fn render_line(&self) -> Line<'static> {
-        self.render_line()
-    }
-
-    fn is_focused(&self) -> bool {
-        self.is_focused
-    }
-
-    fn set_focused(&mut self, focused: bool) {
-        self.set_focused(focused)
-    }
-
-    fn is_editing(&self) -> bool {
-        self.is_editing
-    }
-
-    fn property_name(&self) -> &str {
-        &self.property_name
-    }
-
-    fn get_value(&self) -> PropertyValue {
-        PropertyValue::Numeric(self.value)
-    }
-
-    fn set_value(&mut self, value: PropertyValue) {
-        if let PropertyValue::Numeric(n) = value {
-            self.set_value(n);
         }
     }
 }

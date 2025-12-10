@@ -111,42 +111,17 @@ impl Component for StatusBar {
                     Style::default().fg(Color::Yellow),
                 ));
 
-                // Show property editing hints when properties panel is visible and editing
-                if selected_ids.len() == 1 && state.show_properties {
-                    if state.property_edit.is_some() {
-                        // Editing mode hints
-                        left_spans.push(Span::raw(" | "));
-                        left_spans.push(Span::styled("Editing", Style::default().fg(Color::Cyan)));
-                        left_spans.push(Span::raw(" - Save: "));
-                        left_spans.push(Span::styled("Enter", Style::default().fg(Color::Cyan)));
-                        left_spans.push(Span::raw(" | Cancel: "));
-                        left_spans.push(Span::styled("Esc", Style::default().fg(Color::Cyan)));
-                    } else if state.property_focus.is_some() {
-                        // Navigation mode hints
-                        left_spans.push(Span::raw(" | Navigate: "));
-                        left_spans.push(Span::styled("Tab/j/k", Style::default().fg(Color::Cyan)));
-                        left_spans.push(Span::raw(" | Edit: "));
-                        left_spans.push(Span::styled("Enter", Style::default().fg(Color::Cyan)));
-                        left_spans.push(Span::raw(" | Close: "));
-                        left_spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
-                    } else {
-                        // Properties available but not focused
-                        left_spans.push(Span::raw(" | Properties: "));
-                        left_spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
-                    }
-                } else if selected_ids.len() == 1 {
-                    // Show Properties hint only when exactly one element is selected
+                // Show properties hint when exactly one element is selected
+                if selected_ids.len() == 1 {
                     left_spans.push(Span::raw(" | Properties: "));
                     left_spans.push(Span::styled("p", Style::default().fg(Color::Cyan)));
                 }
 
-                // Only show move/delete hints if not editing properties
-                if state.property_edit.is_none() {
-                    left_spans.push(Span::raw(" | Move: "));
-                    left_spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
-                    left_spans.push(Span::raw(" | Delete: "));
-                    left_spans.push(Span::styled("⌫", Style::default().fg(Color::Cyan)));
-                }
+                // Show move/delete hints
+                left_spans.push(Span::raw(" | Move: "));
+                left_spans.push(Span::styled("←↑↓→", Style::default().fg(Color::Cyan)));
+                left_spans.push(Span::raw(" | Delete: "));
+                left_spans.push(Span::styled("⌫", Style::default().fg(Color::Cyan)));
             }
         }
 
