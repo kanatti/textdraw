@@ -77,11 +77,14 @@ impl Component for StatusBar {
         }
 
         // Split statusbar into left (tool & hints) and right (cursor)
-        let chunks = Layout::horizontal([Constraint::Min(0), Constraint::Length(20)])
-            .split(area);
+        let chunks = Layout::horizontal([Constraint::Min(0), Constraint::Length(20)]).split(area);
 
         // Left side: Tool indicator and hints (fixed width for consistent layout)
-        let tool_name = format!(" {:^width$} ", state.tool.selected_tool.name(), width = Tool::max_name_len());
+        let tool_name = format!(
+            " {:^width$} ",
+            state.tool.selected_tool.name(),
+            width = Tool::max_name_len()
+        );
 
         // Use yellow for Select tool, blue for drawing tools
         let tool_bg_color = if state.tool.selected_tool == Tool::Select {
@@ -154,8 +157,8 @@ impl Component for StatusBar {
         left_spans.push(Span::raw(" | Quit: "));
         left_spans.push(Span::styled("q", Style::default().fg(Color::Cyan)));
 
-        let left_status = Paragraph::new(Line::from(left_spans))
-            .style(Style::default().fg(Color::White));
+        let left_status =
+            Paragraph::new(Line::from(left_spans)).style(Style::default().fg(Color::White));
         frame.render_widget(left_status, chunks[0]);
 
         // Right side: Cursor position (right-aligned)

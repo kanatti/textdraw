@@ -20,15 +20,24 @@ impl CanvasComponent {
     }
 
     /// Generate a map of (x, y) -> (char, color) for welcome text
-    fn get_welcome_text_map(&self, area: &ratatui::layout::Rect) -> HashMap<(usize, usize), (char, Color)> {
+    fn get_welcome_text_map(
+        &self,
+        area: &ratatui::layout::Rect,
+    ) -> HashMap<(usize, usize), (char, Color)> {
         let canvas_height = area.height.saturating_sub(2) as usize;
         let canvas_width = area.width.saturating_sub(2) as usize;
 
         let welcome_lines = vec![
             ("TextDraw v0.1.0", Color::Green),
             ("", Color::DarkGray),
-            ("Interactive terminal ASCII diagram editor built with Ratatui.", Color::White),
-            ("Create and edit diagrams using simple drawing tools and keyboard shortcuts.", Color::White),
+            (
+                "Interactive terminal ASCII diagram editor built with Ratatui.",
+                Color::White,
+            ),
+            (
+                "Create and edit diagrams using simple drawing tools and keyboard shortcuts.",
+                Color::White,
+            ),
             ("", Color::DarkGray),
             ("Press <space> for switching tools", Color::White),
             ("Press ? for more help", Color::White),
@@ -36,7 +45,7 @@ impl CanvasComponent {
             ("Start drawing...", Color::DarkGray),
         ];
 
-        let mut map = std::collections::HashMap::new();
+        let mut map = HashMap::new();
         let total_lines = welcome_lines.len();
         let start_y = canvas_height.saturating_sub(total_lines) / 2;
 
@@ -376,8 +385,7 @@ impl Component for CanvasComponent {
 
         // Build render cache: map (x, y) -> (char, element_id)
         // This is O(total_points) instead of O(pixels × elements)
-        let mut render_map: std::collections::HashMap<(i32, i32), (char, usize)> =
-            std::collections::HashMap::new();
+        let mut render_map: HashMap<(i32, i32), (char, usize)> = HashMap::new();
 
         for element in state.canvas.elements() {
             let element_id = element.id();

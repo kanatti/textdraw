@@ -170,7 +170,7 @@ impl NumericInput {
         };
 
         let display_value = if self.is_editing {
-            format!("{}▎", self.edit_buffer)  // Cursor at end
+            format!("{}▎", self.edit_buffer) // Cursor at end
         } else {
             self.value.to_string()
         };

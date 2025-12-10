@@ -7,12 +7,12 @@ use crate::types::Coord;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DrawingState {
     Idle,
-    Anchored,  // First click done, waiting for second click (click-move-click)
-    Dragging,  // User is actively dragging (drag-and-drop)
+    Anchored, // First click done, waiting for second click (click-move-click)
+    Dragging, // User is actively dragging (drag-and-drop)
 }
 
 pub struct ArrowTool {
-    segments: Vec<Segment>,      // Completed segments in current drawing
+    segments: Vec<Segment>,       // Completed segments in current drawing
     current_start: Option<Coord>, // Start of segment being drawn
     current_end: Option<Coord>,   // Current cursor position
     state: DrawingState,

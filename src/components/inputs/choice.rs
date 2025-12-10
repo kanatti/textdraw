@@ -151,7 +151,11 @@ impl ChoiceInput {
 
         let display_value = if self.is_editing {
             // Use fixed width based on longest option to prevent shifting
-            format!("< {:width$} >", self.current_value, width = self.max_option_width)
+            format!(
+                "< {:width$} >",
+                self.current_value,
+                width = self.max_option_width
+            )
         } else {
             self.current_value.clone()
         };
@@ -248,11 +252,7 @@ impl PropertyInput for ChoiceInput {
     fn set_value(&mut self, value: PropertyValue) {
         if let PropertyValue::Choice(s) = value {
             self.current_value = s.clone();
-            self.selected_index = self
-                .options
-                .iter()
-                .position(|opt| opt == &s)
-                .unwrap_or(0);
+            self.selected_index = self.options.iter().position(|opt| opt == &s).unwrap_or(0);
         }
     }
 }

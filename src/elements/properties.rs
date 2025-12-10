@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 /// Trait for elements that expose editable properties
 pub trait HasProperties {

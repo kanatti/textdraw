@@ -121,21 +121,21 @@ fn directions_to_char(dirs: &HashSet<Direction>) -> char {
     let right = dirs.contains(&Right);
 
     match (up, down, left, right) {
-        (true, true, false, false) => '│',   // Vertical line
-        (false, false, true, true) => '─',   // Horizontal line
-        (true, false, false, true) => '└',   // Bottom-left corner
-        (true, false, true, false) => '┘',   // Bottom-right corner
-        (false, true, false, true) => '┌',   // Top-left corner
-        (false, true, true, false) => '┐',   // Top-right corner
-        (true, true, false, true) => '├',    // T-junction left
-        (true, true, true, false) => '┤',    // T-junction right
-        (false, true, true, true) => '┬',    // T-junction top
-        (true, false, true, true) => '┴',    // T-junction bottom
-        (true, true, true, true) => '┼',     // Cross junction
-        (true, false, false, false) => '│',  // Single endpoint up
-        (false, true, false, false) => '│',  // Single endpoint down
-        (false, false, true, false) => '─',  // Single endpoint left
-        (false, false, false, true) => '─',  // Single endpoint right
-        _ => '·', // Fallback for empty or invalid cases
+        (true, true, false, false) => '│',  // Vertical line
+        (false, false, true, true) => '─',  // Horizontal line
+        (true, false, false, true) => '└',  // Bottom-left corner
+        (true, false, true, false) => '┘',  // Bottom-right corner
+        (false, true, false, true) => '┌',  // Top-left corner
+        (false, true, true, false) => '┐',  // Top-right corner
+        (true, true, false, true) => '├',   // T-junction left
+        (true, true, true, false) => '┤',   // T-junction right
+        (false, true, true, true) => '┬',   // T-junction top
+        (true, false, true, true) => '┴',   // T-junction bottom
+        (true, true, true, true) => '┼',    // Cross junction
+        (true, false, false, false) => '│', // Single endpoint up
+        (false, true, false, false) => '│', // Single endpoint down
+        (false, false, true, false) => '─', // Single endpoint left
+        (false, false, false, true) => '─', // Single endpoint right
+        _ => '·',                           // Fallback for empty or invalid cases
     }
 }

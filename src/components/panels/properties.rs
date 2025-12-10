@@ -73,12 +73,8 @@ impl PropertiesPanel {
                     } else {
                         options.first().unwrap_or(&String::new()).clone()
                     };
-                    let input = ChoiceInput::new(
-                        &field.name,
-                        &field.label,
-                        value_str,
-                        options.clone(),
-                    );
+                    let input =
+                        ChoiceInput::new(&field.name, &field.label, value_str, options.clone());
                     self.inputs.push(Box::new(input));
                 }
                 _ => {
@@ -199,7 +195,12 @@ impl EventHandler for PropertiesPanel {
 
         // Get the selected element
         let element_id = state.selection_state.selected_ids[0];
-        let Some(element) = state.canvas.elements().iter().find(|e| e.id() == element_id) else {
+        let Some(element) = state
+            .canvas
+            .elements()
+            .iter()
+            .find(|e| e.id() == element_id)
+        else {
             return EventResult::Ignored;
         };
 
@@ -211,7 +212,8 @@ impl EventHandler for PropertiesPanel {
         }
 
         // Check if any input is editing
-        let is_editing = self.focused_index
+        let is_editing = self
+            .focused_index
             .map(|idx| self.inputs[idx].is_editing())
             .unwrap_or(false);
 
@@ -269,7 +271,12 @@ impl Component for PropertiesPanel {
 
         // Get the selected element
         let element_id = state.selection_state.selected_ids[0];
-        let Some(element) = state.canvas.elements().iter().find(|e| e.id() == element_id) else {
+        let Some(element) = state
+            .canvas
+            .elements()
+            .iter()
+            .find(|e| e.id() == element_id)
+        else {
             return;
         };
 

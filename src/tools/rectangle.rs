@@ -7,8 +7,8 @@ use crate::types::Coord;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DrawingState {
     Idle,
-    Anchored,  // First click done, waiting for second click (click-move-click)
-    Dragging,  // User is actively dragging (drag-and-drop)
+    Anchored, // First click done, waiting for second click (click-move-click)
+    Dragging, // User is actively dragging (drag-and-drop)
 }
 
 pub struct RectangleTool {

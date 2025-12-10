@@ -2,7 +2,7 @@ use crate::elements::properties::{
     FieldType, HasProperties, PropertiesSpec, PropertyField, PropertySection, PropertyValue,
 };
 use crate::types::{Bounds, Coord, RenderPoint};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
 /// Character set for drawing rectangle borders
