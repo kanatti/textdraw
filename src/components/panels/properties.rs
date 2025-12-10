@@ -244,6 +244,8 @@ impl EventHandler for PropertiesPanel {
                 }
                 EventResult::Ignored
             }
+            // Consume Left/Right to prevent element movement when properties panel is open
+            KeyCode::Left | KeyCode::Right => EventResult::Consumed,
             _ => EventResult::Ignored,
         }
     }
