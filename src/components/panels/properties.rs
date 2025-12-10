@@ -131,7 +131,6 @@ impl PropertiesPanel {
         self.update_focus(prev);
     }
 
-
     /// Calculate modal position at bottom-left corner
     fn calculate_modal_area(canvas_area: Rect, content_height: u16) -> Rect {
         // Add 2 for top and bottom borders
@@ -167,7 +166,10 @@ impl PropertiesPanel {
         }
 
         let element_id = state.selection_state.selected_ids[0];
-        state.canvas.get_element(element_id).map(|e| (element_id, e))
+        state
+            .canvas
+            .get_element(element_id)
+            .map(|e| (element_id, e))
     }
 
     /// Forward key event to focused input with callback

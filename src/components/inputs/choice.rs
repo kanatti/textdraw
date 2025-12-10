@@ -85,7 +85,11 @@ impl ChoiceInput {
 
         let display_value = if self.is_editing {
             // Show currently selected option while editing
-            let selected_value = self.options.get(self.selected_index).map(|s| s.as_str()).unwrap_or("");
+            let selected_value = self
+                .options
+                .get(self.selected_index)
+                .map(|s| s.as_str())
+                .unwrap_or("");
             // Use fixed width based on longest option to prevent shifting
             format!(
                 "< {:^width$} >",
@@ -151,7 +155,10 @@ impl PropertyInput for ChoiceInput {
                 KeyCode::Enter => {
                     // Get selected value and call callback
                     if let Some(new_value) = self.options.get(self.selected_index) {
-                        on_change(&self.property_name, PropertyValue::Choice(new_value.clone()));
+                        on_change(
+                            &self.property_name,
+                            PropertyValue::Choice(new_value.clone()),
+                        );
                     }
                     self.is_editing = false;
                     EventResult::Consumed

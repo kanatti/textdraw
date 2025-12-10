@@ -14,6 +14,26 @@ pub struct BoxChars {
     pub bottom_right: char,
 }
 
+impl BoxChars {
+    const fn new(
+        top_left: char,
+        top: char,
+        top_right: char,
+        side: char,
+        bottom_left: char,
+        bottom_right: char,
+    ) -> Self {
+        Self {
+            top_left,
+            top,
+            top_right,
+            side,
+            bottom_left,
+            bottom_right,
+        }
+    }
+}
+
 /// Border type for rectangles
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum BorderType {
@@ -28,38 +48,10 @@ impl BorderType {
     /// Get the box drawing characters for this border type
     pub fn chars(&self) -> BoxChars {
         match self {
-            BorderType::Normal => BoxChars {
-                top_left: '┌',
-                top: '─',
-                top_right: '┐',
-                side: '│',
-                bottom_left: '└',
-                bottom_right: '┘',
-            },
-            BorderType::Double => BoxChars {
-                top_left: '╔',
-                top: '═',
-                top_right: '╗',
-                side: '║',
-                bottom_left: '╚',
-                bottom_right: '╝',
-            },
-            BorderType::Thick => BoxChars {
-                top_left: '┏',
-                top: '━',
-                top_right: '┓',
-                side: '┃',
-                bottom_left: '┗',
-                bottom_right: '┛',
-            },
-            BorderType::Rounded => BoxChars {
-                top_left: '╭',
-                top: '─',
-                top_right: '╮',
-                side: '│',
-                bottom_left: '╰',
-                bottom_right: '╯',
-            },
+            BorderType::Normal => BoxChars::new('┌', '─', '┐', '│', '└', '┘'),
+            BorderType::Double => BoxChars::new('╔', '═', '╗', '║', '╚', '╝'),
+            BorderType::Thick => BoxChars::new('┏', '━', '┓', '┃', '┗', '┛'),
+            BorderType::Rounded => BoxChars::new('╭', '─', '╮', '│', '╰', '╯'),
         }
     }
 
@@ -170,20 +162,23 @@ impl HasProperties for RectangleElement {
     fn properties_spec(&self) -> PropertiesSpec {
         PropertiesSpec::new()
             .section("Position", |s| {
-                s.numeric("x", "x", 0, 1000)
-                 .numeric("y", "y", 0, 1000)
+                s.numeric("x", "x", 0, 1000).numeric("y", "y", 0, 1000)
             })
             .section("Size", |s| {
                 s.numeric("width", "width", 1, 200)
-                 .numeric("height", "height", 1, 200)
+                    .numeric("height", "height", 1, 200)
             })
             .section("Style", |s| {
-                s.choice("border_type", "border-type", vec![
-                    "Normal".to_string(),
-                    "Double".to_string(),
-                    "Thick".to_string(),
-                    "Rounded".to_string(),
-                ])
+                s.choice(
+                    "border_type",
+                    "border-type",
+                    vec![
+                        "Normal".to_string(),
+                        "Double".to_string(),
+                        "Thick".to_string(),
+                        "Rounded".to_string(),
+                    ],
+                )
             })
     }
 

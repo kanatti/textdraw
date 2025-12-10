@@ -30,7 +30,11 @@ impl PropertiesSpec {
     }
 
     /// Builder method to add a section with a closure
-    pub fn section(mut self, title: impl Into<String>, builder: impl FnOnce(PropertySection) -> PropertySection) -> Self {
+    pub fn section(
+        mut self,
+        title: impl Into<String>,
+        builder: impl FnOnce(PropertySection) -> PropertySection,
+    ) -> Self {
         let section = builder(PropertySection::new(title));
         self.sections.push(section);
         self
@@ -76,26 +80,55 @@ impl PropertySection {
     }
 
     /// Builder method to add a numeric field
-    pub fn numeric(mut self, name: impl Into<String>, label: impl Into<String>, min: u16, max: u16) -> Self {
-        self.fields.push(PropertyField::new(name, label, FieldType::Numeric { min, max }));
+    pub fn numeric(
+        mut self,
+        name: impl Into<String>,
+        label: impl Into<String>,
+        min: u16,
+        max: u16,
+    ) -> Self {
+        self.fields.push(PropertyField::new(
+            name,
+            label,
+            FieldType::Numeric { min, max },
+        ));
         self
     }
 
     /// Builder method to add a text field
-    pub fn text(mut self, name: impl Into<String>, label: impl Into<String>, max_length: usize) -> Self {
-        self.fields.push(PropertyField::new(name, label, FieldType::Text { max_length }));
+    pub fn text(
+        mut self,
+        name: impl Into<String>,
+        label: impl Into<String>,
+        max_length: usize,
+    ) -> Self {
+        self.fields.push(PropertyField::new(
+            name,
+            label,
+            FieldType::Text { max_length },
+        ));
         self
     }
 
     /// Builder method to add a choice field
-    pub fn choice(mut self, name: impl Into<String>, label: impl Into<String>, options: Vec<String>) -> Self {
-        self.fields.push(PropertyField::new(name, label, FieldType::Choice { options }));
+    pub fn choice(
+        mut self,
+        name: impl Into<String>,
+        label: impl Into<String>,
+        options: Vec<String>,
+    ) -> Self {
+        self.fields.push(PropertyField::new(
+            name,
+            label,
+            FieldType::Choice { options },
+        ));
         self
     }
 
     /// Builder method to add a boolean field
     pub fn boolean(mut self, name: impl Into<String>, label: impl Into<String>) -> Self {
-        self.fields.push(PropertyField::new(name, label, FieldType::Boolean));
+        self.fields
+            .push(PropertyField::new(name, label, FieldType::Boolean));
         self
     }
 }
