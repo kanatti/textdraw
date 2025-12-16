@@ -1,4 +1,4 @@
-use super::styles::{PADDING_LEFT, header_style, label_style};
+use super::styles::{PADDING_LEFT, SEPARATOR, header_style, label_style};
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
@@ -52,4 +52,9 @@ pub fn section_header(text: &str) -> Line<'static> {
 /// Create a styled span with standard left padding prepended
 pub fn padded_span(text: impl Into<String>, style: Style) -> Span<'static> {
     Span::styled(format!("{}{}", PADDING_LEFT, text.into()), style)
+}
+
+/// Create a separator span (e.g., " | " for statusbar)
+pub fn separator() -> Span<'static> {
+    Span::raw(SEPARATOR)
 }

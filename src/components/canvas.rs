@@ -3,6 +3,7 @@ use crate::events::{ActionType, EventHandler, EventResult, KeyEvent, MouseEvent}
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::{Panel, RenderMap, SelectionMode};
+use crate::ui::CURSOR_BLOCK;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -780,7 +781,10 @@ impl Component for CanvasComponent {
                     // - Not drawing
                     // - Not actively selecting/moving
                     // - Not hovering over a selected element
-                    line_chars.push(Span::styled("█", Style::default().fg(Color::Yellow)));
+                    line_chars.push(Span::styled(
+                        CURSOR_BLOCK,
+                        Style::default().fg(Color::Yellow),
+                    ));
                 } else if let Some(ref map) = welcome_text_map {
                     if let Some((ch, color)) = map.get(&(x as usize, y as usize)) {
                         // Show welcome text - grey if canvas not active

@@ -16,12 +16,31 @@ pub const COLOR_SELECTED_BG: Color = Color::DarkGray;
 /// Color for muted/disabled text
 pub const COLOR_MUTED: Color = Color::DarkGray;
 
+/// Color for error messages
+pub const COLOR_ERROR: Color = Color::Red;
+
+/// Color for success messages
+pub const COLOR_SUCCESS: Color = Color::Green;
+
+/// Color for keybinding hints
+pub const COLOR_HINT: Color = Color::Cyan;
+
 // ============================================================================
 // Common Spacing
 // ============================================================================
 
+/// Standard separator for statusbar hints
+pub const SEPARATOR: &str = " | ";
+
 /// Standard left padding for content (2 spaces)
 pub const PADDING_LEFT: &str = "  ";
+
+// ============================================================================
+// Common Symbols
+// ============================================================================
+
+/// Cursor block character used in canvas and statusbar
+pub const CURSOR_BLOCK: &str = "█";
 
 // ============================================================================
 // Input Styles
