@@ -1,8 +1,4 @@
-use ratatui::{
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, BorderType, Borders},
-};
+use ratatui::style::{Color, Modifier, Style};
 
 // ============================================================================
 // Design System - Color Palette
@@ -17,9 +13,6 @@ pub const COLOR_LABEL: Color = Color::Yellow;
 /// Color for selected/focused background
 pub const COLOR_SELECTED_BG: Color = Color::DarkGray;
 
-/// Color for secondary accents (locked items, success states)
-pub const COLOR_SUCCESS: Color = Color::Green;
-
 /// Color for muted/disabled text
 pub const COLOR_MUTED: Color = Color::DarkGray;
 
@@ -29,9 +22,6 @@ pub const COLOR_MUTED: Color = Color::DarkGray;
 
 /// Standard left padding for content (2 spaces)
 pub const PADDING_LEFT: &str = "  ";
-
-/// Standard padding width for filling lines
-pub const PADDING_FILL_WIDTH: usize = 20;
 
 // ============================================================================
 // Input Styles
@@ -88,52 +78,4 @@ pub fn muted_style() -> Style {
 /// Style for section headers (bold)
 pub fn header_style() -> Style {
     Style::default().add_modifier(Modifier::BOLD)
-}
-
-// ============================================================================
-// Common Line Constructors
-// ============================================================================
-
-/// Create a blank line
-pub fn blank_line() -> Line<'static> {
-    Line::from("")
-}
-
-/// Create a label-value line with standard padding
-pub fn label_value_line(label: &str, value: impl Into<String>) -> Line<'static> {
-    Line::from(vec![
-        Span::styled(format!("{}{}: ", PADDING_LEFT, label), label_style()),
-        Span::raw(value.into()),
-    ])
-}
-
-/// Create a section header line
-pub fn section_header(text: &str) -> Line<'static> {
-    Line::from(vec![Span::styled(
-        format!("{}{}:", PADDING_LEFT, text),
-        header_style(),
-    )])
-}
-
-/// Create a padded span with background fill
-pub fn padding_span(width: usize, style: Style) -> Span<'static> {
-    Span::styled(" ".repeat(width), style)
-}
-
-/// Create a styled span with standard left padding prepended
-pub fn padded_span(text: impl Into<String>, style: Style) -> Span<'static> {
-    Span::styled(format!("{}{}", PADDING_LEFT, text.into()), style)
-}
-
-// ============================================================================
-// Common Block Styles
-// ============================================================================
-
-/// Create a standard modal block with rounded borders and cyan accent
-pub fn modal_block(title: &str) -> Block<'_> {
-    Block::default()
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .title(format!(" {} ", title))
-        .border_style(Style::default().fg(COLOR_PRIMARY))
 }

@@ -1,3 +1,9 @@
+mod styles;
+mod widgets;
+
+pub use styles::*;
+pub use widgets::*;
+
 use crate::components::{
     CanvasComponent, Component, HelpModal, PropertiesPanel, StatusBar, ToolsPanel,
 };

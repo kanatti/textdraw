@@ -1,7 +1,7 @@
 use crate::components::inputs::PropertyInput;
 use crate::elements::PropertyValue;
 use crate::events::{EventResult, KeyEvent};
-use crate::styles;
+use crate::ui;
 use crossterm::event::KeyCode;
 use ratatui::text::{Line, Span};
 
@@ -81,7 +81,7 @@ impl ChoiceInput {
 
     /// Render this input as a Line
     fn render_line_internal(&self, current_value: &str, panel_active: bool) -> Line<'static> {
-        let styles = styles::input_styles(self.is_editing, self.is_focused, panel_active);
+        let styles = ui::input_styles(self.is_editing, self.is_focused, panel_active);
 
         let display_value = if self.is_editing {
             // Show currently selected option while editing

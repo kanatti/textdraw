@@ -3,6 +3,7 @@ use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::Panel;
+use crate::ui;
 use crate::utils::ModalArea;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -10,7 +11,7 @@ use ratatui::{
     layout::Rect,
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Clear, Paragraph},
+    widgets::Paragraph,
 };
 
 const MODAL_WIDTH: u16 = 25;
@@ -191,18 +192,7 @@ impl Component for ToolsPanel {
         lines.push(Line::from(separator));
         lines.push(render_lock_line(state.tool.tool_locked));
 
-        let border_color = if state.active_panel == Panel::Tools {
-            Color::Green
-        } else {
-            Color::DarkGray
-        };
-
-        let block = Block::default()
-            .title("Tools")
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(Style::default().fg(border_color));
-
+        let block = ui::panel_block("Tools", state.active_panel == Panel::Tools);
         let widget = Paragraph::new(lines).block(block);
         frame.render_widget(widget, modal_area.rect());
     }

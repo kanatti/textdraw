@@ -2,8 +2,8 @@ use crate::components::{ChoiceInput, Component, NumericInput, PropertyInput};
 use crate::elements::{Element, FieldType, PropertiesSpec, PropertyValue};
 use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
-use crate::styles;
 use crate::types::Panel;
+use crate::ui;
 use crate::utils::ModalArea;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -303,19 +303,19 @@ impl Component for PropertiesPanel {
         area.clear(frame);
 
         // Build content lines
-        let mut lines = vec![styles::blank_line()];
+        let mut lines = vec![ui::blank_line()];
 
         // Element type and name
-        lines.push(styles::label_value_line("Type", element.type_name()));
-        lines.push(styles::label_value_line("Name", element.name().to_string()));
+        lines.push(ui::label_value_line("Type", element.type_name()));
+        lines.push(ui::label_value_line("Name", element.name().to_string()));
 
-        lines.push(styles::blank_line());
+        lines.push(ui::blank_line());
 
         // Render editable properties (if any)
         let mut field_index = 0;
         let panel_active = state.active_panel == Panel::Properties;
         for section in &spec.sections {
-            lines.push(styles::section_header(&section.title));
+            lines.push(ui::section_header(&section.title));
 
             // Render inputs for this section
             for _field in &section.fields {
@@ -329,35 +329,18 @@ impl Component for PropertiesPanel {
                 }
             }
 
-            lines.push(styles::blank_line());
+            lines.push(ui::blank_line());
         }
 
         // Add shortcut helper at the bottom
         lines.push(Line::from(vec![
-            styles::padded_span("Toggle: ", styles::muted_style()),
-            Span::styled("p", styles::muted_style()),
-            styles::padded_span("Edit: ", styles::muted_style()),
-            Span::styled("Enter", styles::muted_style()),
+            ui::padded_span("Toggle: ", ui::muted_style()),
+            Span::styled("p", ui::muted_style()),
+            ui::padded_span("Edit: ", ui::muted_style()),
+            Span::styled("Enter", ui::muted_style()),
         ]));
 
-        // Create the paragraph widget with dynamic border color
-        use ratatui::{
-            style::{Color, Style},
-            widgets::{Block, BorderType, Borders},
-        };
-
-        let border_color = if state.active_panel == Panel::Properties {
-            Color::Green
-        } else {
-            Color::DarkGray
-        };
-
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .title(" Properties ")
-            .border_style(Style::default().fg(border_color));
-
+        let block = ui::panel_block(" Properties ", state.active_panel == Panel::Properties);
         let properties = Paragraph::new(lines).block(block);
 
         frame.render_widget(properties, area.rect());

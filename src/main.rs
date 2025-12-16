@@ -5,7 +5,6 @@ mod events;
 mod file;
 mod input;
 mod state;
-mod styles;
 mod tools;
 mod types;
 mod ui;
