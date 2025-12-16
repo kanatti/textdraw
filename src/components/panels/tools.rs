@@ -3,14 +3,32 @@ use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::Panel;
+use crate::utils::ModalArea;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
 };
+
+const MODAL_WIDTH: u16 = 25;
+const MODAL_HEIGHT: u16 = 13;
+const KEY_DISPLAY_WIDTH: usize = 4; // "  X " format
+
+fn get_modal_area(canvas_area: Rect) -> ModalArea {
+    ModalArea::bottom_left(canvas_area, MODAL_WIDTH, MODAL_HEIGHT)
+}
+
+fn detect_tool_click(content_row: usize) -> Option<Tool> {
+    Tool::all().get(content_row).copied()
+}
+
+fn is_lock_click(content_row: usize) -> bool {
+    // Lock line is at: tools (N) + empty (1) + separator (1)
+    content_row == Tool::all().len() + 2
+}
 
 pub struct ToolsPanel;
 
@@ -18,65 +36,13 @@ impl ToolsPanel {
     pub fn new() -> Self {
         Self
     }
-
-    /// Calculate modal position at bottom-left corner
-    fn calculate_modal_area(canvas_area: Rect) -> Rect {
-        const MODAL_WIDTH: u16 = 25;
-        const MODAL_HEIGHT: u16 = 13; // Increased for 6 tools
-
-        Rect {
-            x: canvas_area.x + 2,
-            y: canvas_area.y + canvas_area.height - MODAL_HEIGHT - 1,
-            width: MODAL_WIDTH,
-            height: MODAL_HEIGHT,
-        }
-    }
-
-    /// Check if coordinate is within modal area
-    fn is_inside_modal(x: u16, y: u16, modal_area: Rect) -> bool {
-        x >= modal_area.x
-            && x < modal_area.x + modal_area.width
-            && y >= modal_area.y
-            && y < modal_area.y + modal_area.height
-    }
-
-    /// Detect which tool was clicked based on Y coordinate within modal
-    fn detect_tool_click(y: u16, modal_area: Rect) -> Option<Tool> {
-        // Calculate relative Y position within modal (account for border + empty line at top)
-        let relative_y = y.saturating_sub(modal_area.y + 2); // +1 border +1 empty line
-
-        let tools = Tool::all();
-        let tool_index = relative_y as usize;
-
-        if tool_index < tools.len() {
-            Some(tools[tool_index])
-        } else {
-            None
-        }
-    }
-
-    /// Detect if lock line was clicked
-    fn is_lock_click(y: u16, modal_area: Rect) -> bool {
-        let relative_y = y.saturating_sub(modal_area.y + 1); // +1 for border
-
-        // Lock line is at: empty line (1) + tools (5) + empty (1) + separator (1) + lock line
-        // = 1 + 5 + 1 + 1 + 0 = 8 (0-indexed from line after border)
-        let lock_line = 1 + Tool::all().len() as u16 + 1 + 1;
-
-        relative_y == lock_line
-    }
 }
 
 impl EventHandler for ToolsPanel {
     type State = AppState;
     fn handle_key_event(&mut self, state: &mut AppState, key_event: &KeyEvent) -> EventResult {
-        // Only handle when tools modal is visible
-        if !state.show_tools_modal {
-            return EventResult::Ignored;
-        }
-
-        // Only handle when tools panel is active
-        if state.active_panel != Panel::Tools {
+        // Only handle when tools modal is visible and active
+        if !state.show_tools_modal || state.active_panel != Panel::Tools {
             return EventResult::Ignored;
         }
 
@@ -120,30 +86,26 @@ impl EventHandler for ToolsPanel {
     }
 
     fn handle_mouse_down(&mut self, state: &mut AppState, mouse_event: &MouseEvent) -> EventResult {
-        // Only handle when modal is visible
         if !state.show_tools_modal {
             return EventResult::Ignored;
         }
 
-        let canvas_area = state.layout.canvas;
-        let modal_area = Self::calculate_modal_area(canvas_area);
+        let modal_area = get_modal_area(state.layout.canvas);
 
-        // Check if click is within modal bounds
-        if !Self::is_inside_modal(mouse_event.column, mouse_event.row, modal_area) {
+        if !modal_area.contains(mouse_event.column, mouse_event.row) {
             return EventResult::Ignored;
         }
 
-        // Make tools panel active when clicked
         state.switch_panel(Panel::Tools);
 
-        // Check for lock toggle click
-        if Self::is_lock_click(mouse_event.row, modal_area) {
+        let content_row = modal_area.content_relative_y(mouse_event.row) as usize;
+
+        if is_lock_click(content_row) {
             state.toggle_tool_lock();
             return EventResult::Consumed;
         }
 
-        // Check for tool click
-        if let Some(tool) = Self::detect_tool_click(mouse_event.row, modal_area) {
+        if let Some(tool) = detect_tool_click(content_row) {
             state.select_tool(tool);
             return EventResult::Consumed;
         }
@@ -152,75 +114,82 @@ impl EventHandler for ToolsPanel {
     }
 }
 
+// --- RENDERING ---
+
+fn render_empty_line() -> Line<'static> {
+    Line::from("")
+}
+
+fn render_tool_line(tool: Tool, is_selected: bool) -> Line<'static> {
+    let key_char = tool.key();
+    let name = tool.name().to_string();
+
+    let key_display = if key_char == '\0' {
+        " ".repeat(KEY_DISPLAY_WIDTH)
+    } else {
+        format!("  {} ", key_char)
+    };
+
+    let (key_style, name_style, bg_style) = if is_selected {
+        (
+            Style::default().fg(Color::Cyan).bg(Color::DarkGray),
+            Style::default().fg(Color::Yellow).bg(Color::DarkGray),
+            Style::default().bg(Color::DarkGray),
+        )
+    } else {
+        (
+            Style::default().fg(Color::Cyan),
+            Style::default(),
+            Style::default(),
+        )
+    };
+
+    // Calculate padding to fill rest of line with background
+    let content_width = KEY_DISPLAY_WIDTH + name.len();
+    let padding_width = (MODAL_WIDTH as usize).saturating_sub(content_width + 2); // -2 for borders
+
+    Line::from(vec![
+        Span::styled(key_display, key_style),
+        Span::styled(name, name_style),
+        Span::styled(" ".repeat(padding_width), bg_style),
+    ])
+}
+
+fn render_lock_line(is_locked: bool) -> Line<'static> {
+    let lock_text = if is_locked { "[x]" } else { "[ ]" };
+    let lock_style = if is_locked {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default()
+    };
+
+    Line::from(vec![
+        Span::styled(lock_text, lock_style),
+        Span::raw(" Lock tool"),
+    ])
+}
+
 impl Component for ToolsPanel {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
-        // Only render if modal is visible
         if !state.show_tools_modal {
             return;
         }
 
-        let canvas_area = state.layout.canvas;
-        let modal_area = Self::calculate_modal_area(canvas_area);
+        let modal_area = get_modal_area(state.layout.canvas);
+        modal_area.clear(frame);
 
-        // Clear the area behind the modal
-        frame.render_widget(Clear, modal_area);
+        let mut lines = vec![render_empty_line()];
 
-        let mut lines = vec![Line::from("")];
-
-        for tool in Tool::all() {
-            let is_selected = state.tool.selected_tool == tool;
-            let key_char = tool.key();
-            let name = tool.name().to_string();
-
-            // Handle tools without keyboard shortcuts (key = '\0')
-            let key_display = if key_char == '\0' {
-                "    ".to_string() // Four spaces to match "  X " format
-            } else {
-                format!("  {} ", key_char)
-            };
-
-            let (key_style, name_style, bg_style) = if is_selected {
-                // Selected: grey background with bright colors
-                (
-                    Style::default().fg(Color::Cyan).bg(Color::DarkGray),
-                    Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-                    Style::default().bg(Color::DarkGray),
-                )
-            } else {
-                // Not selected: default colors, no background
-                (
-                    Style::default().fg(Color::Cyan),
-                    Style::default(),
-                    Style::default(),
-                )
-            };
-
-            let line = Line::from(vec![
-                Span::styled(key_display, key_style),
-                Span::styled(name, name_style),
-                // Add padding to fill the rest of the line with background
-                Span::styled(" ".repeat(15), bg_style),
-            ]);
-
-            lines.push(line);
+        // Render tool lines
+        for &tool in Tool::all() {
+            lines.push(render_tool_line(tool, state.tool.selected_tool == tool));
         }
 
-        // Add separator
-        lines.push(Line::from(""));
-        lines.push(Line::from("─────────────────────"));
-
-        // Add lock toggle
-        let lock_text = if state.tool.tool_locked { "[x]" } else { "[ ]" };
-        let lock_style = if state.tool.tool_locked {
-            Style::default().fg(Color::Green)
-        } else {
-            Style::default()
-        };
-
-        lines.push(Line::from(vec![
-            Span::styled(lock_text, lock_style),
-            Span::raw(" Lock tool"),
-        ]));
+        // Add separator and lock line
+        lines.push(render_empty_line());
+        let separator = "─".repeat((MODAL_WIDTH - 2) as usize); // -2 for borders
+        lines.push(Line::from(separator));
+        lines.push(render_lock_line(state.tool.tool_locked));
 
         let border_color = if state.active_panel == Panel::Tools {
             Color::Green
@@ -235,7 +204,6 @@ impl Component for ToolsPanel {
             .border_style(Style::default().fg(border_color));
 
         let widget = Paragraph::new(lines).block(block);
-
-        frame.render_widget(widget, modal_area);
+        frame.render_widget(widget, modal_area.rect());
     }
 }

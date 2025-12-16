@@ -96,11 +96,7 @@ impl HasProperties for RectangleElement {
                     .numeric("height", "height", 1, 200)
             })
             .section("Style", |s| {
-                s.choice(
-                    "border_style",
-                    "border-style",
-                    BorderStyle::all_options(),
-                )
+                s.choice("border_style", "border-style", BorderStyle::all_options())
             })
     }
 

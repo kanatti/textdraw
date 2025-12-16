@@ -10,11 +10,11 @@ pub struct BorderChars {
     pub bottom_left: char,
     pub bottom_right: char,
     // Junction characters for tables
-    pub cross: char,     // Full intersection (┼)
-    pub left_t: char,    // Left T-junction (├)
-    pub right_t: char,   // Right T-junction (┤)
-    pub top_t: char,     // Top T-junction (┬)
-    pub bottom_t: char,  // Bottom T-junction (┴)
+    pub cross: char,    // Full intersection (┼)
+    pub left_t: char,   // Left T-junction (├)
+    pub right_t: char,  // Right T-junction (┤)
+    pub top_t: char,    // Top T-junction (┬)
+    pub bottom_t: char, // Bottom T-junction (┴)
 }
 
 /// Border style with support for box drawing characters

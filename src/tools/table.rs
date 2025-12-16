@@ -72,7 +72,8 @@ impl EventHandler for TableTool {
                 let height = sy.abs_diff(y);
 
                 // Create table with auto-calculated rows/cols based on dragged area
-                let table = TableElement::new_from_drag(id, Coord { x: left, y: top }, width, height);
+                let table =
+                    TableElement::new_from_drag(id, Coord { x: left, y: top }, width, height);
                 state.add_element(Element::Table(table));
 
                 self.reset();
@@ -161,7 +162,8 @@ impl DrawingTool for TableTool {
             let height = sy.abs_diff(cy);
 
             // Show preview with auto-calculated rows/cols based on dragged area
-            let temp_table = TableElement::new_from_drag(0, Coord { x: left, y: top }, width, height);
+            let temp_table =
+                TableElement::new_from_drag(0, Coord { x: left, y: top }, width, height);
             temp_table.render_points()
         } else {
             vec![]

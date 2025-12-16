@@ -1,7 +1,7 @@
 use crate::elements::borders::BorderStyle;
 use crate::elements::properties::{HasProperties, PropertiesSpec, PropertyValue};
 use crate::types::{Bounds, Coord, RenderPoint};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -9,6 +9,7 @@ mod styles;
 mod tools;
 mod types;
 mod ui;
+mod utils;
 
 use anyhow::Result;
 use clap::Parser;

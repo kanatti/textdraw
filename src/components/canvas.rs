@@ -381,7 +381,10 @@ impl CanvasComponent {
     }
 
     /// Build overlays for Edit Table mode (selected cell highlight + edit buffer content)
-    fn build_edit_table_overlays(&self, state: &AppState) -> (HashMap<(i32, i32), bool>, HashMap<(i32, i32), (char, bool)>) {
+    fn build_edit_table_overlays(
+        &self,
+        state: &AppState,
+    ) -> (HashMap<(i32, i32), bool>, HashMap<(i32, i32), (char, bool)>) {
         use crate::elements::{Element, TableElement};
 
         let mut highlight_map = HashMap::new();
@@ -510,7 +513,11 @@ impl CanvasComponent {
                         let edit_state = state.editing_table_mut().unwrap();
                         edit_state.edit_buffer.insert(edit_state.cursor_pos, c);
                         edit_state.cursor_pos += 1;
-                        (edit_state.selected_row, edit_state.selected_col, edit_state.edit_buffer.clone())
+                        (
+                            edit_state.selected_row,
+                            edit_state.selected_col,
+                            edit_state.edit_buffer.clone(),
+                        )
                     };
 
                     // Update table cell and resize
@@ -531,7 +538,11 @@ impl CanvasComponent {
                             edit_state.cursor_pos -= 1;
                             edit_state.edit_buffer.remove(edit_state.cursor_pos);
                         }
-                        (edit_state.selected_row, edit_state.selected_col, edit_state.edit_buffer.clone())
+                        (
+                            edit_state.selected_row,
+                            edit_state.selected_col,
+                            edit_state.edit_buffer.clone(),
+                        )
                     };
 
                     // Update table cell and resize
@@ -551,7 +562,11 @@ impl CanvasComponent {
                         if edit_state.cursor_pos < edit_state.edit_buffer.len() {
                             edit_state.edit_buffer.remove(edit_state.cursor_pos);
                         }
-                        (edit_state.selected_row, edit_state.selected_col, edit_state.edit_buffer.clone())
+                        (
+                            edit_state.selected_row,
+                            edit_state.selected_col,
+                            edit_state.edit_buffer.clone(),
+                        )
                     };
 
                     // Update table cell and resize
@@ -709,10 +724,15 @@ impl Component for CanvasComponent {
         }
 
         // Build Edit Table mode overlays (selected cell highlight + edit buffer)
-        let (edit_table_highlight_map, edit_table_content_map) = self.build_edit_table_overlays(state);
+        let (edit_table_highlight_map, edit_table_content_map) =
+            self.build_edit_table_overlays(state);
 
         // Check if actively editing a cell (for color selection)
-        let is_actively_editing_cell = state.editing_table.as_ref().map(|e| e.editing_cell).unwrap_or(false);
+        let is_actively_editing_cell = state
+            .editing_table
+            .as_ref()
+            .map(|e| e.editing_cell)
+            .unwrap_or(false);
 
         // Calculate welcome text positioning if needed
         let welcome_text_map = if state.should_show_welcome() {
@@ -769,7 +789,10 @@ impl Component for CanvasComponent {
                         } else {
                             Color::DarkGray
                         };
-                        line_chars.push(Span::styled(ch.to_string(), Style::default().fg(text_color)));
+                        line_chars.push(Span::styled(
+                            ch.to_string(),
+                            Style::default().fg(text_color),
+                        ));
                     } else {
                         line_chars.push(Span::raw(" "));
                     }

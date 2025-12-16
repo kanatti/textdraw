@@ -29,8 +29,8 @@ macro_rules! define_tools_enum {
         }
 
         impl Tool {
-            pub fn all() -> Vec<Tool> {
-                vec![$(Tool::$variant),*]
+            pub fn all() -> &'static [Tool] {
+                &[$(Tool::$variant),*]
             }
 
             pub fn name(&self) -> &'static str {

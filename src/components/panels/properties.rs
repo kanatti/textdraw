@@ -4,12 +4,13 @@ use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::styles;
 use crate::types::Panel;
+use crate::utils::ModalArea;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::Rect,
     text::{Line, Span},
-    widgets::{Clear, Paragraph},
+    widgets::Paragraph,
 };
 
 /// Panel dimensions for properties panel
@@ -133,16 +134,10 @@ impl PropertiesPanel {
     }
 
     /// Calculate modal position at bottom-left corner
-    fn calculate_modal_area(canvas_area: Rect, content_height: u16) -> Rect {
+    fn calculate_modal_area(canvas_area: Rect, content_height: u16) -> ModalArea {
         // Add 2 for top and bottom borders
         let total_height = content_height + 2;
-
-        Rect {
-            x: canvas_area.x + 2,
-            y: canvas_area.y + canvas_area.height.saturating_sub(total_height + 1),
-            width: PROPERTIES_PANEL_WIDTH,
-            height: total_height,
-        }
+        ModalArea::bottom_left(canvas_area, PROPERTIES_PANEL_WIDTH, total_height)
     }
 
     /// Calculate the height needed for the content
@@ -277,12 +272,7 @@ impl EventHandler for PropertiesPanel {
         let area = Self::calculate_modal_area(canvas_area, content_height);
 
         // Check if click is inside properties panel
-        let inside = mouse_event.column >= area.x
-            && mouse_event.column < area.x + area.width
-            && mouse_event.row >= area.y
-            && mouse_event.row < area.y + area.height;
-
-        if inside {
+        if area.contains(mouse_event.column, mouse_event.row) {
             // Activate properties panel when clicked
             state.switch_panel(Panel::Properties);
             EventResult::Consumed
@@ -310,8 +300,7 @@ impl Component for PropertiesPanel {
         let canvas_area = state.layout.canvas;
         let area = Self::calculate_modal_area(canvas_area, content_height);
 
-        // Clear the area
-        frame.render_widget(Clear, area);
+        area.clear(frame);
 
         // Build content lines
         let mut lines = vec![styles::blank_line()];
@@ -371,6 +360,6 @@ impl Component for PropertiesPanel {
 
         let properties = Paragraph::new(lines).block(block);
 
-        frame.render_widget(properties, area);
+        frame.render_widget(properties, area.rect());
     }
 }
