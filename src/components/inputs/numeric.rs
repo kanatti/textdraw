@@ -3,7 +3,7 @@ use crate::elements::PropertyValue;
 use crate::events::{EventResult, KeyEvent};
 use crate::ui;
 use crossterm::event::KeyCode;
-use ratatui::text::{Line, Span};
+use ratatui::text::Line;
 
 /// A numeric input component with editing capabilities
 pub struct NumericInput {
@@ -81,24 +81,6 @@ impl NumericInput {
         self.is_editing = false;
         self.edit_buffer.clear();
     }
-
-    /// Render this input as a Line
-    fn render_line_internal(&self, current_value: u16, panel_active: bool) -> Line<'static> {
-        let styles = ui::input_styles(self.is_editing, self.is_focused, panel_active);
-
-        let display_value = if self.is_editing {
-            format!("{}▎", self.edit_buffer) // Cursor at end
-        } else {
-            current_value.to_string()
-        };
-
-        Line::from(vec![
-            Span::styled(format!("  {}: ", self.label), styles.label),
-            Span::styled(display_value, styles.value),
-            // Add padding to fill the rest of the line
-            Span::styled(" ".repeat(20), styles.background),
-        ])
-    }
 }
 
 impl PropertyInput for NumericInput {
@@ -107,7 +89,16 @@ impl PropertyInput for NumericInput {
             PropertyValue::Numeric(n) => *n,
             _ => 0, // Fallback, shouldn't happen
         };
-        self.render_line_internal(value, panel_active)
+
+        let styles = ui::input_styles(self.is_editing, self.is_focused, panel_active);
+
+        let display_value = if self.is_editing {
+            format!("{}▎", self.edit_buffer) // Cursor at end
+        } else {
+            value.to_string()
+        };
+
+        ui::input_line(&self.label, display_value, styles)
     }
 
     fn set_focused(&mut self, focused: bool) {

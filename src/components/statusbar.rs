@@ -11,10 +11,6 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-// ============================================================================
-// Constants
-// ============================================================================
-
 const CURSOR_POSITION_WIDTH: u16 = 20;
 
 // Mode badge background colors
@@ -42,13 +38,11 @@ impl Component for StatusBar {
     fn draw(&mut self, state: &AppState, frame: &mut Frame) {
         let area = state.layout.statusbar;
 
-        // Priority 1: Command mode
         if state.is_command_mode_active() {
             render_command_mode(state, frame, area);
             return;
         }
 
-        // Priority 2: Status message
         if let Some(ref message) = state.file.status_message {
             render_status_message(message, frame, area);
             return;
@@ -58,10 +52,6 @@ impl Component for StatusBar {
         render_default_status(state, frame, area);
     }
 }
-
-// ============================================================================
-// Rendering Functions
-// ============================================================================
 
 /// Render command mode display
 fn render_command_mode(state: &AppState, frame: &mut Frame, area: ratatui::layout::Rect) {
@@ -100,12 +90,8 @@ fn render_status_message(message: &str, frame: &mut Frame, area: ratatui::layout
         COLOR_SUCCESS
     };
 
-    let spans = vec![
-        Span::styled(" ", Style::default()),
-        Span::styled(message, Style::default().fg(color)),
-    ];
-
-    let status = Paragraph::new(Line::from(spans)).style(Style::default().fg(Color::White));
+    let text = format!(" {}", message);
+    let status = Paragraph::new(text).style(Style::default().fg(color));
     frame.render_widget(status, area);
 }
 
@@ -125,10 +111,6 @@ fn render_default_status(state: &AppState, frame: &mut Frame, area: ratatui::lay
     let right_status = build_cursor_position(state);
     frame.render_widget(right_status, chunks[1]);
 }
-
-// ============================================================================
-// Status Line Builders
-// ============================================================================
 
 /// Build left side of status bar (mode badge + hints)
 fn build_left_status(state: &AppState) -> Paragraph<'static> {
@@ -151,15 +133,8 @@ fn build_left_status(state: &AppState) -> Paragraph<'static> {
 
 /// Build right side of status bar (cursor position)
 fn build_cursor_position(state: &AppState) -> Paragraph<'static> {
-    let spans = vec![
-        Span::raw("Cursor: ("),
-        Span::raw(state.cursor_x.to_string()),
-        Span::raw(", "),
-        Span::raw(state.cursor_y.to_string()),
-        Span::raw(") "),
-    ];
-
-    Paragraph::new(Line::from(spans))
+    let text = format!("Cursor: ({}, {}) ", state.cursor_x, state.cursor_y);
+    Paragraph::new(text)
         .style(Style::default().fg(Color::White))
         .alignment(Alignment::Right)
 }

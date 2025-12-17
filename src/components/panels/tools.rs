@@ -3,13 +3,13 @@ use crate::events::{EventHandler, EventResult, KeyEvent, MouseEvent};
 use crate::state::AppState;
 use crate::tools::Tool;
 use crate::types::Panel;
-use crate::ui;
+use crate::ui::{self, COLOR_LABEL, COLOR_PRIMARY, COLOR_SELECTED_BG, COLOR_SUCCESS};
 use crate::utils::ModalArea;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     text::{Line, Span},
     widgets::Paragraph,
 };
@@ -117,10 +117,6 @@ impl EventHandler for ToolsPanel {
 
 // --- RENDERING ---
 
-fn render_empty_line() -> Line<'static> {
-    Line::from("")
-}
-
 fn render_tool_line(tool: Tool, is_selected: bool) -> Line<'static> {
     let key_char = tool.key();
     let name = tool.name().to_string();
@@ -133,13 +129,13 @@ fn render_tool_line(tool: Tool, is_selected: bool) -> Line<'static> {
 
     let (key_style, name_style, bg_style) = if is_selected {
         (
-            Style::default().fg(Color::Cyan).bg(Color::DarkGray),
-            Style::default().fg(Color::Yellow).bg(Color::DarkGray),
-            Style::default().bg(Color::DarkGray),
+            Style::default().fg(COLOR_PRIMARY).bg(COLOR_SELECTED_BG),
+            Style::default().fg(COLOR_LABEL).bg(COLOR_SELECTED_BG),
+            Style::default().bg(COLOR_SELECTED_BG),
         )
     } else {
         (
-            Style::default().fg(Color::Cyan),
+            Style::default().fg(COLOR_PRIMARY),
             Style::default(),
             Style::default(),
         )
@@ -159,7 +155,7 @@ fn render_tool_line(tool: Tool, is_selected: bool) -> Line<'static> {
 fn render_lock_line(is_locked: bool) -> Line<'static> {
     let lock_text = if is_locked { "[x]" } else { "[ ]" };
     let lock_style = if is_locked {
-        Style::default().fg(Color::Green)
+        Style::default().fg(COLOR_SUCCESS)
     } else {
         Style::default()
     };
@@ -179,7 +175,7 @@ impl Component for ToolsPanel {
         let modal_area = get_modal_area(state.layout.canvas);
         modal_area.clear(frame);
 
-        let mut lines = vec![render_empty_line()];
+        let mut lines = vec![ui::blank_line()];
 
         // Render tool lines
         for &tool in Tool::all() {
@@ -187,7 +183,7 @@ impl Component for ToolsPanel {
         }
 
         // Add separator and lock line
-        lines.push(render_empty_line());
+        lines.push(ui::blank_line());
         let separator = "─".repeat((MODAL_WIDTH - 2) as usize); // -2 for borders
         lines.push(Line::from(separator));
         lines.push(render_lock_line(state.tool.tool_locked));

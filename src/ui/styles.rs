@@ -35,6 +35,9 @@ pub const SEPARATOR: &str = " | ";
 /// Standard left padding for content (2 spaces)
 pub const PADDING_LEFT: &str = "  ";
 
+/// Width of right-side fill to extend input background across the line
+pub const INPUT_BG_FILL_WIDTH: usize = 20;
+
 // ============================================================================
 // Common Symbols
 // ============================================================================

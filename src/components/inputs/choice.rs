@@ -3,7 +3,7 @@ use crate::elements::PropertyValue;
 use crate::events::{EventResult, KeyEvent};
 use crate::ui;
 use crossterm::event::KeyCode;
-use ratatui::text::{Line, Span};
+use ratatui::text::Line;
 
 /// A choice input component for selecting from a list of options
 pub struct ChoiceInput {
@@ -43,8 +43,8 @@ impl ChoiceInput {
         }
     }
 
-    /// Set focus state
-    pub fn set_focused(&mut self, focused: bool) {
+    /// Update focus state and clear editing when unfocused
+    fn update_focus(&mut self, focused: bool) {
         self.is_focused = focused;
         if !focused {
             self.is_editing = false;
@@ -78,9 +78,15 @@ impl ChoiceInput {
         };
         self.options.get(self.selected_index).cloned()
     }
+}
 
-    /// Render this input as a Line
-    fn render_line_internal(&self, current_value: &str, panel_active: bool) -> Line<'static> {
+impl PropertyInput for ChoiceInput {
+    fn render_line(&self, current_value: &PropertyValue, panel_active: bool) -> Line<'static> {
+        let value = match current_value {
+            PropertyValue::Choice(s) => s.as_str(),
+            _ => "", // Fallback, shouldn't happen
+        };
+
         let styles = ui::input_styles(self.is_editing, self.is_focused, panel_active);
 
         let display_value = if self.is_editing {
@@ -97,29 +103,14 @@ impl ChoiceInput {
                 width = self.max_option_width
             )
         } else {
-            current_value.to_string()
+            value.to_string()
         };
 
-        Line::from(vec![
-            Span::styled(format!("  {}: ", self.label), styles.label),
-            Span::styled(display_value, styles.value),
-            // Add padding to fill the rest of the line
-            Span::styled(" ".repeat(20), styles.background),
-        ])
-    }
-}
-
-impl PropertyInput for ChoiceInput {
-    fn render_line(&self, current_value: &PropertyValue, panel_active: bool) -> Line<'static> {
-        let value = match current_value {
-            PropertyValue::Choice(s) => s.as_str(),
-            _ => "", // Fallback, shouldn't happen
-        };
-        self.render_line_internal(value, panel_active)
+        ui::input_line(&self.label, display_value, styles)
     }
 
     fn set_focused(&mut self, focused: bool) {
-        self.set_focused(focused)
+        self.update_focus(focused)
     }
 
     fn is_editing(&self) -> bool {
