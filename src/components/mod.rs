@@ -4,6 +4,7 @@ mod help_line;
 pub mod inputs;
 pub mod panels;
 pub mod statusbar;
+pub mod table_editor;
 
 pub use canvas::CanvasComponent;
 pub use help::HelpModal;
